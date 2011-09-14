@@ -14,7 +14,7 @@ StatusProxy::StatusProxy(string addr, int port) {
 		struct hostent* ptrhost = gethostbyname(addr.c_str());
 		if (ptrhost != NULL) {
 			cout << "Server IP: " << ptrhost->h_addr_list[0] << endl;
-			server_addr = inet_addr(ptrhost->h_addr_list[0]);
+			server_addr = (in_addr_t)ptrhost->h_addr_list[0];
 		}
 	}
 
