@@ -251,6 +251,7 @@ int SenderStatusProxy::TransferString(string str, bool send_out_packets) {
 	ptr_sender->IPSend((char*)&msg, sizeof(msg), send_out_packets);
 	ptr_sender->IPSend(str.c_str(), msg.data_len, send_out_packets);
 
+	SendMessage(COMMAND_RESPONSE, "Specified string successfully sent.");
 	return 1;
 }
 

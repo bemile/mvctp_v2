@@ -8,7 +8,8 @@
 #include "MVCTPReceiver.h"
 
 MVCTPReceiver::MVCTPReceiver(int buf_size) {
-	ptr_recv_buf_mgr = new ReceiveBufferMgr(buf_size, ptr_raw_sock_comm);
+	ptr_recv_buf_mgr = new ReceiveBufferMgr(buf_size, ptr_multicast_comm);
+	//ptr_recv_buf_mgr = new ReceiveBufferMgr(buf_size, ptr_raw_sock_comm);
 }
 
 MVCTPReceiver::~MVCTPReceiver() {
