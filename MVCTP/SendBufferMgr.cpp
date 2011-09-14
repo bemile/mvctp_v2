@@ -47,13 +47,7 @@ int SendBufferMgr::SendData(const char* data, size_t length, void* dst_addr, boo
 	while (bytes_left > 0) {
 		int len = bytes_left > MVCTP_DATA_LEN ? MVCTP_DATA_LEN : bytes_left;
 
-//		char* ptr_data = (char*) malloc(len + MVCTP_HLEN);
-//		MVCTP_HEADER* header = (MVCTP_HEADER*) ptr_data;
-//		header->packet_id = ++last_packet_id;
-//		header->data_len = len;
-//		memcpy(ptr_data + MVCTP_HLEN, pos, len);
-
-		PacketBuffer* entry = send_buf->GetFreePacket(); //(BufferEntry*) malloc(sizeof(BufferEntry));
+		PacketBuffer* entry = send_buf->GetFreePacket();
 		MVCTP_HEADER* header = (MVCTP_HEADER*) entry->mvctp_header;
 		header->proto = MVCTP_PROTO_TYPE;
 		header->packet_id = ++last_packet_id;
@@ -62,9 +56,7 @@ int SendBufferMgr::SendData(const char* data, size_t length, void* dst_addr, boo
 		entry->packet_id = header->packet_id;
 		entry->packet_len = len + MVCTP_HLEN;
 		entry->data_len = len;
-		//entry->data = entry->mvctp_header + MVCTP_HLEN;
 		memcpy(entry->data, pos, len);
-		//entry->data = ptr_data;
 
 		SendPacket(entry, dst_addr, send_out);
 
@@ -78,6 +70,7 @@ int SendBufferMgr::SendData(const char* data, size_t length, void* dst_addr, boo
 }
 
 
+// Send out a single MVCTP packet
 void SendBufferMgr::SendPacket(PacketBuffer* entry, void* dst_addr, bool send_out) {
 	size_t avail_buf_size = send_buf->GetAvailableBufferSize();
 	if (avail_buf_size < entry->packet_len) {
@@ -89,9 +82,6 @@ void SendBufferMgr::SendPacket(PacketBuffer* entry, void* dst_addr, bool send_ou
 		if (comm->SendPacket(entry, 0, dst_addr) < 0) {
 			SysError("SendBufferMgr::SendPacket()::SendData() error");
 		}
-		//if (comm->SendData(entry->mvctp_header, entry->packet_len, 0, dst_addr) < 0) {
-		//	SysError("SendBufferMgr::SendPacket()::SendData() error");
-		//}
 	}
 }
 
