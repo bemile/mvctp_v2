@@ -9,8 +9,8 @@
 
 
 MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
-	//ptr_send_buf_mgr = new SendBufferMgr(buf_size, ptr_multicast_comm);
-	ptr_send_buf_mgr = new SendBufferMgr(buf_size, ptr_raw_sock_comm);
+	ptr_send_buf_mgr = new SendBufferMgr(buf_size, ptr_multicast_comm);
+	//ptr_send_buf_mgr = new SendBufferMgr(buf_size, ptr_raw_sock_comm);
 }
 
 MVCTPSender::~MVCTPSender() {

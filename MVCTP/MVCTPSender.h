@@ -17,8 +17,8 @@ public:
 	MVCTPSender(int buf_size);
 	~MVCTPSender();
 
-	int RawSend(const char* data, size_t length, bool send_out);
-	int IPSend(const char* data, size_t length, bool send_out);
+	int RawSend(const char* data, size_t length, bool send_out = true);
+	int IPSend(const char* data, size_t length, bool send_out = true);
 	void SetSendRate(int num_mbps);
 	void SetBufferSize(size_t buff_size);
 	void ResetBuffer();

@@ -29,6 +29,7 @@ private:
 	void HandleStringTransfer(TransferMessage& msg);
 	void HandleMemoryTransfer(TransferMessage& msg, size_t buff_size);
 	void HandleFileTransfer(TransferMessage& msg, size_t buff_size);
+	void SendMemoryData(void* buffer, size_t length);
 	bool IsSender();
 	string ExecSysCommand(char* cmd);
 

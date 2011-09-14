@@ -41,6 +41,8 @@ protected:
 
 	int TransferString(string str, bool send_out_packets);
 	int TransferMemoryData(int size);
+	void TransferFile(string file_name);
+	void SendMemoryData(void* buffer, size_t length);
 
 private:
 	MVCTPSender* ptr_sender;

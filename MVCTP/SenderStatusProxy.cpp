@@ -95,6 +95,7 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 	bool send_out_packets = true;
 
 	int 	mem_transfer_size = 0;
+	string	file_name;
 
 	string arg = "";
 	list<string>::iterator it;
@@ -102,12 +103,14 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 		if ((*it)[0] == '-') {
 			switch ((*it)[1]) {
 			case 'm':
-				it++;
 				memory_transfer = true;
+				it++;
 				mem_transfer_size = atoi((*it).c_str());	// in Megabytes
 				break;
 			case 'f':
 				file_transfer = true;
+				it++;
+				file_name = *it;
 				break;
 			case 'n':
 				send_out_packets = false;
@@ -127,7 +130,7 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 		TransferMemoryData(mem_transfer_size);
 	}
 	else if (file_transfer) {
-
+		TransferFile(file_name);
 	}
 	else {
 		TransferString(arg, send_out_packets);
@@ -153,7 +156,7 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 	TransferMessage msg;
 	msg.msg_type = MEMORY_TRANSFER;
 	msg.data_len = size;
-	ptr_sender->RawSend((char*)&msg, sizeof(msg), true);
+	ptr_sender->IPSend((char*)&msg, sizeof(msg));
 
 	// Initialize the memory buffer
 //	uint* mem_store = (uint*)malloc(size);
@@ -182,7 +185,7 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 	while (remained_size > 0) {
 		int packet_size = remained_size > MVCTP_ETH_FRAME_LEN ? MVCTP_ETH_FRAME_LEN
 				: remained_size;
-		ptr_sender->RawSend(buffer /*+ total_sent_data*/, packet_size - MVCTP_HLEN - ETH_HLEN, true);
+		ptr_sender->IPSend(buffer /*+ total_sent_data*/, packet_size - MVCTP_HLEN - ETH_HLEN);
 		remained_size -= packet_size;
 		total_sent_data += packet_size - MVCTP_HLEN - ETH_HLEN;
 
@@ -209,13 +212,44 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 }
 
 
+// Transfer a disk file to all receivers
+void SenderStatusProxy::TransferFile(string file_name) {
+	struct stat file_status;
+	stat(file_name.c_str(), &file_status);
+	ulong file_size = file_status.st_size;
+	ulong remained_size = file_size;
+
+	int fd = open(file_name.c_str(), O_RDONLY);
+	char* buffer;
+	off_t offset = 0;
+	while (remained_size > 0) {
+		int map_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size
+				: MAX_MAPPED_MEM_SIZE;
+		buffer = (char*) mmap(0, map_size, PROT_READ | PROT_WRITE, 0, fd,
+				offset);
+		munmap(buffer, map_size);
+		SendMemoryData(buffer, map_size);
+		offset += map_size;
+		remained_size -= map_size;
+	}
+
+	close(fd);
+
+}
+
+
+void SenderStatusProxy::SendMemoryData(void* buffer, size_t length) {
+
+}
+
+
 // Multicast a string message to receivers
 int SenderStatusProxy::TransferString(string str, bool send_out_packets) {
 	TransferMessage msg;
 	msg.msg_type = STRING_TRANSFER;
 	msg.data_len = str.length();
-	ptr_sender->RawSend((char*)&msg, sizeof(msg), send_out_packets);
-	ptr_sender->RawSend(str.c_str(), msg.data_len, send_out_packets);
+	ptr_sender->IPSend((char*)&msg, sizeof(msg), send_out_packets);
+	ptr_sender->IPSend(str.c_str(), msg.data_len, send_out_packets);
 
 	return 1;
 }

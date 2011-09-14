@@ -8,16 +8,11 @@
 #include "StatusProxy.h"
 
 StatusProxy::StatusProxy(string addr, int port) {
-	cout << "Server Address: " << addr << endl;
 	in_addr_t server_addr = inet_addr(addr.c_str());
 	if (server_addr == -1) {
 		struct hostent* ptrhost = gethostbyname(addr.c_str());
 		if (ptrhost != NULL) {
 			server_addr = ((in_addr*)ptrhost->h_addr_list[0])->s_addr;
-
-			char addr_str[INET6_ADDRSTRLEN];
-			inet_ntop(ptrhost->h_addrtype, ptrhost->h_addr_list[0], addr_str, sizeof(addr_str));
-			cout << "Server IP: " << addr_str << endl;
 		}
 	}
 

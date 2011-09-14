@@ -19,8 +19,8 @@ public:
 	SendBufferMgr(int size, InetComm* mcomm);
 	~SendBufferMgr();
 
-	int SendData(const char* data, size_t length, void* dst_addr, bool send_out);
-	void SendPacket(PacketBuffer* entry, void* dst_addr, bool send_out);
+	int SendData(const char* data, size_t length, void* dst_addr, bool send_out = true);
+	void SendPacket(PacketBuffer* entry, void* dst_addr, bool send_out = true);
 	void StartUdpThread();
 	void SetBufferSize(size_t buff_size);
 	void ResetBuffer();
