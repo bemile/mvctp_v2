@@ -185,7 +185,25 @@ void Tester::HandleMemoryTransfer(TransferMessage& msg, size_t buff_size) {
 
 
 void Tester::HandleFileTransfer(TransferMessage& msg, size_t buff_size) {
+	string file_name = msg.file_name;
+	struct stat file_status;
+	stat(msg.file_name, &file_status);
+	ulong file_size = file_status.st_size;
+	ulong remained_size = file_size;
 
+	int fd = open(msg.file_name, O_RDONLY);
+	char* buffer;
+	off_t offset = 0;
+	while (remained_size > 0) {
+		int map_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size : MAX_MAPPED_MEM_SIZE;
+		buffer = (char*) mmap(0, map_size, PROT_READ | PROT_WRITE, 0, fd, offset);
+		munmap(buffer, map_size);
+
+		offset += map_size;
+		remained_size -= map_size;
+	}
+
+	close(fd);
 }
 
 

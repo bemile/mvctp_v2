@@ -8,9 +8,17 @@
 #include "StatusProxy.h"
 
 StatusProxy::StatusProxy(string addr, int port) {
+	in_addr_t server_addr = inet_addr(addr.c_str());
+	if (server_addr == -1) {
+		struct hostent* ptrhost = gethostbyname(addr.c_str());
+		if (ptrhost != NULL) {
+			server_addr = inet_addr(*ptrhost->h_addr_list);
+		}
+	}
+
 	bzero(&servaddr, sizeof(servaddr));
 	servaddr.sin_family 	 = AF_INET;
-	servaddr.sin_addr.s_addr = inet_addr(addr.c_str());
+	servaddr.sin_addr.s_addr = server_addr;
 	servaddr.sin_port 		 = htons(port);
 
 	sockfd = -1;

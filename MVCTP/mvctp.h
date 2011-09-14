@@ -8,30 +8,36 @@
 #ifndef MVCTP_H_
 #define MVCTP_H_
 
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/ioctl.h>
-#include <sys/utsname.h>
-#include <sys/errno.h>
-#include <sys/time.h>
-#include <linux/if_packet.h>
-#include <linux/if_ether.h>
-//#include <linux/if_arp.h>
-#include <arpa/inet.h>
-#include <netinet/in.h>
-#include <net/if.h>
-#include <netdb.h>
-#include <unistd.h>
-#include <signal.h>
-#include <time.h>
 #include <ctime>
-#include <iostream>
 #include <cstdio>
 #include <cstdlib>
+#include <fcntl.h>
+#include <iostream>
+#include <list>
+#include <netdb.h>
 #include <stdarg.h>
 #include <string>
 #include <string.h>
-#include <list>
+#include <signal.h>
+#include <time.h>
+#include <unistd.h>
+#include <arpa/inet.h>
+#include <linux/if_packet.h>
+#include <linux/if_ether.h>
+#include <netinet/in.h>
+#include <net/if.h>
+#include <sys/errno.h>
+#include <sys/ioctl.h>
+#include <sys/mman.h>
+#include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/time.h>
+#include <sys/types.h>
+#include <sys/utsname.h>
+//#include <linux/if_arp.h>
+
+
+
 #include "ConfigInfo.h"
 
 
@@ -109,33 +115,36 @@ struct NackMsgInfo {
 // Macros
 #define MAX(a, b)  ((a) > (b) ? (a) : (b))
 
-const bool is_debug = true;
+const static bool is_debug = true;
 
 // Constant values
-const string group_id = "224.1.2.3";
-const unsigned char group_mac_addr[6] = {0x01, 0x00, 0x5e, 0x01, 0x02, 0x03};
-const ushort mvctp_port = 123;
-const ushort BUFFER_UDP_SEND_PORT = 12345;
-const ushort BUFFER_UDP_RECV_PORT = 12346;
-const int PORT_NUM = 11001;
-const int BUFF_SIZE = 10000;
+const static string group_id = "224.1.2.3";
+const static unsigned char group_mac_addr[6] = {0x01, 0x00, 0x5e, 0x01, 0x02, 0x03};
+const static ushort mvctp_port = 123;
+const static ushort BUFFER_UDP_SEND_PORT = 12345;
+const static ushort BUFFER_UDP_RECV_PORT = 12346;
+const static int PORT_NUM = 11001;
+const static int BUFF_SIZE = 10000;
 
-const ushort MVCTP_PROTO_TYPE = 0x0001;
+const static ushort MVCTP_PROTO_TYPE = 0x0001;
 // Force maximum MVCTP packet length to be 1460 bytes so that it won't cause fragmentation
 // when using TCP for packet retransmission
-const int MVCTP_ETH_FRAME_LEN = 1460 + ETH_HLEN;
-const int MVCTP_PACKET_LEN = 1460; //ETH_FRAME_LEN - ETH_HLEN;
-const int MVCTP_HLEN = sizeof(MVCTP_HEADER);
-const int MVCTP_DATA_LEN = MVCTP_PACKET_LEN - sizeof(MVCTP_HEADER); //ETH_FRAME_LEN - ETH_HLEN - sizeof(MVCTP_HEADER);
+const static int MVCTP_ETH_FRAME_LEN = 1460 + ETH_HLEN;
+const static int MVCTP_PACKET_LEN = 1460; //ETH_FRAME_LEN - ETH_HLEN;
+const static int MVCTP_HLEN = sizeof(MVCTP_HEADER);
+const static int MVCTP_DATA_LEN = MVCTP_PACKET_LEN - sizeof(MVCTP_HEADER); //ETH_FRAME_LEN - ETH_HLEN - sizeof(MVCTP_HEADER);
 
 // parameters for MVCTP over UDP
-const int UDP_MVCTP_PACKET_LEN = 1460;
-const int UDP_MVCTP_HLEN = sizeof(MVCTP_HEADER);
-const int UDP_MVCTP_DATA_LEN = 1200 - sizeof(MVCTP_HEADER);
-const int UDP_PACKET_LEN = ETH_DATA_LEN;
+static const int UDP_MVCTP_PACKET_LEN = 1460;
+static const int UDP_MVCTP_HLEN = sizeof(MVCTP_HEADER);
+static const int UDP_MVCTP_DATA_LEN = 1200 - sizeof(MVCTP_HEADER);
+static const int UDP_PACKET_LEN = ETH_DATA_LEN;
 
-const int INIT_RTT	= 50;		// in milliseconds
+static const int INIT_RTT	= 50;		// in milliseconds
 
+
+// parameters for data transfer
+const int MAX_MAPPED_MEM_SIZE = 128 * 1024 * 1024;
 
 class MVCTP {
 public:

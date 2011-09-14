@@ -1,5 +1,5 @@
 # This is a comment
-Monitor_Server=128.143.69.164
+Monitor_Server=node0.windows-xp.mvc.emulab.net
 Monitor_Server_Port=11003
 Send_Buffer_Size=65536
 Recv_Buffer_Size=65536

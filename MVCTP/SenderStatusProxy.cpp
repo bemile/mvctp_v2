@@ -68,6 +68,16 @@ int SenderStatusProxy::HandleCommand(char* command) {
 			}
 		}
 	}
+	else if (parts.front().compare("GenDataFile") == 0) {
+		if (parts.size() == 3) {
+			parts.pop_front();
+			string file_name = parts.front();
+			parts.pop_front();
+			int size = atoi(parts.front().c_str());
+			GenerateDataFile(file_name, size);
+			SendMessage(COMMAND_RESPONSE, "Data file generated.");
+		}
+	}
 	else {
 		StatusProxy::HandleCommand(command);
 	}
@@ -199,6 +209,7 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 }
 
 
+// Multicast a string message to receivers
 int SenderStatusProxy::TransferString(string str, bool send_out_packets) {
 	TransferMessage msg;
 	msg.msg_type = STRING_TRANSFER;
@@ -208,5 +219,27 @@ int SenderStatusProxy::TransferString(string str, bool send_out_packets) {
 
 	return 1;
 }
+
+
+// Generate a local data file for disk-to-disk transfer experiments
+int SenderStatusProxy::GenerateDataFile(string file_name, int size_mb) {
+	char buffer[1024];
+	int loops = size_mb * 1024;
+	memset(buffer, 'a', 1024);
+
+	ofstream myfile(file_name.c_str(), ios::out);
+	if (myfile.is_open()) {
+		for (int i = 0; i < loops; i++) {
+			myfile.write(buffer, 1024);
+		}
+		myfile.close();
+		return 1;
+	}
+	else {
+		return -1;
+	}
+}
+
+
 
 
