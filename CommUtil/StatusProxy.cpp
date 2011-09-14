@@ -13,7 +13,7 @@ StatusProxy::StatusProxy(string addr, int port) {
 	if (server_addr == -1) {
 		struct hostent* ptrhost = gethostbyname(addr.c_str());
 		if (ptrhost != NULL) {
-			server_addr = htonl((in_addr_t)ptrhost->h_addr_list[0]);
+			server_addr = ((in_addr*)ptrhost->h_addr_list[0])->s_addr;
 
 			char addr_str[INET6_ADDRSTRLEN];
 			inet_ntop(ptrhost->h_addrtype, ptrhost->h_addr_list[0], addr_str, sizeof(addr_str));
