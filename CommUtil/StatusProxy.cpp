@@ -13,8 +13,11 @@ StatusProxy::StatusProxy(string addr, int port) {
 	if (server_addr == -1) {
 		struct hostent* ptrhost = gethostbyname(addr.c_str());
 		if (ptrhost != NULL) {
-			cout << "Server IP: " << ptrhost->h_addr_list[0] << endl;
 			server_addr = (in_addr_t)ptrhost->h_addr_list[0];
+
+			char addr_str[INET6_ADDRSTRLEN];
+			inet_ntop(ptrhost->h_addrtype, ptrhost->h_addr_list[0], addr_str, sizeof(addr_str));
+			cout << "Server IP: " << addr_str << endl;
 		}
 	}
 
