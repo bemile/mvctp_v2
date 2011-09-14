@@ -1,6 +1,6 @@
 HOST=`hostname -f`
 
-cd ~/$HOST/src/EmulabStarter
+cd ~/$HOST/src/mvctp_v2
 make
 make clean
 sudo cp ./emustarter ~/$HOST/
