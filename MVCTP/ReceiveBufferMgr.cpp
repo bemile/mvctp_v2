@@ -223,6 +223,7 @@ void ReceiveBufferMgr::RunReceivingThread() {
 
 		if (header->flags & MVCTP_EOF) {
 			ReceiveRetransmissions();
+			cout << "Retransmission done." << endl;
 			continue;
 		}
 
