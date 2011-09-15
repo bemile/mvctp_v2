@@ -121,6 +121,7 @@ void SendBufferMgr::DoRetransmission() {
 	entry->packet_len = MVCTP_HLEN;
 	entry->data_len = 0;
 	SendPacket(entry, dst_mac_addr, true);
+	header->flags = 0;
 
 	//
 	map<int, list<int32_t> >::iterator it;
