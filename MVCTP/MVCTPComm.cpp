@@ -24,6 +24,7 @@ MVCTPComm::MVCTPComm() {
 		string ip = inet_ntoa(addr->sin_addr);
 		if (ip.find("10.1.") != ip.npos) {
 			if_name = ptr_ifi->ifi_name;
+			if_ip = ip;
 			cout << "Raw Socket Interface: " << if_name << endl;
 			break;
 		}
@@ -44,7 +45,7 @@ int MVCTPComm::JoinGroup(string addr, ushort port) {
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORT_NUM);
 	inet_pton(AF_INET, addr.c_str(), &sa.sin_addr);
-	ptr_multicast_comm->JoinGroup((SA *)&sa, sizeof(sa), if_name.c_str());//(char*)NULL);
+	ptr_multicast_comm->JoinGroup((SA *)&sa, sizeof(sa), (char*)NULL); //if_name.c_str());//
 
 	mvctp_group_id = sa.sin_addr.s_addr;
 	GetMulticastMacAddressFromIP(mac_group_addr, mvctp_group_id);

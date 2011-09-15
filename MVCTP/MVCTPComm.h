@@ -24,7 +24,7 @@ public:
 
 protected:
 	NetInterfaceManager* if_manager;
-	string if_name;
+	string if_name, if_ip;
 	RawSocketComm* ptr_raw_sock_comm;
 	MulticastComm* ptr_multicast_comm;
 	u_int32_t mvctp_group_id;
