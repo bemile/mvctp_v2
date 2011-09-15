@@ -188,7 +188,7 @@ void ReceiveBufferMgr::RunReceivingThread() {
 			else
 				SysError("MVCTPBuffer error on receiving data");
 		}
-		cout << "I received one packet. Packet length: " << bytes << endl;
+		cout << "I received one packet. Packet length: " << bytes << "  Packet ID: " << header->packet_id << endl;
 
 		// Initialize the packet id information on receiving the first packet
 		bool donot_drop_packet = false;
@@ -223,7 +223,7 @@ void ReceiveBufferMgr::RunReceivingThread() {
 
 		if (header->flags & MVCTP_EOF) {
 			ReceiveRetransmissions();
-			cout << "Retransmission done. Flags: " << header->flags << endl;
+			cout << "Retransmission Done." << endl;
 			continue;
 		}
 
@@ -232,7 +232,6 @@ void ReceiveBufferMgr::RunReceivingThread() {
 		// Otherwise, just drop the packet (emulates errored packet)
 		if (rand() % 1000 >= packet_loss_rate || donot_drop_packet) {
 			AddNewEntry(header, buf);
-			cout << "Packet added." << endl;
 		}
 	}
 }
