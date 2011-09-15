@@ -47,7 +47,8 @@ int MulticastComm::JoinGroup(const SA* sa, int sa_len, const char *if_name) {
 				mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 			}
 
-			bind(sock_fd, (SA *)&temp_addr, sa_len); //bind(sock_fd, &dst_addr, dst_addr_len);
+			bind(sock_fd, (SA *)&temp_addr, sa_len);
+			bind(sock_fd, &dst_addr, dst_addr_len);
 			return (setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)));
 
 		default:
@@ -115,7 +116,6 @@ ssize_t MulticastComm::SendData(const void* buff, size_t len, int flags, void* d
 }
 
 ssize_t MulticastComm::SendPacket(PacketBuffer* buffer, int flags, void* dst_addr) {
-	cout << "One packet sent out" << endl;
 	return sendto(sock_fd, buffer->mvctp_header, buffer->data_len + MVCTP_HLEN,
 					flags, &this->dst_addr, sizeof(sockaddr_in));
 }
