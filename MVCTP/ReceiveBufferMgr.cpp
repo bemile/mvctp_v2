@@ -17,7 +17,6 @@ ReceiveBufferMgr::ReceiveBufferMgr(int size, InetComm* mcomm) {
 	comm = mcomm;
 	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_UDP_SEND_PORT);
 	retrans_tcp_client->Connect();
-	cout << "Retransmission server connected." << endl;
 
 	udp_comm = new UdpComm(BUFFER_UDP_RECV_PORT);
 	//TODO: remove this after the problem of getting sender address info is solved
@@ -222,9 +221,9 @@ void ReceiveBufferMgr::RunReceivingThread() {
 			}
 		}
 
-		if (header->flags | MVCTP_EOF) {
+		if (header->flags & MVCTP_EOF) {
 			ReceiveRetransmissions();
-			cout << "Retransmission done." << endl;
+			cout << "Retransmission done. Flags: " << header->flags << endl;
 			continue;
 		}
 
