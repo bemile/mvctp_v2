@@ -85,6 +85,7 @@ void Tester::StartTest() {
 
 
 void Tester::HandleStringTransfer(TransferMessage& msg) {
+	this->SendMessage(INFORMATIONAL, "Receiving a string...");
 	char buff[msg.data_len + 1];
 	sockaddr_in from;
 	socklen_t socklen = sizeof(from);
