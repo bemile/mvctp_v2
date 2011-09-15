@@ -56,6 +56,7 @@ int SendBufferMgr::SendData(const char* data, size_t length, void* dst_addr, boo
 		header->proto = MVCTP_PROTO_TYPE;
 		header->packet_id = ++last_packet_id;
 		header->data_len = len;
+		header->flags = 0;
 
 		entry->packet_id = header->packet_id;
 		entry->packet_len = len + MVCTP_HLEN;
