@@ -66,6 +66,7 @@ void Tester::StartTest() {
 				SysError("Tester::StartTester::RawReceive() error");
 			}
 
+			this->SendMessage(INFORMATIONAL, "Received a message...");
 			switch (msg.msg_type) {
 			case STRING_TRANSFER:
 				HandleStringTransfer(msg);
@@ -85,7 +86,6 @@ void Tester::StartTest() {
 
 
 void Tester::HandleStringTransfer(TransferMessage& msg) {
-	this->SendMessage(INFORMATIONAL, "Receiving a string...");
 	char buff[msg.data_len + 1];
 	sockaddr_in from;
 	socklen_t socklen = sizeof(from);
