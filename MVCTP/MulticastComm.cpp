@@ -48,8 +48,8 @@ int MulticastComm::JoinGroup(const SA* sa, int sa_len, const char *if_name) {
 			}
 
 
-			bind(sock_fd, &dst_addr, dst_addr_len);
-			//bind(sock_fd, (SA *)&temp_addr, sa_len);
+			//bind(sock_fd, &dst_addr, dst_addr_len);
+			bind(sock_fd, (SA *)&temp_addr, sa_len);
 			setsockopt(sock_fd, IPPROTO_IP, SO_BINDTODEVICE, if_name, strlen(if_name));
 
 			return (setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)));
