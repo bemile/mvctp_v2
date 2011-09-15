@@ -8,6 +8,7 @@
 #ifndef TCPCLIENT_H_
 #define TCPCLIENT_H_
 
+#include <iostream>
 #include <list>
 #include <netdb.h>
 #include <string>

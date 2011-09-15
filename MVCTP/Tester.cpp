@@ -66,7 +66,6 @@ void Tester::StartTest() {
 				SysError("Tester::StartTester::RawReceive() error");
 			}
 
-			this->SendMessage(INFORMATIONAL, "Received a message...");
 			switch (msg.msg_type) {
 			case STRING_TRANSFER:
 				HandleStringTransfer(msg);
