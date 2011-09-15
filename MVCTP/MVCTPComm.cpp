@@ -10,7 +10,6 @@
 MVCTPComm::MVCTPComm() {
 	ptr_multicast_comm = new MulticastComm();
 
-
 	send_mvctp_header = (PTR_MVCTP_HEADER)send_packet_buf;
 	send_data = send_packet_buf + sizeof(MVCTP_HEADER);
 
@@ -28,11 +27,6 @@ MVCTPComm::MVCTPComm() {
 			cout << "Raw Socket Interface: " << if_name << endl;
 			break;
 		}
-
-//		if_name = ptr_ifi->ifi_name;
-//		if (if_name.find("eth") != string::npos) {
-//			break;
-//		}
 	}
 	cout << "interface name: " << if_name << endl;
 	ptr_raw_sock_comm = new RawSocketComm(if_name.c_str());

@@ -65,6 +65,5 @@ ssize_t MVCTPReceiver::RawReceive(void* buff, size_t len, int flags, SA* from, s
 }
 
 ssize_t MVCTPReceiver::IPReceive(void* buff, size_t len, int flags, SA* from, socklen_t* from_len) {
-	size_t bytes = ptr_recv_buf_mgr->GetData(buff, len);
-	return bytes;
+	return ptr_recv_buf_mgr->GetData(buff, len);
 }
