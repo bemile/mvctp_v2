@@ -113,7 +113,7 @@ void SendBufferMgr::DoRetransmission() {
 	PacketBuffer* entry = send_buf->GetFreePacket();
 	MVCTP_HEADER* header = (MVCTP_HEADER*) entry->mvctp_header;
 	header->proto = MVCTP_PROTO_TYPE;
-	header->packet_id = 0;
+	header->packet_id = last_packet_id;
 	header->data_len = 0;
 	header->flags = MVCTP_EOF;
 
