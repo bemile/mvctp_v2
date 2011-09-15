@@ -17,6 +17,7 @@ ReceiveBufferMgr::ReceiveBufferMgr(int size, InetComm* mcomm) {
 	comm = mcomm;
 	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_UDP_SEND_PORT);
 	retrans_tcp_client->Connect();
+	cout << "Retransmission server connected." << endl;
 
 	udp_comm = new UdpComm(BUFFER_UDP_RECV_PORT);
 	//TODO: remove this after the problem of getting sender address info is solved
@@ -180,7 +181,6 @@ void ReceiveBufferMgr::RunReceivingThread() {
 	char buf[ETH_DATA_LEN];
 	MVCTP_HEADER* header = (MVCTP_HEADER*)buf;
 	int bytes;
-	bool donot_drop_packet = false;
 
 	while (true) {
 		if ( (bytes = comm->RecvData(buf, ETH_DATA_LEN, 0, (SA*)&sender_multicast_addr, &sender_socklen)) <= 0) {
@@ -189,8 +189,10 @@ void ReceiveBufferMgr::RunReceivingThread() {
 			else
 				SysError("MVCTPBuffer error on receiving data");
 		}
+		cout << "I received one packet. Packet length: " << bytes << endl;
 
 		// Initialize the packet id information on receiving the first packet
+		bool donot_drop_packet = false;
 		if (is_first_packet) {
 			donot_drop_packet = true;
 			char ip[20];
