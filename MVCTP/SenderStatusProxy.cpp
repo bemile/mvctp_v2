@@ -206,6 +206,8 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 		}
 	}
 
+	ptr_sender->GetBufferManager()->DoRetransmission();
+
 	//free(mem_store);
 	SendMessage(COMMAND_RESPONSE, "Memory data transfer completed.");
 	return 1;

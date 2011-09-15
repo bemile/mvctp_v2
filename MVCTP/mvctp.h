@@ -72,7 +72,11 @@ typedef struct MVCTPHeader {
 	u_int16_t		dest_port;
 	int32_t			packet_id;
 	u_int32_t		data_len;
+	u_int32_t		flags;
 } MVCTP_HEADER, *PTR_MVCTP_HEADER;
+
+// MVCTP Header Flags
+const u_int32_t MVCTP_EOF = 0x00000001;
 
 
 /*#if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -96,6 +100,11 @@ typedef struct PacketBuffer {
 	char*		data;
 	char* 		packet_buffer;
 } BUFFER_ENTRY, * PTR_BUFFER_ENTRY;
+
+struct MvctpNackMsg {
+	int32_t 	proto;
+	int32_t 	packet_id;
+};
 
 
 const int MAX_NACK_IDS = 10;
@@ -123,6 +132,8 @@ const static unsigned char group_mac_addr[6] = {0x01, 0x00, 0x5e, 0x01, 0x02, 0x
 const static ushort mvctp_port = 123;
 const static ushort BUFFER_UDP_SEND_PORT = 12345;
 const static ushort BUFFER_UDP_RECV_PORT = 12346;
+const static ushort BUFFER_TCP_SEND_PORT = 12345;
+const static ushort BUFFER_TCP_RECV_PORT = 12346;
 const static int PORT_NUM = 11001;
 const static int BUFF_SIZE = 10000;
 
@@ -144,7 +155,9 @@ static const int INIT_RTT	= 50;		// in milliseconds
 
 
 // parameters for data transfer
+const int MAX_NUM_RECEIVERS = 200;
 const int MAX_MAPPED_MEM_SIZE = 128 * 1024 * 1024;
+
 
 class MVCTP {
 public:

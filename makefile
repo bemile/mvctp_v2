@@ -4,7 +4,7 @@ VPATH=starter:CommUtil:MVCTP
 OBJ=EmulabStarter.o ConfigInfo.o mvctp.o Tester.o MVCTPComm.o \
 SendBufferMgr.o ReceiveBufferMgr.o MVCTPBuffer.o MVCTPSender.o MVCTPReceiver.o \
 MulticastComm.o RawSocketComm.o InetComm.o UdpComm.o NetInterfaceManager.o \
-ReceiverStatusProxy.o SenderStatusProxy.o StatusProxy.o
+ReceiverStatusProxy.o SenderStatusProxy.o StatusProxy.o TcpServer.o TcpClient.o
 
 
 
@@ -17,7 +17,7 @@ EmulabStarter.o: ConfigInfo.o Tester.o
 
 ConfigInfo.o: 
 
-Tester.o: mvctp.o MulticastComm.o RawSocketComm.o InetComm.o MVCTPComm.o SendBufferMgr.o ReceiveBufferMgr.o MVCTPBuffer.o MVCTPSender.o MVCTPReceiver.o UdpComm.o ReceiverStatusProxy.o SenderStatusProxy.o StatusProxy.o NetInterfaceManager.o
+Tester.o: mvctp.o MulticastComm.o RawSocketComm.o InetComm.o MVCTPComm.o SendBufferMgr.o ReceiveBufferMgr.o MVCTPBuffer.o MVCTPSender.o MVCTPReceiver.o UdpComm.o ReceiverStatusProxy.o SenderStatusProxy.o StatusProxy.o NetInterfaceManager.o TcpServer.o TcpClient.o
 
 SenderStatusProxy.o : StatusProxy.o MVCTPSender.o MVCTPComm.o
 
@@ -29,7 +29,9 @@ MVCTPReceiver.o: mvctp.o MVCTPComm.o ReceiveBufferMgr.o
 
 MVCTPComm.o: mvctp.o MulticastComm.o RawSocketComm.o NetInterfaceManager.o
 
-SendBufferMgr.o ReceiveBufferMgr.o: mvctp.o MVCTPBuffer.o UdpComm.o InetComm.o
+SendBufferMgr.o ReceiveBufferMgr.o: mvctp.o MVCTPBuffer.o UdpComm.o InetComm.o TcpServer.o TcpClient.o
+
+TcpServer.o TcpClient.o:
 
 MVCTPBuffer.o: mvctp.o
 

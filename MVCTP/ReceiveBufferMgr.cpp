@@ -15,11 +15,11 @@ ReceiveBufferMgr::ReceiveBufferMgr(int size, InetComm* mcomm) {
 
 	recv_buf = new MVCTPBuffer(size);
 	comm = mcomm;
-	udp_comm = new UdpComm(BUFFER_UDP_RECV_PORT);
+	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_UDP_SEND_PORT);
+	retrans_tcp_client->Connect();
 
+	udp_comm = new UdpComm(BUFFER_UDP_RECV_PORT);
 	//TODO: remove this after the problem of getting sender address info is solved
-	//hostent * record = gethostbyname("node0.ldm-hs-lan.MVC.emulab.net");
-	//in_addr* address = (in_addr *)record->h_addr_list[0];
 	in_addr address;
 	inet_aton("10.1.1.2", &address);
 	sender_udp_addr.sin_port = htons(BUFFER_UDP_SEND_PORT);
@@ -157,9 +157,9 @@ void ReceiveBufferMgr::StartReceiveThread() {
 		SysError("ReceiveBufferMgr:: pthread_create() error");
 	}
 
-	if ( (res= pthread_create(&udp_thread, NULL, &ReceiveBufferMgr::StartUdpReceiveThread, this)) != 0) {
-		SysError("ReceiveBufferMgr:: pthread_create() error");
-	}
+	//if ( (res= pthread_create(&udp_thread, NULL, &ReceiveBufferMgr::StartUdpReceiveThread, this)) != 0) {
+	//	SysError("ReceiveBufferMgr:: pthread_create() error");
+	//}
 
 	//if ( (res= pthread_create(&nack_thread, NULL, &ReceiveBufferMgr::StartNackThread, this)) != 0) {
 	//		SysError("ReceiveBufferMgr:: pthread_create() error");
@@ -168,11 +168,95 @@ void ReceiveBufferMgr::StartReceiveThread() {
 
 // Helper function to start the multicast data receiving thread
 void* ReceiveBufferMgr::StartReceivingData(void* ptr) {
-	((ReceiveBufferMgr*)ptr)->Run();
+	((ReceiveBufferMgr*)ptr)->RunReceivingThread(); //Run();
 	pthread_exit(NULL);
 }
 
+void ReceiveBufferMgr::RunReceivingThread() {
+//	struct sched_param sp;
+//	sp.__sched_priority = sched_get_priority_max(SCHED_RR);
+//	sched_setscheduler(0, SCHED_RR, &sp);
 
+	char buf[ETH_DATA_LEN];
+	MVCTP_HEADER* header = (MVCTP_HEADER*)buf;
+	int bytes;
+	bool donot_drop_packet = false;
+
+	while (true) {
+		if ( (bytes = comm->RecvData(buf, ETH_DATA_LEN, 0, (SA*)&sender_multicast_addr, &sender_socklen)) <= 0) {
+			if (errno == EINTR)
+				continue;
+			else
+				SysError("MVCTPBuffer error on receiving data");
+		}
+
+		// Initialize the packet id information on receiving the first packet
+		if (is_first_packet) {
+			donot_drop_packet = true;
+			char ip[20];
+			sockaddr_in * ptr_sock = (sockaddr_in *)&sender_multicast_addr;
+			inet_ntop(AF_INET, (void*)&(ptr_sock->sin_addr), ip, 20);
+			ip[15] = 0;
+			//cout << "Sender IP address: " << ip << endl;
+			//cout << "Sender Port: " << ntohs(ptr_sock->sin_port) << endl;
+
+			last_recv_packet_id = header->packet_id - 1;
+			last_del_packet_id = header->packet_id - 1;
+			is_first_packet = false;
+		}
+
+		// Record missing packets if there is a gap in the packet_id
+		if (header->packet_id > last_recv_packet_id + 1) {
+			Log("%.6f    Packet loss detected. Received Packet ID: %d    Supposed ID:%d\n",
+								GetCurrentTime(), header->packet_id, last_recv_packet_id + 1);
+
+			MvctpNackMsg msg;
+			int msg_size = sizeof(msg);
+			msg.proto = MVCTP_PROTO_TYPE;
+			for (int32_t i = last_recv_packet_id + 1; i != header->packet_id; i++) {
+				msg.packet_id = i;
+				retrans_tcp_client->Send(&msg, msg_size);
+				retrans_packet_map[i] = true;
+			}
+		}
+
+		if (header->flags | MVCTP_EOF) {
+			ReceiveRetransmissions();
+			continue;
+		}
+
+		// Add the received packet to the buffer
+		// When greater than packet_loss_rate, add the packet to the receive buffer
+		// Otherwise, just drop the packet (emulates errored packet)
+		if (rand() % 1000 >= packet_loss_rate || donot_drop_packet) {
+			AddNewEntry(header, buf);
+		}
+	}
+}
+
+
+void ReceiveBufferMgr::ReceiveRetransmissions() {
+	char buf[ETH_DATA_LEN];
+	MVCTP_HEADER * header = (MVCTP_HEADER *)buf;
+	char* data = buf + MVCTP_HLEN;
+
+	int bytes;
+	while (!retrans_packet_map.empty()) {
+		if ( (bytes = retrans_tcp_client->Receive(buf, MVCTP_HLEN)) <= 0) {
+			SysError("ReceiveBufferMgr::ReceiveRetransmissions()::Receive() error");
+		}
+
+		if ( (bytes = retrans_tcp_client->Receive(data, header->data_len)) <= 0) {
+			SysError("ReceiveBufferMgr::ReceiveRetransmissions()::Receive() error");
+		}
+
+		AddRetransmittedEntry(header, buf);
+		retrans_packet_map.erase(header->packet_id);
+	}
+}
+
+
+//========================== Old receiving thread functions ===========================
 void ReceiveBufferMgr::Run() {
 //	struct sched_param sp;
 //	sp.__sched_priority = sched_get_priority_max(SCHED_RR);

@@ -11,6 +11,7 @@
 #include "mvctp.h"
 #include "MVCTPBuffer.h"
 #include "InetComm.h"
+#include "TcpClient.h"
 #include "UdpComm.h"
 #include <netinet/in.h>
 #include <pthread.h>
@@ -28,6 +29,7 @@ public:
 
 	size_t 		GetData(void* buff, size_t len);
 	void 		StartReceiveThread();
+	void		ReceiveRetransmissions();
 	void 		SetBufferSize(size_t buff_size);
 	size_t 		GetBufferSize();
 	void 		SetPacketLossRate(int rate);		// rate is #loss per thousand packets
@@ -39,6 +41,7 @@ public:
 private:
 	MVCTPBuffer* 	recv_buf;
 	InetComm* 		comm;
+	TcpClient*		retrans_tcp_client;
 	UdpComm*		udp_comm;
 	sockaddr		sender_multicast_addr;
 	sockaddr_in		sender_udp_addr;
@@ -55,7 +58,9 @@ private:
 
 	pthread_t recv_thread, nack_thread, udp_thread;
 	pthread_mutex_t buf_mutex, nack_list_mutex;
+	map<int32_t, bool> retrans_packet_map;
 	static void* StartReceivingData(void* ptr);
+	void RunReceivingThread();
 	void Run();
 	void AddNewEntry(MVCTP_HEADER* header, void* buf);
 	void AddRetransmittedEntry(MVCTP_HEADER* header, void* buf);

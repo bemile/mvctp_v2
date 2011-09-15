@@ -22,6 +22,7 @@ public:
 	void SetSendRate(int num_mbps);
 	void SetBufferSize(size_t buff_size);
 	void ResetBuffer();
+	SendBufferMgr* GetBufferManager();
 
 private:
 	//MVCTPComm* ptr_mvctp_comm;

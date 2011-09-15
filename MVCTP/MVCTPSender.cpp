@@ -9,7 +9,7 @@
 
 
 MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
-	ptr_send_buf_mgr = new SendBufferMgr(buf_size, ptr_multicast_comm);
+	ptr_send_buf_mgr = new SendBufferMgr(buf_size, mac_group_addr, ptr_multicast_comm);
 	//ptr_send_buf_mgr = new SendBufferMgr(buf_size, ptr_raw_sock_comm);
 }
 
@@ -17,6 +17,9 @@ MVCTPSender::~MVCTPSender() {
 	delete ptr_send_buf_mgr;
 }
 
+SendBufferMgr* MVCTPSender::GetBufferManager() {
+	return ptr_send_buf_mgr;
+}
 
 void MVCTPSender::SetSendRate(int num_mbps) {
 	send_rate_in_mbps = num_mbps;

@@ -7,15 +7,19 @@
 
 #include "SendBufferMgr.h"
 
-SendBufferMgr::SendBufferMgr(int size, InetComm* mcomm) {
+SendBufferMgr::SendBufferMgr(int size, u_char* dst_addr, InetComm* mcomm) {
+	memcpy(dst_mac_addr, dst_addr, 6);
 	last_packet_id = 0;
 
 	send_buf = new MVCTPBuffer(size);
 	comm = mcomm;
-	udp_comm = new UdpComm(BUFFER_UDP_SEND_PORT);
-	//udp_comm->SetSocketBufferSize(20000000);
 
-	StartUdpThread();
+	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT);
+	StartRetransmissionThread();
+
+	udp_comm = new UdpComm(BUFFER_UDP_SEND_PORT);
+	//StartUdpThread();
+
 }
 
 SendBufferMgr::~SendBufferMgr() {
@@ -102,6 +106,74 @@ void SendBufferMgr::MakeRoomForNewPacket(size_t room_size) {
 }
 
 
+void SendBufferMgr::DoRetransmission() {
+	// First send EOF messages to all receivers so that they know
+	// they should start receiving retransmission packets
+	PacketBuffer* entry = send_buf->GetFreePacket();
+	MVCTP_HEADER* header = (MVCTP_HEADER*) entry->mvctp_header;
+	header->proto = MVCTP_PROTO_TYPE;
+	header->packet_id = ++last_packet_id;
+	header->data_len = 0;
+	header->flags = MVCTP_EOF;
+
+	entry->packet_id = header->packet_id;
+	entry->packet_len = MVCTP_HLEN;
+	entry->data_len = 0;
+	SendPacket(entry, dst_mac_addr, true);
+
+	//
+	map<int, list<int32_t> >::iterator it;
+	pthread_mutex_lock(&buf_mutex);
+	for (it = nack_msg_map.begin(); it != nack_msg_map.end(); it++) {
+		int sock = it->first;
+		list<int32_t>::iterator list_it;
+		for (list_it = it->second.begin(); list_it != it->second.end(); list_it++) {
+			RetransmitPacket(sock, *list_it);
+		}
+		it->second.clear();
+	}
+	pthread_mutex_unlock(&buf_mutex);
+}
+
+
+void SendBufferMgr::RetransmitPacket(int sock, int32_t packet_id) {
+	PacketBuffer* entry = send_buf->Find(packet_id);
+	if (entry != NULL) {
+		retrans_tcp_server->SelectSend(sock,(void *)entry->mvctp_header, entry->packet_len);
+	}
+}
+
+
+//======================== TCP Retransmission Thread Functions ========================
+void SendBufferMgr::StartRetransmissionThread() {
+	pthread_mutex_init(&buf_mutex, 0);
+
+	int res;
+	if ( (res= pthread_create(&tcp_retrans_thread, NULL, &SendBufferMgr::StartTcpRetransThread, this)) != 0) {
+		SysError("SendBufferMgr:: pthread_create() error");
+	}
+}
+
+void* SendBufferMgr::StartTcpRetransThread(void* ptr) {
+	((SendBufferMgr*)ptr)->RunTcpRetransThread();
+	pthread_exit(NULL);
+}
+
+
+void SendBufferMgr::RunTcpRetransThread() {
+	retrans_tcp_server->Start();
+	int client_sock;
+	struct MvctpNackMsg nack_msg;
+	int size = sizeof(nack_msg);
+	while (true) {
+		retrans_tcp_server->SelectReceive(&client_sock, &nack_msg, size);
+		nack_msg_map[client_sock].push_back(nack_msg.packet_id);
+	}
+}
+
+
+
+//======================== UDP Retransmission Thread Functions ========================
 void SendBufferMgr::StartUdpThread() {
 	pthread_mutex_init(&buf_mutex, 0);
 
