@@ -26,9 +26,6 @@ int MulticastComm::JoinGroup(const SA* sa, int sa_len, const char *if_name) {
 			dst_addr = *sa;
 			dst_addr_len = sa_len;
 
-			sockaddr_in temp_addr;
-			memcpy(&temp_addr, sa, sa_len);
-
 			memcpy(&mreq.imr_multiaddr, &((struct sockaddr_in *) sa)->sin_addr,
 					sizeof(struct in_addr));
 
@@ -40,17 +37,15 @@ int MulticastComm::JoinGroup(const SA* sa, int sa_len, const char *if_name) {
 
 				memcpy(&mreq.imr_interface, &((struct sockaddr_in *) &if_req.ifr_addr)->sin_addr,
 						sizeof(struct in_addr));
-				memcpy(&temp_addr.sin_addr, &((struct sockaddr_in *) &if_req.ifr_addr)->sin_addr,
-						sizeof(struct in_addr));
+
+				setsockopt(sock_fd, SOL_SOCKET, SO_BINDTODEVICE, if_name, strlen(if_name));
 			}
 			else {
 				mreq.imr_interface.s_addr = htonl(INADDR_ANY);
 			}
 
-
-			bind(sock_fd, &dst_addr, dst_addr_len);
+			//bind(sock_fd, &dst_addr, dst_addr_len);
 			//bind(sock_fd, (SA *)&temp_addr, sa_len);
-			setsockopt(sock_fd, SOL_SOCKET, SO_BINDTODEVICE, if_name, strlen(if_name));
 
 			return (setsockopt(sock_fd, IPPROTO_IP, IP_ADD_MEMBERSHIP, &mreq, sizeof(mreq)));
 
