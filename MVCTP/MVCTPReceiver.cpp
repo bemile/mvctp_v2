@@ -82,9 +82,9 @@ void MVCTPReceiver::Start() {
 }
 
 // Receive memory data from the sender
-void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data) {
+void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg, char* mem_data) {
 	char str[1024];
-	sprintf(str, "Started new memory data transfer. Size: %d", msg.data_len);
+	sprintf(str, "Started new memory data transfer. Size: %d", transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
 	list<MvctpNackMessage> nack_list;
@@ -105,17 +105,40 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & msg, char* me
 		}
 
 		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
-			struct MvctpTransferMessage msg;
-			if (recv(retrans_tcp_sock, &msg, sizeof(msg), 0) < 0) {
+			struct MvctpTransferMessage t_msg;
+			if (recv(retrans_tcp_sock, &t_msg, sizeof(t_msg), 0) < 0) {
 				SysError("MVCTPReceiver::ReceiveMemoryData()::recv() error");
 			}
 
-			switch (msg.event_type) {
+			switch (t_msg.event_type) {
 			case MEMORY_TRANSFER_FINISH:
+			{
+				while ((recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
+									MVCTP_PACKET_LEN, MSG_DONTWAIT, NULL, NULL)) > 0) {
+					if (header->seq_number > offset) {
+						MvctpNackMessage msg;
+						msg.seq_num = offset;
+						msg.data_len = header->seq_number - offset;
+						nack_list.push_back(msg);
+					}
+
+					memcpy(mem_data + header->seq_number, packet_data,
+							header->data_len);
+					offset = header->seq_number + header->data_len;
+				}
+
+				if (offset < transfer_msg.data_len) {
+					MvctpNackMessage msg;
+					msg.seq_num = offset;
+					msg.data_len = msg.data_len - offset;
+					nack_list.push_back(msg);
+				}
+
 				DoMemoryDataRetransmission(mem_data, nack_list);
 				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
 				// Transfer finished, so return directly
 				return;
+			}
 			default:
 				break;
 			}
