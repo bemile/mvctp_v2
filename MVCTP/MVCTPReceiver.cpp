@@ -234,9 +234,12 @@ void MVCTPReceiver::DoMemoryDataRetransmission(char* mem_data, const list<MvctpN
 	MvctpHeader header;
 	char packet_data[MVCTP_DATA_LEN];
 	int size = nack_list.size();
+	int bytes;
 	for (int i = 0; i < size; i++) {
-		retrans_tcp_client->Receive(&header, MVCTP_HLEN);
-		retrans_tcp_client->Receive(packet_data, header.data_len);
+		bytes = retrans_tcp_client->Receive(&header, MVCTP_HLEN);
+		cout << "Received header: " << bytes << " bytes." << endl;
+		bytes = retrans_tcp_client->Receive(packet_data, header.data_len);
+		cout << "Received payload: " << bytes << " bytes." << endl;
 		memcpy(mem_data+header.seq_number, packet_data, header.data_len);
 
 		cout << "Retransmission packet received. Seq No.: " << header.seq_number <<
