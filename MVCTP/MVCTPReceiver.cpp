@@ -108,21 +108,67 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 			SysError("MVCTPReceiver::ReceiveMemoryData()::select() error");
 		}
 
-		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
+		if (FD_ISSET(multicast_sock, &read_set)) {
+			recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
+					MVCTP_PACKET_LEN, 0, NULL, NULL);
+			if (recv_bytes < 0) {
+				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
+			} else {
+				// Need to check that the first packet starts with sequence number 0
+				//				if (is_first_packet) {
+				//					if (header->seq_number == 0) {
+				//						is_first_packet = false;
+				//					}
+				//					else {
+				//						continue;
+				//					}
+				//				}
+
+				// Add the received packet to the buffer
+				// When greater than packet_loss_rate, add the packet to the receive buffer
+				// Otherwise, just drop the packet (emulates errored packet)
+				if (rand() % 1000 >= packet_loss_rate) {
+					cout << "Received a new packet. Seq No.: "
+							<< header->seq_number << "    Length: "
+							<< header->data_len << endl;
+					if (header->seq_number > offset) {
+						int pos_start = offset;
+						while (pos_start < header->seq_number) {
+							int len = (header->seq_number - pos_start)
+									< MVCTP_DATA_LEN ? (header->seq_number
+									- pos_start) : MVCTP_DATA_LEN;
+							MvctpNackMessage msg;
+							msg.seq_num = pos_start; //offset;
+							msg.data_len = len; //header->seq_number - offset;
+							nack_list.push_back(msg);
+							pos_start += len;
+						}
+					}
+
+					memcpy(mem_data + header->seq_number, packet_data,
+							header->data_len);
+					offset = header->seq_number + header->data_len;
+				}
+
+			}
+			continue;
+
+		} else if (FD_ISSET(retrans_tcp_sock, &read_set)) {
 			struct MvctpTransferMessage t_msg;
 			if (recv(retrans_tcp_sock, &t_msg, sizeof(t_msg), 0) < 0) {
 				SysError("MVCTPReceiver::ReceiveMemoryData()::recv() error");
 			}
 
 			switch (t_msg.event_type) {
-			case MEMORY_TRANSFER_FINISH:
-			{
+			case MEMORY_TRANSFER_FINISH: {
 				cout << "MEMORY_TRANSFER_FINISH signal received." << endl;
 
-				while ((recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
-									MVCTP_PACKET_LEN, 0 /*MSG_DONTWAIT*/, NULL, NULL)) > 0) {
-					cout << "Received a new packet. Seq No.: " << header->seq_number
-							<< "    Length: " << header->data_len << endl;
+				while ((recv_bytes = ptr_multicast_comm->RecvData(
+						packet_buffer, MVCTP_PACKET_LEN, 0 /*MSG_DONTWAIT*/,
+						NULL, NULL)) > 0) {
+					cout << "Received a new packet. Seq No.: "
+							<< header->seq_number << "    Length: "
+							<< header->data_len << endl;
 
 					if (header->seq_number > offset) {
 						MvctpNackMessage msg;
@@ -139,8 +185,9 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				if (transfer_msg.data_len > offset) {
 					int pos_start = offset;
 					while (pos_start < transfer_msg.data_len) {
-						int len = (transfer_msg.data_len - pos_start) < MVCTP_DATA_LEN ?
-									(transfer_msg.data_len - pos_start) : MVCTP_DATA_LEN;
+						int len = (transfer_msg.data_len - pos_start)
+								< MVCTP_DATA_LEN ? (transfer_msg.data_len
+								- pos_start) : MVCTP_DATA_LEN;
 						MvctpNackMessage msg;
 						msg.seq_num = pos_start; //offset;
 						msg.data_len = len; //header->seq_number - offset;
@@ -150,53 +197,13 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				}
 
 				DoMemoryDataRetransmission(mem_data, nack_list);
-				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
+				status_proxy->SendMessage(INFORMATIONAL,
+						"Memory data transfer finished.");
 				// Transfer finished, so return directly
 				return;
 			}
 			default:
 				break;
-			}
-
-		} else if (FD_ISSET(multicast_sock, &read_set)) {
-			recv_bytes = ptr_multicast_comm->RecvData(packet_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL);
-			if (recv_bytes < 0) {
-				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
-			}
-			else {
-				// Need to check that the first packet starts with sequence number 0
-//				if (is_first_packet) {
-//					if (header->seq_number == 0) {
-//						is_first_packet = false;
-//					}
-//					else {
-//						continue;
-//					}
-//				}
-
-				// Add the received packet to the buffer
-				// When greater than packet_loss_rate, add the packet to the receive buffer
-				// Otherwise, just drop the packet (emulates errored packet)
-				if (rand() % 1000 >= packet_loss_rate) {
-					cout << "Received a new packet. Seq No.: " << header->seq_number
-										<< "    Length: " << header->data_len << endl;
-					if (header->seq_number > offset) {
-						int pos_start = offset;
-						while (pos_start < header->seq_number) {
-							int len = (header->seq_number - pos_start) < MVCTP_DATA_LEN ?
-										(header->seq_number - pos_start) : MVCTP_DATA_LEN;
-							MvctpNackMessage msg;
-							msg.seq_num = pos_start; //offset;
-							msg.data_len = len; //header->seq_number - offset;
-							nack_list.push_back(msg);
-							pos_start += len;
-						}
-					}
-
-					memcpy(mem_data + header->seq_number, packet_data, header->data_len);
-					offset = header->seq_number + header->data_len;
-				}
-
 			}
 
 		}
