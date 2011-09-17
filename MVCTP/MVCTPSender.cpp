@@ -69,6 +69,8 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 	map<int, list<NACK_MSG> >::iterator it;
 	for (it = missing_packet_map.begin(); it != missing_packet_map.end(); it++) {
 		int sock = it->first;
+		cout << "Socket " << sock << " has " << it->second.size() << " retransmission requests." << endl;
+
 		list<NACK_MSG>::iterator list_it;
 		for (list_it = it->second.begin(); list_it != it->second.end(); list_it++) {
 			header->seq_number = list_it->seq_num;
