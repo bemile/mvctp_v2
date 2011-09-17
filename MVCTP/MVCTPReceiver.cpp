@@ -160,14 +160,14 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 			}
 			else {
 				// Need to check that the first packet starts with sequence number 0
-				if (is_first_packet) {
-					if (header->seq_number == 0) {
-						is_first_packet = false;
-					}
-					else {
-						continue;
-					}
-				}
+//				if (is_first_packet) {
+//					if (header->seq_number == 0) {
+//						is_first_packet = false;
+//					}
+//					else {
+//						continue;
+//					}
+//				}
 
 				// Add the received packet to the buffer
 				// When greater than packet_loss_rate, add the packet to the receive buffer
