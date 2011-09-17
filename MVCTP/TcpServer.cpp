@@ -61,11 +61,18 @@ int TcpServer::Accept() {
 
 
 void TcpServer::SendToAll(const void* data, size_t length) {
-	list<int>::iterator it;
+	list<int> bad_sock_list;
 
+	list<int>::iterator it;
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
-		send(*it, data, length, 0);
+		if (send(*it, data, length, 0) < 0) {
+			bad_sock_list.push_back(*it);
+		}
+	}
+
+	for (it = bad_sock_list.begin(); it != bad_sock_list.end(); it++) {
+		conn_sock_list.remove(*it);
 	}
 	pthread_mutex_unlock(&sock_list_mutex);
 }
