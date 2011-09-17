@@ -56,7 +56,16 @@ int TcpClient::Send(const void* data, size_t length) {
 
 
 int TcpClient::Receive(void* buffer, size_t length) {
-	return recv(sock_fd, buffer, length, 0);
+	size_t remained_size = length;
+	int recv_bytes;
+	while (remained_size > 0) {
+		if ( (recv_bytes = recv(sock_fd, buffer, remained_size, 0) ) < 0) {
+			SysError("TcpClient::Receive()::recv() error");
+		}
+		remained_size -= recv_bytes;
+	}
+
+	return length;
 }
 
 void TcpClient::SysError(char* info) {
