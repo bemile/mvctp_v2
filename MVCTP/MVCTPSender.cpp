@@ -84,6 +84,34 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 	}
 }
 
+// Multicast data in a memory buffer, given the specific start sequence number
+void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num) {
+	char buffer[MVCTP_PACKET_LEN];
+	char* packet_data = buffer + sizeof(MvctpHeader);
+	MvctpHeader* header = (MvctpHeader*) buffer;
+	header->protocol = MVCTP_PROTO_TYPE;
+	header->src_port = 0;
+	header->dest_port = 0;
+	header->seq_number = 0;
+	header->flags = 0;
+
+	size_t remained_size = length;
+	size_t offset = 0;
+	while (remained_size > 0) {
+		int data_size = remained_size < MVCTP_DATA_LEN ? remained_size
+				: MVCTP_DATA_LEN;
+		header->seq_number = offset + start_seq_num;
+		header->data_len = data_size;
+		memcpy(packet_data, (char*)data + offset, data_size);
+		if (ptr_multicast_comm->SendData(buffer, MVCTP_HLEN + data_size, 0, NULL) < 0) {
+			SysError("MVCTPSender::DoMemoryTransfer()::SendPacket() error");
+		}
+
+		remained_size -= data_size;
+		offset += data_size;
+	}
+}
+
 
 
 void MVCTPSender::SendFile(const char* file_name) {
@@ -124,36 +152,6 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	close(fd);
 }
-
-
-// Multicast data in a memory buffer, given the specific start sequence number
-void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num) {
-	char buffer[MVCTP_PACKET_LEN];
-	char* packet_data = buffer + sizeof(MvctpHeader);
-	MvctpHeader* header = (MvctpHeader*) buffer;
-	header->protocol = MVCTP_PROTO_TYPE;
-	header->src_port = 0;
-	header->dest_port = 0;
-	header->seq_number = 0;
-	header->flags = 0;
-
-	size_t remained_size = length;
-	size_t offset = 0;
-	while (remained_size > 0) {
-		int data_size = remained_size < MVCTP_DATA_LEN ? remained_size
-				: MVCTP_DATA_LEN;
-		header->seq_number = offset + start_seq_num;
-		header->data_len = data_size;
-		memcpy(packet_data, (char*)data + offset, data_size);
-		if (ptr_multicast_comm->SendData(buffer, MVCTP_HLEN + data_size, 0, NULL) < 0) {
-			SysError("MVCTPSender::DoMemoryTransfer()::SendPacket() error");
-		}
-
-		remained_size -= data_size;
-		offset += data_size;
-	}
-}
-
 
 
 void MVCTPSender::DoFileRetransmission(int fd) {

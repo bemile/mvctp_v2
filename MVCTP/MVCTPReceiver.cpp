@@ -117,8 +117,13 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 			switch (t_msg.event_type) {
 			case MEMORY_TRANSFER_FINISH:
 			{
+				cout << "MEMORY_TRANSFER_FINISH signal received." << endl;
+
 				while ((recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
 									MVCTP_PACKET_LEN, MSG_DONTWAIT, NULL, NULL)) > 0) {
+					cout << "Received a new packet. Seq No.: " << header->seq_number
+							<< "    Length: " << header->data_len << endl;
+
 					if (header->seq_number > offset) {
 						MvctpNackMessage msg;
 						msg.seq_num = offset;
