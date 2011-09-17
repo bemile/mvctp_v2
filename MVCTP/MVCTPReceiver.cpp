@@ -114,7 +114,8 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & msg, char* me
 			case MEMORY_TRANSFER_FINISH:
 				DoMemoryDataRetransmission(mem_data, nack_list);
 				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
-				break;
+				// Transfer finished, so return directly
+				return;
 			default:
 				break;
 			}
