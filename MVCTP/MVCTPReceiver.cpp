@@ -131,11 +131,17 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 					offset = header->seq_number + header->data_len;
 				}
 
-				if (offset < transfer_msg.data_len) {
-					MvctpNackMessage msg;
-					msg.seq_num = offset;
-					msg.data_len = msg.data_len - offset;
-					nack_list.push_back(msg);
+				if (transfer_msg.data_len > offset) {
+					int pos_start = offset;
+					while (pos_start < transfer_msg.data_len) {
+						int len = (transfer_msg.data_len - pos_start) < MVCTP_DATA_LEN ?
+									(transfer_msg.data_len - pos_start) : MVCTP_DATA_LEN;
+						MvctpNackMessage msg;
+						msg.seq_num = pos_start; //offset;
+						msg.data_len = len; //header->seq_number - offset;
+						nack_list.push_back(msg);
+						pos_start += len;
+					}
 				}
 
 				DoMemoryDataRetransmission(mem_data, nack_list);
@@ -168,10 +174,16 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				// Otherwise, just drop the packet (emulates errored packet)
 				if (rand() % 1000 >= packet_loss_rate) {
 					if (header->seq_number > offset) {
-						MvctpNackMessage msg;
-						msg.seq_num = offset;
-						msg.data_len = header->seq_number - offset;
-						nack_list.push_back(msg);
+						int pos_start = offset;
+						while (pos_start < header->seq_number) {
+							int len = (header->seq_number - pos_start) < MVCTP_DATA_LEN ?
+										(header->seq_number - pos_start) : MVCTP_DATA_LEN;
+							MvctpNackMessage msg;
+							msg.seq_num = pos_start; //offset;
+							msg.data_len = len; //header->seq_number - offset;
+							nack_list.push_back(msg);
+							pos_start += len;
+						}
 					}
 
 					memcpy(mem_data + header->seq_number, packet_data, header->data_len);
