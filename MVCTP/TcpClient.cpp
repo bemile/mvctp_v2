@@ -37,8 +37,8 @@ int TcpClient::Connect() {
 	int res;
 	while ((res = connect(sock_fd, (sockaddr *) &server_addr,
 			sizeof(server_addr))) < 0) {
-		cout << "TcpClient::Connect()::connect() error" << endl;
-		sleep(15);
+		cout << "TcpClient::Connect()::connect() error. Retry in 5 seconds..." << endl;
+		sleep(5);
 		//return -1;
 	}
 	return res;
