@@ -216,6 +216,7 @@ void MVCTPReceiver::DoMemoryDataRetransmission(char* mem_data, const list<MvctpN
 	msg.num_requests = 0;
 	retrans_tcp_client->Send(&msg, sizeof(msg));
 
+	status_proxy->SendMessage(INFORMATIONAL, "Retransmission requests sent.");
 
 	// Receive packets from the sender
 	MvctpHeader header;

@@ -58,6 +58,8 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 	map<int, list<NACK_MSG> > missing_packet_map;
 	ReceiveRetransRequests(missing_packet_map);
 
+	cout << "Retransmission requests received." << endl;
+
 	char buffer[MVCTP_PACKET_LEN];
 	char* packet_data = buffer + sizeof(MvctpHeader);
 	MvctpHeader* header = (MvctpHeader*) buffer;
