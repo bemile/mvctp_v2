@@ -52,6 +52,33 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 
 
 
+// TODO: Add scheduling logic
+void MVCTPSender::DoMemoryDataRetransmission(void* data) {
+	// first: client socket; second: list of NACK_MSG info
+	map<int, list<NACK_MSG> > missing_packet_map;
+	ReceiveRetransRequests(missing_packet_map);
+
+	char buffer[MVCTP_PACKET_LEN];
+	char* packet_data = buffer + sizeof(MvctpHeader);
+	MvctpHeader* header = (MvctpHeader*) buffer;
+	bzero(header, sizeof(MvctpHeader));
+	header->protocol = MVCTP_PROTO_TYPE;
+
+	map<int, list<NACK_MSG> >::iterator it;
+	for (it = missing_packet_map.begin(); it != missing_packet_map.end(); it++) {
+		int sock = it->first;
+		list<NACK_MSG>::iterator list_it;
+		for (list_it = it->second.begin(); list_it != it->second.end(); list_it++) {
+			header->seq_number = list_it->seq_num;
+			header->data_len = list_it->data_len;
+			memcpy(packet_data, (char*)data + list_it->seq_num, list_it->data_len);
+			retrans_tcp_server->SelectSend(sock, buffer, MVCTP_HLEN + list_it->data_len);
+		}
+	}
+}
+
+
+
 void MVCTPSender::SendFile(const char* file_name) {
 	struct stat file_status;
 	stat(file_name, &file_status);
@@ -121,39 +148,13 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 }
 
 
-// TODO: Add scheduling logic
-void MVCTPSender::DoMemoryDataRetransmission(void* data) {
-	// first: client socket; second: list of NACK_MSG info
-	map<int, list<NACK_MSG> > missing_packet_map;
-	ReceiveRetransRequests(&missing_packet_map);
-
-	char buffer[MVCTP_PACKET_LEN];
-	char* packet_data = buffer + sizeof(MvctpHeader);
-	MvctpHeader* header = (MvctpHeader*) buffer;
-	bzero(header, sizeof(MvctpHeader));
-	header->protocol = MVCTP_PROTO_TYPE;
-
-	map<int, list<NACK_MSG> >::iterator it;
-	for (it = missing_packet_map.begin(); it != missing_packet_map.end(); it++) {
-		int sock = it->first;
-		list<NACK_MSG>::iterator list_it;
-		for (list_it = it->second.begin(); list_it != it->second.end(); list_it++) {
-			header->seq_number = list_it->seq_num;
-			header->data_len = list_it->data_len;
-			memcpy(packet_data, (char*)data + list_it->seq_num, list_it->data_len);
-			retrans_tcp_server->SelectSend(sock, buffer, MVCTP_HLEN + list_it->data_len);
-		}
-	}
-}
-
-
 
 void MVCTPSender::DoFileRetransmission(int fd) {
 
 }
 
 
-void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map) {
+void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >& missing_packet_map) {
 	int client_sock;
 	MvctpRetransMessage retrans_msg;
 	int msg_size = sizeof(retrans_msg);
@@ -170,7 +171,14 @@ void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_pack
 			NACK_MSG packet_info;
 			packet_info.seq_num = retrans_msg.seq_numbers[i];
 			packet_info.data_len = retrans_msg.data_lens[i];
-			(*missing_packet_map)[client_sock].push_back(packet_info);
+			if (missing_packet_map.find(client_sock) != missing_packet_map.end()) {
+				missing_packet_map[client_sock].push_back(packet_info);
+			}
+			else {
+				list<NACK_MSG> new_list;
+				new_list.push_back(packet_info);
+				missing_packet_map.insert(pair<int, list<NACK_MSG> >(client_sock, new_list) );
+			}
 		}
 	}
 }

@@ -35,7 +35,7 @@ private:
 	void DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
 	void DoMemoryDataRetransmission(void* data);
 	void DoFileRetransmission(int fd);
-	void ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map);
+	void ReceiveRetransRequests(map<int, list<NACK_MSG> >& missing_packet_map);
 
 	StatusProxy*	status_proxy;
 	int send_rate_in_mbps;
