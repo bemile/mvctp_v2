@@ -76,7 +76,7 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 			header->seq_number = list_it->seq_num;
 			header->data_len = list_it->data_len;
 			memcpy(packet_data, (char*)data + list_it->seq_num, list_it->data_len);
-			if (retrans_tcp_server->SelectSend(sock, buffer, MVCTP_HLEN + list_it->data_len) != list_it->data_len) {
+			if (retrans_tcp_server->SelectSend(sock, buffer, MVCTP_HLEN + list_it->data_len) != (MVCTP_HLEN + list_it->data_len) ) {
 				cout << "Packet sent incompletely." << endl;
 			}
 
