@@ -120,7 +120,7 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				cout << "MEMORY_TRANSFER_FINISH signal received." << endl;
 
 				while ((recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
-									MVCTP_PACKET_LEN, MSG_DONTWAIT, NULL, NULL)) > 0) {
+									MVCTP_PACKET_LEN, 0 /*MSG_DONTWAIT*/, NULL, NULL)) > 0) {
 					cout << "Received a new packet. Seq No.: " << header->seq_number
 							<< "    Length: " << header->data_len << endl;
 
