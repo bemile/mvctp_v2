@@ -42,6 +42,7 @@ private:
 	int		retrans_tcp_sock;
 	fd_set	read_sock_set;
 
+	int 	packet_loss_rate;
 	struct MvctpReceiverStats stats;
 	StatusProxy*	status_proxy;
 

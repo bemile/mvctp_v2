@@ -17,6 +17,9 @@ MVCTPReceiver::MVCTPReceiver(int buf_size) {
 	FD_ZERO(&read_sock_set);
 	FD_SET(multicast_sock, &read_sock_set);
 	FD_SET(retrans_tcp_sock, &read_sock_set);
+
+	srand(time(NULL));
+	packet_loss_rate = 0;
 }
 
 MVCTPReceiver::~MVCTPReceiver() {
@@ -28,10 +31,11 @@ const struct MvctpReceiverStats MVCTPReceiver::GetBufferStats() {
 }
 
 void MVCTPReceiver::SetPacketLossRate(int rate) {
+	packet_loss_rate = rate;
 }
 
 int MVCTPReceiver::GetPacketLossRate() {
-	return 1;
+	return packet_loss_rate;
 }
 
 void MVCTPReceiver::SetStatusProxy(StatusProxy* proxy) {
@@ -83,7 +87,7 @@ void MVCTPReceiver::Start() {
 
 // Receive memory data from the sender
 void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg, char* mem_data) {
-	char str[1024];
+	char str[500];
 	sprintf(str, "Started new memory data transfer. Size: %d", transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
@@ -159,15 +163,21 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 					}
 				}
 
-				if (header->seq_number > offset) {
-					MvctpNackMessage msg;
-					msg.seq_num = offset;
-					msg.data_len = header->seq_number - offset;
-					nack_list.push_back(msg);
+				// Add the received packet to the buffer
+				// When greater than packet_loss_rate, add the packet to the receive buffer
+				// Otherwise, just drop the packet (emulates errored packet)
+				if (rand() % 1000 >= packet_loss_rate) {
+					if (header->seq_number > offset) {
+						MvctpNackMessage msg;
+						msg.seq_num = offset;
+						msg.data_len = header->seq_number - offset;
+						nack_list.push_back(msg);
+					}
+
+					memcpy(mem_data + header->seq_number, packet_data, header->data_len);
+					offset = header->seq_number + header->data_len;
 				}
 
-				memcpy(mem_data + header->seq_number, packet_data, header->data_len);
-				offset = header->seq_number + header->data_len;
 			}
 
 		}
@@ -177,6 +187,10 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 //
 void MVCTPReceiver::DoMemoryDataRetransmission(char* mem_data, const list<MvctpNackMessage>& nack_list) {
+	char str[500];
+	sprintf(str, "Start retransmission. Total missing packets: %d", nack_list.size());
+	status_proxy->SendMessage(INFORMATIONAL, str);
+
 	MvctpRetransMessage msg;
 	bzero(&msg, sizeof(msg));
 
