@@ -40,6 +40,8 @@ MVCTPComm::~MVCTPComm() {
 }
 
 
+// Not IGMP join
+// Local register of multicast address
 int MVCTPComm::JoinGroup(string addr, ushort port) {
 	sockaddr_in sa;
 	sa.sin_family = AF_INET;
@@ -50,63 +52,11 @@ int MVCTPComm::JoinGroup(string addr, ushort port) {
 	mvctp_group_id = sa.sin_addr.s_addr;
 	GetMulticastMacAddressFromIP(mac_group_addr, mvctp_group_id);
 	ptr_raw_sock_comm->Bind((SA *)&sa, sizeof(sa), mac_group_addr);
-	send_mvctp_header->group_id  = mvctp_group_id;
 	send_mvctp_header->src_port = port;
 	return 1;
 }
 
 
-int MVCTPComm::Send(void* buffer, size_t length) {
-	int remained_len = length;
-	u_char* pos = (u_char*)buffer;
-	while (remained_len > MVCTP_DATA_LEN) {
-		memcpy(send_data, pos, MVCTP_DATA_LEN);
-		ptr_raw_sock_comm->SendFrame(send_packet_buf, MVCTP_PACKET_LEN);
-		pos += MVCTP_DATA_LEN;
-		remained_len -= MVCTP_DATA_LEN;
-	}
-
-	if (remained_len > 0) {
-		memcpy(send_data, pos, remained_len);
-		ptr_raw_sock_comm->SendFrame(send_packet_buf, MVCTP_HLEN + remained_len);
-	}
-
-	return length;
-}
-
-
-int MVCTPComm::Receive(void* buffer, size_t length) {
-	size_t remained_len = length;
-	size_t received_bytes = 0;
-	char* ptr = (char*)buffer;
-
-	int bytes;
-	while (remained_len > 0) {
-		if ( (bytes = ptr_raw_sock_comm->ReceiveFrame(recv_frame_buf)) < 0) {
-			return received_bytes;
-		}
-
-		if (IsMyPacket()) {
-			int data_len = bytes - ETH_HLEN - sizeof(MVCTP_HEADER);
-			memcpy(ptr, recv_data, data_len);
-			received_bytes += data_len;
-			ptr += data_len;
-			remained_len -= data_len;
-			return received_bytes;
-		}
-	}
-
-	return length;
-}
-
-
-bool MVCTPComm::IsMyPacket() {
-	if (memcmp(eth_header->h_dest, mac_group_addr, 6) == 0 &&
-			recv_mvctp_header->group_id == mvctp_group_id)
-		return true;
-	else
-		return false;
-}
 
 void MVCTPComm::GetMulticastMacAddressFromIP(u_char* mac_addr, u_int ip_addr) {
 	u_char* ptr = (u_char*)&ip_addr;

@@ -19,3 +19,7 @@ InetComm::~InetComm() {
 void InetComm::SetBufferSize(size_t buf_size) {
 
 }
+
+int InetComm::GetSocket() {
+	return sock_fd;
+}

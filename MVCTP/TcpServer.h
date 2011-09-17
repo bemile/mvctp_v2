@@ -17,9 +17,9 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
-#include <sys/types.h>
 #include <sys/select.h>
 #include <sys/socket.h>
+#include <sys/types.h>
 
 using namespace std;
 
@@ -31,9 +31,10 @@ public:
 	void 	Start();
 	void 	Listen();
 	int 	Accept();
-	void 	SendToAll(const char* data, size_t length);
+	void 	SendToAll(const void* data, size_t length);
 	int		SelectSend(int conn_sock, const void* data, size_t length);
 	int 	SelectReceive(int* conn_sock, void* buffer, size_t length);
+	list<int> GetSocketList();
 
 private:
 	struct sockaddr_in	server_addr;

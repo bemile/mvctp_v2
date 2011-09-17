@@ -31,6 +31,10 @@ TcpServer::~TcpServer() {
 }
 
 
+list<int> TcpServer::GetSocketList() {
+	return conn_sock_list;
+}
+
 void TcpServer::Listen()	 {
 	if (listen(server_sock, 200) < 0) {
 		SysError("TcpServer::Listen()::listen() error");
@@ -56,7 +60,7 @@ int TcpServer::Accept() {
 }
 
 
-void TcpServer::SendToAll(const char* data, size_t length) {
+void TcpServer::SendToAll(const void* data, size_t length) {
 	list<int>::iterator it;
 
 	pthread_mutex_lock(&sock_list_mutex);
@@ -70,6 +74,7 @@ void TcpServer::SendToAll(const char* data, size_t length) {
 int TcpServer::SelectSend(int conn_sock, const void* data, size_t length) {
 	return send(conn_sock, data, length, 0);
 }
+
 
 int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 	fd_set read_fds = master_read_fds;

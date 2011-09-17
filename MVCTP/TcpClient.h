@@ -30,6 +30,8 @@ public:
 	virtual ~TcpClient();
 
 	int Connect();
+	int GetSocket();
+
 	int Send(const void* data, size_t length);
 	int Receive(void* buffer, size_t length);
 
@@ -37,6 +39,7 @@ private:
 	sockaddr_in server_addr;
 	int server_port;
 	int sock_fd;
+
 
 	void SysError(char* info);
 };

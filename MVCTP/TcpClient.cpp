@@ -45,6 +45,11 @@ int TcpClient::Connect() {
 }
 
 
+int TcpClient::GetSocket() {
+	return sock_fd;
+}
+
+
 int TcpClient::Send(const void* data, size_t length) {
 	return send(sock_fd, data, length, 0);
 }

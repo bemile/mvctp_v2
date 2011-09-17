@@ -10,27 +10,35 @@
 
 #include "mvctp.h"
 #include "MVCTPComm.h"
-#include "SendBufferMgr.h"
+#include "TcpServer.h"
+#include "../CommUtil/StatusProxy.h"
+
 
 class MVCTPSender : public MVCTPComm {
 public:
 	MVCTPSender(int buf_size);
 	~MVCTPSender();
 
-	int RawSend(const char* data, size_t length, bool send_out = true);
-	int IPSend(const char* data, size_t length, bool send_out = true);
-	void SetSendRate(int num_mbps);
-	void SetBufferSize(size_t buff_size);
-	void ResetBuffer();
-	SendBufferMgr* GetBufferManager();
+	void 	SetStatusProxy(StatusProxy* proxy);
+	int 	JoinGroup(string addr, u_short port);
+	void 	SetSendRate(int num_mbps);
+	// For memory-to-memory data tranfer
+	void 	SendMemoryData(void* data, size_t length);
+	// For disk-to-disk data transfer
+	void 	SendFile(const char* file_name);
+
 
 private:
-	//MVCTPComm* ptr_mvctp_comm;
-	SendBufferMgr *ptr_send_buf_mgr;
-	int send_rate_in_mbps;
+	TcpServer*		retrans_tcp_server;
+	u_int32_t			last_packet_id;		// packet ID assigned to the latest received packet
 
-	// Should not be called publicly, may be deleted later
-	int RawReceive(void* buff, size_t len);
+	void DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
+	void DoMemoryDataRetransmission(void* data);
+	void DoFileRetransmission(int fd);
+	void ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map);
+
+	StatusProxy*	status_proxy;
+	int send_rate_in_mbps;
 };
 
 #endif /* MVCTPSENDER_H_ */

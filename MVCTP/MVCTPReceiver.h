@@ -10,30 +10,47 @@
 
 #include "mvctp.h"
 #include "MVCTPComm.h"
-#include "ReceiveBufferMgr.h"
+#include "TcpClient.h"
+#include "../CommUtil/StatusProxy.h"
+
+struct MvctpReceiverStats {
+	uint num_received_packets;
+	uint num_retrans_packets;
+	uint num_dup_retrans_packets;
+};
+
 
 class MVCTPReceiver : public MVCTPComm {
 public:
 	MVCTPReceiver(int buf_size);
 	~MVCTPReceiver();
 
-	int JoinGroup(string addr, ushort port);
-	int RawReceive(void* buff, size_t len, int flags, SA* from, socklen_t* from_len);
-	int IPReceive(void* buff, size_t len, int flags, SA* from, socklen_t* from_len);
-	ReceiveBufferMgr* GetReceiveBufferManager();
-	void SetBufferSize(size_t buff_size);
-	size_t GetBufferSize();
-	void SetPacketLossRate(int rate);
-	int GetPacketLossRate();
-	const struct ReceiveBufferStats GetBufferStats();
-	void SetSocketBufferSize(size_t buff_size);
-	void ResetBuffer();
+	int JoinGroup(string addr, u_short port);
+	void 	Start();
+
+	void 	SetPacketLossRate(int rate);
+	int 	GetPacketLossRate();
+	void 	SetStatusProxy(StatusProxy* proxy);
+	const struct MvctpReceiverStats GetBufferStats();
+
 
 private:
-	ReceiveBufferMgr *ptr_recv_buf_mgr;
+	TcpClient*		retrans_tcp_client;
+	// used in the select() system call
+	int		max_sock_fd;
+	int 	multicast_sock;
+	int		retrans_tcp_sock;
+	fd_set	read_sock_set;
 
-	// Should not be called publicly, may be deleted later
-	int RawSend(char* data, size_t length, bool send_out);
+	struct MvctpReceiverStats stats;
+	StatusProxy*	status_proxy;
+
+	// Memory-to-memory data tranfer
+	void 	ReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);
+	void 	DoMemoryDataRetransmission(char* mem_data, const list<MvctpNackMessage>& nack_list);
+	// Disk-to-disk data transfer
+	void 	ReceiveFile(const MvctpTransferMessage & msg);
+	void 	DoFileRetransmission();
 };
 
 #endif /* MVCTPRECEIVER_H_ */

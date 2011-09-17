@@ -38,18 +38,6 @@ int SenderStatusProxy::HandleCommand(char* command) {
 			SendMessage(COMMAND_RESPONSE, msg);
 		}
 	}
-	else if (parts.front().compare("SetBufferSize") == 0) {
-		if (parts.size() == 2) {
-			int size = atoi(parts.back().c_str());
-			ptr_sender->SetBufferSize(size);
-			sprintf(msg, "Buffer size has been set to %d bytes.", size);
-			SendMessage(COMMAND_RESPONSE, msg);
-		}
-	}
-	else if (parts.front().compare("ResetBuffer") == 0) {
-		ptr_sender->ResetBuffer();
-		SendMessage(COMMAND_RESPONSE, "Buffer has been reset.");
-	}
 	else if (parts.front().compare("CreateLogFile") == 0) {
 		if (parts.size() == 2) {
 			CreateNewLogFile(parts.back().c_str());
@@ -150,65 +138,12 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 // Transfer memory-to-memory data to all receivers
 // size: the size of data to transfer (in megabytes)
 int SenderStatusProxy::TransferMemoryData(int size) {
-	// Clear the send buffer
-	ptr_sender->ResetBuffer();
+	SendMessage(COMMAND_RESPONSE, "Transferring memory data...");
 
-	TransferMessage msg;
-	msg.msg_type = MEMORY_TRANSFER;
-	msg.data_len = size;
-	ptr_sender->IPSend((char*)&msg, sizeof(msg));
+	char* buffer = (char*)malloc(size);
+	ptr_sender->SendMemoryData(buffer, size);
+	free(buffer);
 
-	// Initialize the memory buffer
-//	uint* mem_store = (uint*)malloc(size);
-//  char* buffer = (char*)mem_store;
-//	uint num_ints = size / sizeof(uint);
-//	for (uint i = 0; i < num_ints; i++) {
-//		mem_store[i] = i;
-//	}
-
-
-	char buffer[MVCTP_DATA_LEN];
-	memset(buffer, 1, MVCTP_DATA_LEN);
-
-	timeval last_time, cur_time;
-	float time_diff;
-	gettimeofday(&last_time, NULL);
-
-	int period = size / MVCTP_DATA_LEN / 10;
-	if (period == 0)
-		period = 1;
-
-	int send_count = 0;
-	uint remained_size = size;
-	uint period_sent_size = 0;
-	uint total_sent_data = 0;
-	while (remained_size > 0) {
-		int packet_size = remained_size > MVCTP_ETH_FRAME_LEN ? MVCTP_ETH_FRAME_LEN
-				: remained_size;
-		ptr_sender->IPSend(buffer /*+ total_sent_data*/, packet_size - MVCTP_HLEN - ETH_HLEN);
-		remained_size -= packet_size;
-		total_sent_data += packet_size - MVCTP_HLEN - ETH_HLEN;
-
-		// periodically calculate transfer speed
-		period_sent_size += packet_size; //(packet_size + MVCTP_HLEN + ETH_HLEN);
-		send_count++;
-		if (send_count % period == 0) {
-			gettimeofday(&cur_time, NULL);
-			time_diff = (cur_time.tv_sec - last_time.tv_sec)
-					+ (cur_time.tv_usec - last_time.tv_usec) / 1000000.0 + 0.001;
-
-			last_time = cur_time;
-			float rate = period_sent_size / time_diff / 1024.0 / 1024.0 * 8;
-			period_sent_size = 0;
-			char buf[100];
-			sprintf(buf, "Data sending rate: %3.2f Mbps", rate);
-			SendMessage(INFORMATIONAL, buf);
-		}
-	}
-
-	ptr_sender->GetBufferManager()->DoRetransmission();
-
-	//free(mem_store);
 	SendMessage(COMMAND_RESPONSE, "Memory data transfer completed.");
 	return 1;
 }
@@ -216,43 +151,15 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 
 // Transfer a disk file to all receivers
 void SenderStatusProxy::TransferFile(string file_name) {
-	struct stat file_status;
-	stat(file_name.c_str(), &file_status);
-	ulong file_size = file_status.st_size;
-	ulong remained_size = file_size;
-
-	int fd = open(file_name.c_str(), O_RDONLY);
-	char* buffer;
-	off_t offset = 0;
-	while (remained_size > 0) {
-		int map_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size
-				: MAX_MAPPED_MEM_SIZE;
-		buffer = (char*) mmap(0, map_size, PROT_READ | PROT_WRITE, 0, fd,
-				offset);
-		munmap(buffer, map_size);
-		SendMemoryData(buffer, map_size);
-		offset += map_size;
-		remained_size -= map_size;
-	}
-
-	close(fd);
-
+	SendMessage(COMMAND_RESPONSE, "Transferring file...");
+	ptr_sender->SendFile(file_name.c_str());
+	SendMessage(COMMAND_RESPONSE, "File transfer completed.");
 }
 
-
-void SenderStatusProxy::SendMemoryData(void* buffer, size_t length) {
-
-}
 
 
 // Multicast a string message to receivers
 int SenderStatusProxy::TransferString(string str, bool send_out_packets) {
-	TransferMessage msg;
-	msg.msg_type = STRING_TRANSFER;
-	msg.data_len = str.length();
-	ptr_sender->IPSend((char*)&msg, sizeof(msg), send_out_packets);
-	ptr_sender->IPSend(str.c_str(), msg.data_len, send_out_packets);
-
 	SendMessage(COMMAND_RESPONSE, "Specified string successfully sent.");
 	return 1;
 }

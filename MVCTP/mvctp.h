@@ -29,6 +29,7 @@
 #include <sys/errno.h>
 #include <sys/ioctl.h>
 #include <sys/mman.h>
+#include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -63,9 +64,18 @@ void CreateNewLogFile(const char* file_name);
 typedef struct sockaddr SA;
 typedef struct ifreq	IFREQ;
 
+typedef struct MvctpHeader {
+	int32_t 	protocol;
+	u_int16_t	src_port;
+	u_int16_t	dest_port;
+	u_int32_t	seq_number;
+	u_int32_t	data_len;
+	u_int32_t	flags;
+} MVCTP_HEADER, *PTR_MVCTP_HEADER;
+
 
 // MVCTP structs
-typedef struct MVCTPHeader {
+struct MVCTPHeader {
 	int32_t 		proto;
 	u_int32_t		group_id;
 	u_int16_t		src_port;
@@ -73,7 +83,7 @@ typedef struct MVCTPHeader {
 	int32_t			packet_id;
 	u_int32_t		data_len;
 	u_int32_t		flags;
-} MVCTP_HEADER, *PTR_MVCTP_HEADER;
+};
 
 // MVCTP Header Flags
 const u_int32_t MVCTP_EOF = 0x00000001;
@@ -155,8 +165,34 @@ static const int INIT_RTT	= 50;		// in milliseconds
 
 
 // parameters for data transfer
-const int MAX_NUM_RECEIVERS = 200;
-const int MAX_MAPPED_MEM_SIZE = 128 * 1024 * 1024;
+static const int MAX_NUM_RECEIVERS = 200;
+static const int MAX_MAPPED_MEM_SIZE = 128 * 1024 * 1024;
+
+static const int STRING_TRANSFER_START = 1;
+static const int STRING_TRANSFER_FINISH = 2;
+static const int MEMORY_TRANSFER_START = 3;
+static const int MEMORY_TRANSFER_FINISH = 4;
+static const int FILE_TRANSFER_START = 5;
+static const int FILE_TRANSFER_FINISH = 6;
+static const int DO_RETRANSMISSION = 7;
+
+struct MvctpTransferMessage {
+	int32_t		event_type;
+	uint32_t 	data_len;
+	char       	text[30];
+};
+
+const int MAX_NUM_NACK_REQ = 50;
+struct MvctpRetransMessage {
+	int32_t		num_requests;
+	u_int32_t	seq_numbers[MAX_NUM_NACK_REQ];
+	u_int32_t	data_lens[MAX_NUM_NACK_REQ];
+};
+
+typedef struct MvctpNackMessage {
+	u_int32_t 	seq_num;
+	u_int32_t	data_len;
+} NACK_MSG, * PTR_NACK_MSG;
 
 
 class MVCTP {

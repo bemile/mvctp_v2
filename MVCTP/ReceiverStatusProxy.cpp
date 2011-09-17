@@ -26,27 +26,7 @@ int ReceiverStatusProxy::HandleCommand(char* command) {
 		return 0;
 
 	char msg[512];
-	if (parts.front().compare("SetRecvBuffSize") == 0) {
-		if (parts.size() == 2) {
-			size_t size = atoi(parts.back().c_str());
-			ptr_receiver->SetBufferSize(size);
-			sprintf(msg, "Receive buffer size has been set to %d bytes.", size);
-			SendMessage(COMMAND_RESPONSE, msg);
-		}
-	}
-	else if (parts.front().compare("SetSocketBuffSize") == 0) {
-		if (parts.size() == 2) {
-			size_t size = atoi(parts.back().c_str());
-			ptr_receiver->SetSocketBufferSize(size);
-			sprintf(msg, "Socket buffer size has been set to %d bytes.", size);
-			SendMessage(COMMAND_RESPONSE, msg);
-		}
-	}
-	else if (parts.front().compare("ResetBuffer") == 0) {
-		ptr_receiver->ResetBuffer();
-		SendMessage(COMMAND_RESPONSE, "Receive buffer has been reset.");
-	}
-	else if (parts.front().compare("SetLossRate") == 0) {
+	if (parts.front().compare("SetLossRate") == 0) {
 		int rate = atoi(parts.back().c_str());
 		ptr_receiver->SetPacketLossRate(rate);
 		sprintf(msg, "Packet loss rate has been set to %d per thousand.", rate);

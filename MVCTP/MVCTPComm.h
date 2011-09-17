@@ -18,9 +18,7 @@ public:
 	MVCTPComm();
 	~MVCTPComm();
 
-	int JoinGroup(string addr, u_short port);
-	int Send(void* buffer, size_t length);
-	int Receive(void* buffer, size_t length);
+	virtual int JoinGroup(string addr, u_short port);
 
 protected:
 	NetInterfaceManager* if_manager;
@@ -42,8 +40,6 @@ private:
 	MVCTP_HEADER* recv_mvctp_header;
 	u_char* recv_data;
 
-
-	bool IsMyPacket();
 	void GetMulticastMacAddressFromIP(u_char* mac_addr, u_int ip_addr);
 
 };
