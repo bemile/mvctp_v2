@@ -61,9 +61,9 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 	cout << "Retransmission requests received." << endl;
 
 	char buffer[MVCTP_PACKET_LEN];
-	char* packet_data = buffer + sizeof(MvctpHeader);
+	char* packet_data = buffer + MVCTP_HLEN;
 	MvctpHeader* header = (MvctpHeader*) buffer;
-	bzero(header, sizeof(MvctpHeader));
+	bzero(header, MVCTP_HLEN);
 	header->protocol = MVCTP_PROTO_TYPE;
 
 	map<int, list<NACK_MSG> >::iterator it;
@@ -75,6 +75,9 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 			header->data_len = list_it->data_len;
 			memcpy(packet_data, (char*)data + list_it->seq_num, list_it->data_len);
 			retrans_tcp_server->SelectSend(sock, buffer, MVCTP_HLEN + list_it->data_len);
+
+			cout << "Retransmission packet sent. Seq No.: " << list_it->seq_num <<
+				"    Length: " << list_it->data_len << endl;
 		}
 	}
 }
