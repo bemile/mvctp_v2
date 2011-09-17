@@ -148,8 +148,6 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & msg, char* me
 
 		}
 	}
-
-	return mem_data;
 }
 
 
