@@ -272,6 +272,8 @@ void MVCTPSender::SendFile(const char* file_name) {
 	strcpy(msg.text, file_name);
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
+	usleep(500000);
+
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
 	int fd = open(file_name, O_RDWR);
