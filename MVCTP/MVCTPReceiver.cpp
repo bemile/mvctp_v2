@@ -129,9 +129,8 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 			// When greater than packet_loss_rate, add the packet to the receive buffer
 			// Otherwise, just drop the packet (emulates errored packet)
 			if (rand() % 1000 >= packet_loss_rate) {
-				cout << "Received a new packet. Seq No.: "
-						<< header->seq_number << "    Length: "
-						<< header->data_len << endl;
+				//cout << "Received a new packet. Seq No.: " << header->seq_number << "    Length: "
+				//		<< header->data_len << endl;
 				if (header->seq_number > offset) {
 					int pos_start = offset;
 					while (pos_start < header->seq_number) {
