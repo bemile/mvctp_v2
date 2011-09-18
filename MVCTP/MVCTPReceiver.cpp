@@ -355,7 +355,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 			if (header->session_id != session_id) {
 				continue;
 			}
-			cout << "One packet received. Seq No.: " << header->seq_number << "    Length: " << header->data_len << endl;
+			//cout << "One packet received. Seq No.: " << header->seq_number << "    Length: " << header->data_len << endl;
 
 			// Add the received packet to the buffer
 			// When greater than packet_loss_rate, add the packet to the receive buffer
