@@ -319,6 +319,9 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 						(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
 	char* file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
 									MAP_FILE | MAP_SHARED, fd, file_start_pos);
+	if (file_buffer == MAP_FAILED) {
+		cout << "mmap() failed." << endl;
+	}
 
 	list<MvctpNackMessage> nack_list;
 	char packet_buffer[MVCTP_PACKET_LEN];
