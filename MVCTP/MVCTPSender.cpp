@@ -266,6 +266,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	// Send a notification to all receivers before starting the memory transfer
 	struct MvctpTransferMessage msg;
+	msg.session_id = cur_session_id;
 	msg.event_type = FILE_TRANSFER_START;
 	msg.data_len = file_size;
 	strcpy(msg.text, file_name);
