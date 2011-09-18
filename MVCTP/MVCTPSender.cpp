@@ -284,6 +284,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 		cout << "Sending memory section..." << endl;
 		DoMemoryTransfer(buffer, map_size, offset);
+		cout << "Memory section sent." << endl;
 
 		munmap(buffer, map_size);
 
