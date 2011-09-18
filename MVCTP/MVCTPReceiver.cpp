@@ -45,11 +45,13 @@ void MVCTPReceiver::SetStatusProxy(StatusProxy* proxy) {
 
 void MVCTPReceiver::SendSessionStatistics() {
 	char buf[512];
-	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets:\t\t%d\nTotal Retrans. Packets:\t\t%d\t"
-			"Retrans. Percentage:\t\t%.4f\nTotal Trans. Time:\t\t%.2f sec\nMulticast Trans. Time:\t\t%.2f sec\n"
-			"Retrans. Time:\t\t\t%.2f sec\n", recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
+	double send_rate = (recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes)
+						/ 1000.0 / 1000.0 * 8 / recv_stats.session_total_time;
+	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
+			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
+			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps", recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage, recv_stats.session_total_time, recv_stats.session_trans_time,
-			recv_stats.session_retrans_time);
+			recv_stats.session_retrans_time, send_rate);
 	status_proxy->SendMessage(INFORMATIONAL, buf);
 }
 
@@ -99,7 +101,9 @@ void MVCTPReceiver::Start() {
 void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg, char* mem_data) {
 	// Clear session related statistics
 	recv_stats.session_recv_packets = 0;
+	recv_stats.session_recv_bytes = 0;
 	recv_stats.session_retrans_packets = 0;
+	recv_stats.session_retrans_bytes = 0;
 	recv_stats.session_retrans_percentage = 0.0;
 	recv_stats.session_total_time = 0.0;
 	recv_stats.session_trans_time = 0.0;
@@ -164,7 +168,9 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 				// Update statistics
 				recv_stats.total_recv_packets++;
+				recv_stats.total_recv_bytes += header->data_len;
 				recv_stats.session_recv_packets++;
+				recv_stats.session_recv_bytes += header->data_len;
 			}
 
 			continue;
@@ -285,7 +291,9 @@ void MVCTPReceiver::DoMemoryDataRetransmission(char* mem_data, const list<MvctpN
 
 		// Update statistics
 		recv_stats.total_retrans_packets++;
+		recv_stats.total_retrans_bytes += header.data_len;
 		recv_stats.session_retrans_packets++;
+		recv_stats.session_retrans_bytes += header.data_len;
 
 		//cout << "Retransmission packet received. Seq No.: " << header.seq_number <<
 		//				"    Length: " << header.data_len << endl;

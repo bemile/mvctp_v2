@@ -40,11 +40,12 @@ void MVCTPSender::SendAllStatistics() {
 
 void MVCTPSender::SendSessionStatistics() {
 	char buf[512];
-	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets:\t\t%d\nTotal Retrans. Packets:\t\t%d\t"
-			"Retrans. Percentage:\t\t%.4f\nTotal Trans. Time:\t\t%.2f sec\nMulticast Trans. Time:\t\t%.2f sec\n"
-			"Retrans. Time:\t\t\t%.2f sec\n", send_stats.session_sent_packets, send_stats.session_retrans_packets,
+	double send_rate = send_stats.session_sent_bytes / 1000.0 / 1000.0 * 8 / send_stats.session_total_time;
+	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
+			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
+			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n", send_stats.session_sent_packets, send_stats.session_retrans_packets,
 			send_stats.session_retrans_percentage, send_stats.session_total_time, send_stats.session_trans_time,
-			send_stats.session_retrans_time);
+			send_stats.session_retrans_time, send_rate);
 	status_proxy->SendMessage(INFORMATIONAL, buf);
 }
 
@@ -61,7 +62,9 @@ int MVCTPSender::JoinGroup(string addr, u_short port) {
 void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	// Clear session related statistics
 	send_stats.session_sent_packets = 0;
+	send_stats.session_sent_bytes = 0;
 	send_stats.session_retrans_packets = 0;
+	send_stats.session_retrans_bytes = 0;
 	send_stats.session_retrans_percentage = 0.0;
 	send_stats.session_total_time = 0.0;
 	send_stats.session_trans_time = 0.0;
@@ -132,7 +135,9 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 
 			// Update statistics
 			send_stats.total_retrans_packets++;
+			send_stats.total_retrans_bytes += header->data_len;
 			send_stats.session_retrans_packets++;
+			send_stats.session_retrans_bytes += header->data_len;
 
 			cout << "Retransmission packet sent. Seq No.: " << list_it->seq_num <<
 				"    Length: " << list_it->data_len << endl;
@@ -168,7 +173,9 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 
 		// Update statistics
 		send_stats.total_sent_packets++;
+		send_stats.total_sent_bytes += data_size;
 		send_stats.session_sent_packets++;
+		send_stats.session_sent_bytes += data_size;
 	}
 }
 

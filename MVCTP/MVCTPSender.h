@@ -15,9 +15,13 @@
 
 struct MvctpSenderStats {
 	uint 	total_sent_packets;
+	uint	total_sent_bytes;
 	uint 	total_retrans_packets;
+	uint	total_retrans_bytes;
 	uint 	session_sent_packets;
+	uint	session_sent_bytes;
 	uint 	session_retrans_packets;
+	uint	session_retrans_bytes;
 	double	session_retrans_percentage;
 	double	session_total_time;
 	double	session_trans_time;
