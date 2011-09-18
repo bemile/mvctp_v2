@@ -99,7 +99,7 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 	char buffer[MVCTP_PACKET_LEN];
 	char* packet_data = buffer + sizeof(MvctpHeader);
 	MvctpHeader* header = (MvctpHeader*) buffer;
-	header->protocol = MVCTP_PROTO_TYPE;
+	header->session_id = cur_session_id;
 	header->src_port = 0;
 	header->dest_port = 0;
 	header->seq_number = 0;
