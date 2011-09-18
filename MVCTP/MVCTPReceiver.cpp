@@ -309,7 +309,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	uint32_t session_id = transfer_msg.session_id;
 
 	// Create the disk file
-	int fd = creat(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);
+	int fd = open(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);
 	if (fd < 0) {
 		SysError("MVCTPReceiver::ReceiveFile()::creat() error");
 	}
