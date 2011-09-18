@@ -55,7 +55,8 @@ private:
 	void DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
 	void DoMemoryDataRetransmission(void* data);
 	void DoFileRetransmission(int fd);
-	void ReceiveRetransRequests(map<int, list<NACK_MSG> >& missing_packet_map);
+	void ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map);
+	void SortSocketsByShortestJobs(int* ptr_socks, const map<int, list<NACK_MSG> >* missing_packet_map);
 
 
 	int send_rate_in_mbps;
