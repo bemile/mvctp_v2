@@ -166,7 +166,7 @@ static const int INIT_RTT	= 50;		// in milliseconds
 
 // parameters for data transfer
 static const int MAX_NUM_RECEIVERS = 200;
-static const int MAX_MAPPED_MEM_SIZE = 4096 * 1024;
+static const int MAX_MAPPED_MEM_SIZE = 4096 * MVCTP_DATA_LEN;
 
 static const int STRING_TRANSFER_START = 1;
 static const int STRING_TRANSFER_FINISH = 2;
