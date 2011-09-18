@@ -281,6 +281,9 @@ void MVCTPSender::SendFile(const char* file_name) {
 				: MAX_MAPPED_MEM_SIZE;
 		buffer = (char*) mmap(0, map_size, PROT_READ | PROT_WRITE, 0, fd,
 				offset);
+		if (buffer == MAP_FAILED) {
+			cout << "mmap() error" << endl;
+		}
 
 		cout << "Sending memory section..." << endl;
 		DoMemoryTransfer(buffer, map_size, offset);
