@@ -59,6 +59,68 @@ int MVCTPSender::JoinGroup(string addr, u_short port) {
 }
 
 
+void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map) {
+	int client_sock;
+	MvctpRetransMessage retrans_msg;
+	int msg_size = sizeof(retrans_msg);
+
+	list<int> sock_list = retrans_tcp_server->GetSocketList();
+	while (!sock_list.empty()) {
+		retrans_tcp_server->SelectReceive(&client_sock, &retrans_msg, msg_size);
+		if (retrans_msg.num_requests == 0) {
+			sock_list.remove(client_sock);
+			continue;
+		}
+
+		for (int i = 0; i < retrans_msg.num_requests; i++) {
+			NACK_MSG packet_info;
+			packet_info.seq_num = retrans_msg.seq_numbers[i];
+			packet_info.data_len = retrans_msg.data_lens[i];
+			if (missing_packet_map->find(client_sock) != missing_packet_map->end()) {
+				(*missing_packet_map)[client_sock].push_back(packet_info);
+			}
+			else {
+				list<NACK_MSG> new_list;
+				new_list.push_back(packet_info);
+				missing_packet_map->insert(pair<int, list<NACK_MSG> >(client_sock, new_list) );
+			}
+		}
+	}
+}
+
+
+
+// Use selection sort to reorder the sockets according to their retransmission request numbers
+// Should use better sorting algorithm is this becomes a bottleneck
+void MVCTPSender::SortSocketsByShortestJobs(int* ptr_socks,
+			const map<int, list<NACK_MSG> >* missing_packet_map) {
+	map<int, int> num_sockets;
+	map<int, list<NACK_MSG> >::const_iterator it;
+	for (it = missing_packet_map->begin(); it != missing_packet_map->end(); it++) {
+		num_sockets[it->first] = it->second.size();
+	}
+
+	map<int, int>::iterator num_it;
+	int min_sock;
+	int min_num;
+	int pos = 0;
+	while (!num_sockets.empty()) {
+		min_num = 0x7fffffff;
+		for (num_it = num_sockets.begin(); num_it != num_sockets.end(); num_it++) {
+			if (min_num > num_it->second) {
+				min_sock = num_it->first;
+				min_num = num_it->second;
+			}
+		}
+
+		ptr_socks[pos++] = min_sock;
+		num_sockets.erase(min_sock);
+	}
+
+}
+
+
+
 void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	// Clear session related statistics
 	send_stats.session_sent_packets = 0;
@@ -113,6 +175,9 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 	cout << "Retransmission requests received." << endl;
 
 	int num_socks = missing_packet_map->size();
+	if (num_socks == 0)
+		return;
+
 	int* sorted_socks = new int[num_socks];
 	SortSocketsByShortestJobs(sorted_socks, missing_packet_map);
 
@@ -133,9 +198,7 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 			header->seq_number = list_it->seq_num;
 			header->data_len = list_it->data_len;
 			memcpy(packet_data, (char*)data + list_it->seq_num, list_it->data_len);
-			if (retrans_tcp_server->SelectSend(sock, buffer, MVCTP_HLEN + list_it->data_len) != (MVCTP_HLEN + list_it->data_len) ) {
-				cout << "Packet sent incompletely." << endl;
-			}
+			retrans_tcp_server->SelectSend(sock, buffer, MVCTP_HLEN + list_it->data_len);
 
 			// Update statistics
 			send_stats.total_retrans_packets++;
@@ -253,107 +316,79 @@ void MVCTPSender::SendFile(const char* file_name) {
 }
 
 
+
+///
 void MVCTPSender::DoFileRetransmission(int fd) {
 	// first: client socket; second: list of NACK_MSG info
 	map<int, list<NACK_MSG> >* missing_packet_map = new map<int, list<NACK_MSG> >();
 	ReceiveRetransRequests(missing_packet_map);
 
-	cout << "Retransmission requests received." << endl;
+	int num_socks = missing_packet_map->size();
+	if (num_socks == 0)
+			return;
 
-	char buffer[MVCTP_PACKET_LEN];
-	char* packet_data = buffer + MVCTP_HLEN;
-	MvctpHeader* header = (MvctpHeader*) buffer;
-	bzero(header, MVCTP_HLEN);
-	header->session_id = cur_session_id;
+	int* sorted_socks = new int[num_socks];
+	SortSocketsByShortestJobs(sorted_socks, missing_packet_map);
 
-	map<int, list<NACK_MSG> >::iterator it;
-	for (it = missing_packet_map->begin(); it != missing_packet_map->end(); it++) {
-		int sock = it->first;
-		cout << "Socket " << sock << " has " << it->second.size()
-				<< " retransmission requests." << endl;
+	list<MvctpRetransBuffer *> retrans_cache_list;
+	MvctpRetransBuffer * ptr_cache = new MvctpRetransBuffer();
+	retrans_cache_list.push_back(ptr_cache);
+
+	MvctpHeader* header;
+	char* packet_data;
+	// first: sequence number of a packet; second: pointer to the packet in the cache
+	map<uint32_t, char*>* packet_map = new map<uint32_t, char*>();
+	map<uint32_t, char*>::iterator packet_map_it;
+
+	for (int i = 0; i < num_socks; i++) {
+		int sock = sorted_socks[i];
+
+		list<NACK_MSG>* retrans_list = &(*missing_packet_map)[sock];
+		cout << "Socket " << sock << " has " << retrans_list->size() << " retransmission requests." << endl;
 
 		list<NACK_MSG>::iterator list_it;
-		for (list_it = it->second.begin(); list_it != it->second.end(); list_it++) {
+		for (list_it = retrans_list->begin(); list_it != retrans_list->end(); list_it++) {
+			// First check if the packet is already in the cache
+			if ( (packet_map_it = packet_map->find(list_it->seq_num)) != packet_map->end()) {
+				retrans_tcp_server->SelectSend(sock, packet_map_it->second, MVCTP_HLEN + list_it->data_len);
+				continue;
+			}
+
+			// If not, read the packet in from the disk file
+			if (ptr_cache->cur_pos == ptr_cache->end_pos) {
+				ptr_cache = new MvctpRetransBuffer();
+				retrans_cache_list.push_back(ptr_cache);
+			}
+
+			header = (MvctpHeader *)ptr_cache->cur_pos;
+			header->session_id = cur_session_id;
 			header->seq_number = list_it->seq_num;
 			header->data_len = list_it->data_len;
-			//memcpy(packet_data, (char*) data + list_it->seq_num,
-			//		list_it->data_len);
-			if (retrans_tcp_server->SelectSend(sock, buffer,
-					MVCTP_HLEN + list_it->data_len) != (MVCTP_HLEN
-					+ list_it->data_len)) {
-				cout << "Packet sent incompletely." << endl;
-			}
+
+			packet_data = ptr_cache->cur_pos + MVCTP_HLEN;
+			lseek(fd, list_it->seq_num, SEEK_SET);
+			read(fd, packet_data, list_it->data_len);
+			retrans_tcp_server->SelectSend(sock, ptr_cache->cur_pos, MVCTP_HLEN + list_it->data_len);
+
+			(*packet_map)[list_it->seq_num] = ptr_cache->cur_pos;
+			ptr_cache->cur_pos += MVCTP_PACKET_LEN;
 
 			// Update statistics
 			send_stats.total_retrans_packets++;
 			send_stats.total_retrans_bytes += header->data_len;
 			send_stats.session_retrans_packets++;
 			send_stats.session_retrans_bytes += header->data_len;
-
-			//cout << "Retransmission packet sent. Seq No.: " << list_it->seq_num <<
-			//	"    Length: " << list_it->data_len << endl;
 		}
 	}
+
+
+	// Clean up
+	delete missing_packet_map;
+	delete[] sorted_socks;
+	list<MvctpRetransBuffer *>::iterator it;
+	for (it = retrans_cache_list.begin(); it != retrans_cache_list.end(); it++) {
+		delete (*it);
+	}
+	delete packet_map;
 }
-
-
-void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map) {
-	int client_sock;
-	MvctpRetransMessage retrans_msg;
-	int msg_size = sizeof(retrans_msg);
-
-	list<int> sock_list = retrans_tcp_server->GetSocketList();
-	while (!sock_list.empty()) {
-		retrans_tcp_server->SelectReceive(&client_sock, &retrans_msg, msg_size);
-		if (retrans_msg.num_requests == 0) {
-			sock_list.remove(client_sock);
-			continue;
-		}
-
-		for (int i = 0; i < retrans_msg.num_requests; i++) {
-			NACK_MSG packet_info;
-			packet_info.seq_num = retrans_msg.seq_numbers[i];
-			packet_info.data_len = retrans_msg.data_lens[i];
-			if (missing_packet_map->find(client_sock) != missing_packet_map->end()) {
-				(*missing_packet_map)[client_sock].push_back(packet_info);
-			}
-			else {
-				list<NACK_MSG> new_list;
-				new_list.push_back(packet_info);
-				missing_packet_map->insert(pair<int, list<NACK_MSG> >(client_sock, new_list) );
-			}
-		}
-	}
-}
-
-
-// Use selection sort to reorder the sockets according to their retransmission request numbers
-// Should use better sorting algorithm is this becomes a bottleneck
-void MVCTPSender::SortSocketsByShortestJobs(int* ptr_socks,
-			const map<int, list<NACK_MSG> >* missing_packet_map) {
-	map<int, int> num_sockets;
-	map<int, list<NACK_MSG> >::const_iterator it;
-	for (it = missing_packet_map->begin(); it != missing_packet_map->end(); it++) {
-		num_sockets[it->first] = it->second.size();
-	}
-
-	map<int, int>::iterator num_it;
-	int min_sock;
-	int min_num;
-	int pos = 0;
-	while (!num_sockets.empty()) {
-		min_num = 0x7fffffff;
-		for (num_it = num_sockets.begin(); num_it != num_sockets.end(); num_it++) {
-			if (min_num > num_it->second) {
-				min_sock = num_it->first;
-				min_num = num_it->second;
-			}
-		}
-
-		ptr_socks[pos++] = min_sock;
-		num_sockets.erase(min_sock);
-	}
-
-}
-
 

@@ -29,6 +29,18 @@ struct MvctpSenderStats {
 };
 
 
+#define	BUFFER_PACKET_SIZE	2000
+struct MvctpRetransBuffer {
+	char 	buffer[BUFFER_PACKET_SIZE * MVCTP_PACKET_LEN];
+	char*	cur_pos;
+	char*	end_pos;
+
+	MvctpRetransBuffer() {
+		cur_pos = buffer;
+		end_pos = buffer + BUFFER_PACKET_SIZE * MVCTP_PACKET_LEN;
+	}
+};
+
 class MVCTPSender : public MVCTPComm {
 public:
 	MVCTPSender(int buf_size);
