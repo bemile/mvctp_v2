@@ -11,7 +11,7 @@
 MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT);
 	cur_session_id = 0;
-	last_packet_id = 0;
+	bzero(&send_stats, sizeof(send_stats));
 }
 
 MVCTPSender::~MVCTPSender() {
@@ -25,6 +25,29 @@ void MVCTPSender::SetStatusProxy(StatusProxy* proxy) {
 	status_proxy = proxy;
 }
 
+void MVCTPSender::SendAllStatistics() {
+	char buf[512];
+	sprintf(buf, "***** Sender Statistics *****\nTotal Sent Packets:\t\t%d\nTotal Retrans. Packets:\t\t%d\t"
+			"Session Sent Packets:\t\t%d\nSession Retrans. Packets:\t\t%d\t"
+			"Retrans. Percentage:\t\t%.4f\nTotal Trans. Time:\t\t%.2f sec\nMulticast Trans. Time:\t\t%.2f sec\n"
+			"Retrans. Time:\t\t\t%.2f sec\n", send_stats.total_sent_packets, send_stats.total_retrans_packets,
+			send_stats.session_sent_packets, send_stats.session_retrans_packets,
+			send_stats.session_retrans_percentage, send_stats.session_total_time, send_stats.session_trans_time,
+			send_stats.session_retrans_time);
+
+	status_proxy->SendMessage(INFORMATIONAL, buf);
+}
+
+void MVCTPSender::SendSessionStatistics() {
+	char buf[512];
+	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets:\t\t%d\nTotal Retrans. Packets:\t\t%d\t"
+			"Retrans. Percentage:\t\t%.4f\nTotal Trans. Time:\t\t%.2f sec\nMulticast Trans. Time:\t\t%.2f sec\n"
+			"Retrans. Time:\t\t\t%.2f sec\n", send_stats.session_sent_packets, send_stats.session_retrans_packets,
+			send_stats.session_retrans_percentage, send_stats.session_total_time, send_stats.session_trans_time,
+			send_stats.session_retrans_time);
+	status_proxy->SendMessage(INFORMATIONAL, buf);
+}
+
 
 // After binding the multicast address, the sender also needs to
 // start the thread to accept incoming connection requests
@@ -36,6 +59,15 @@ int MVCTPSender::JoinGroup(string addr, u_short port) {
 
 
 void MVCTPSender::SendMemoryData(void* data, size_t length) {
+	// Clear session related statistics
+	send_stats.session_sent_packets = 0;
+	send_stats.session_retrans_packets = 0;
+	send_stats.session_retrans_percentage = 0.0;
+	send_stats.session_total_time = 0.0;
+	send_stats.session_trans_time = 0.0;
+	send_stats.session_retrans_time = 0.0;
+
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers before starting the memory transfer
 	struct MvctpTransferMessage msg;
 	msg.event_type = MEMORY_TRANSFER_START;
@@ -44,6 +76,9 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
 	DoMemoryTransfer(data, length, 0);
+
+	// Record memory data multicast time
+	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
 
 	// Sleep for a few milliseconds to allow receivers to
 	// empty their multicast socket buffers
@@ -54,8 +89,15 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 	DoMemoryDataRetransmission(data);
 
+	// Record total transfer and retransmission time
+	send_stats.session_total_time = GetElapsedSeconds(cpu_counter);
+	send_stats.session_retrans_time = send_stats.session_total_time - send_stats.session_trans_time;
+	send_stats.session_retrans_percentage = send_stats.session_retrans_packets  * 1.0
+								/ (send_stats.session_sent_packets + send_stats.session_retrans_packets);
 	// Increase the session id for the next transfer
 	cur_session_id++;
+
+	SendSessionStatistics();
 }
 
 
@@ -88,6 +130,10 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 				cout << "Packet sent incompletely." << endl;
 			}
 
+			// Update statistics
+			send_stats.total_retrans_packets++;
+			send_stats.session_retrans_packets++;
+
 			cout << "Retransmission packet sent. Seq No.: " << list_it->seq_num <<
 				"    Length: " << list_it->data_len << endl;
 		}
@@ -119,6 +165,10 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 
 		remained_size -= data_size;
 		offset += data_size;
+
+		// Update statistics
+		send_stats.total_sent_packets++;
+		send_stats.session_sent_packets++;
 	}
 }
 
@@ -197,5 +247,6 @@ void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >& missing_pack
 		}
 	}
 }
+
 
 

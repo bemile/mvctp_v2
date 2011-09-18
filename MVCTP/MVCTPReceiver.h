@@ -14,9 +14,14 @@
 #include "../CommUtil/StatusProxy.h"
 
 struct MvctpReceiverStats {
-	uint num_received_packets;
-	uint num_retrans_packets;
-	uint num_dup_retrans_packets;
+	uint 	total_recv_packets;
+	uint 	total_retrans_packets;
+	uint 	session_recv_packets;
+	uint 	session_retrans_packets;
+	double	session_retrans_percentage;
+	double	session_total_time;
+	double	session_trans_time;
+	double 	session_retrans_time;
 };
 
 
@@ -25,11 +30,12 @@ public:
 	MVCTPReceiver(int buf_size);
 	~MVCTPReceiver();
 
-	int JoinGroup(string addr, u_short port);
+	int 	JoinGroup(string addr, u_short port);
 	void 	Start();
 
 	void 	SetPacketLossRate(int rate);
 	int 	GetPacketLossRate();
+	void 	SendSessionStatistics();
 	void 	SetStatusProxy(StatusProxy* proxy);
 	const struct MvctpReceiverStats GetBufferStats();
 
@@ -43,8 +49,9 @@ private:
 	fd_set	read_sock_set;
 
 	int 	packet_loss_rate;
-	struct MvctpReceiverStats stats;
-	StatusProxy*	status_proxy;
+	MvctpReceiverStats 	recv_stats;
+	CpuCycleCounter		cpu_counter;
+	StatusProxy*		status_proxy;
 
 	// Memory-to-memory data tranfer
 	void 	ReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);

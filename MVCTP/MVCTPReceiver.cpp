@@ -20,6 +20,7 @@ MVCTPReceiver::MVCTPReceiver(int buf_size) {
 
 	srand(time(NULL));
 	packet_loss_rate = 0;
+	bzero(&recv_stats, sizeof(recv_stats));
 }
 
 MVCTPReceiver::~MVCTPReceiver() {
@@ -27,7 +28,7 @@ MVCTPReceiver::~MVCTPReceiver() {
 
 
 const struct MvctpReceiverStats MVCTPReceiver::GetBufferStats() {
-	return stats;
+	return recv_stats;
 }
 
 void MVCTPReceiver::SetPacketLossRate(int rate) {
@@ -42,6 +43,15 @@ void MVCTPReceiver::SetStatusProxy(StatusProxy* proxy) {
 	status_proxy = proxy;
 }
 
+void MVCTPReceiver::SendSessionStatistics() {
+	char buf[512];
+	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets:\t\t%d\nTotal Retrans. Packets:\t\t%d\t"
+			"Retrans. Percentage:\t\t%.4f\nTotal Trans. Time:\t\t%.2f sec\nMulticast Trans. Time:\t\t%.2f sec\n"
+			"Retrans. Time:\t\t\t%.2f sec\n", recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
+			recv_stats.session_retrans_percentage, recv_stats.session_total_time, recv_stats.session_trans_time,
+			recv_stats.session_retrans_time);
+	status_proxy->SendMessage(INFORMATIONAL, buf);
+}
 
 
 int MVCTPReceiver::JoinGroup(string addr, ushort port) {
@@ -87,9 +97,19 @@ void MVCTPReceiver::Start() {
 
 // Receive memory data from the sender
 void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg, char* mem_data) {
+	// Clear session related statistics
+	recv_stats.session_recv_packets = 0;
+	recv_stats.session_retrans_packets = 0;
+	recv_stats.session_retrans_percentage = 0.0;
+	recv_stats.session_total_time = 0.0;
+	recv_stats.session_trans_time = 0.0;
+	recv_stats.session_retrans_time = 0.0;
+
 	char str[500];
 	sprintf(str, "Started new memory data transfer. Size: %d", transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
+
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
 	uint32_t session_id = transfer_msg.session_id;
 	list<MvctpNackMessage> nack_list;
@@ -100,7 +120,6 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 	int recv_bytes;
 	int offset = 0;
-
 	fd_set read_set;
 	while (true) {
 		read_set = read_sock_set;
@@ -142,6 +161,10 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				memcpy(mem_data + header->seq_number, packet_data,
 						header->data_len);
 				offset = header->seq_number + header->data_len;
+
+				// Update statistics
+				recv_stats.total_recv_packets++;
+				recv_stats.session_recv_packets++;
 			}
 
 			continue;
@@ -189,9 +212,22 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 					}
 				}
 
+				// Record memory data multicast time
+				recv_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
+
 				DoMemoryDataRetransmission(mem_data, nack_list);
+
+				// Record total transfer and retransmission time
+				recv_stats.session_total_time = GetElapsedSeconds(cpu_counter);
+				recv_stats.session_retrans_time = recv_stats.session_total_time - recv_stats.session_trans_time;
+				recv_stats.session_retrans_percentage = recv_stats.session_retrans_packets  * 1.0
+										/ (recv_stats.session_recv_packets + recv_stats.session_retrans_packets);
+
 				status_proxy->SendMessage(INFORMATIONAL,
 						"Memory data transfer finished.");
+
+				SendSessionStatistics();
+
 				// Transfer finished, so return directly
 				return;
 			}
@@ -246,6 +282,10 @@ void MVCTPReceiver::DoMemoryDataRetransmission(char* mem_data, const list<MvctpN
 		bytes = retrans_tcp_client->Receive(&header, MVCTP_HLEN);
 		bytes = retrans_tcp_client->Receive(packet_data, header.data_len);
 		memcpy(mem_data+header.seq_number, packet_data, header.data_len);
+
+		// Update statistics
+		recv_stats.total_retrans_packets++;
+		recv_stats.session_retrans_packets++;
 
 		//cout << "Retransmission packet received. Seq No.: " << header.seq_number <<
 		//				"    Length: " << header.data_len << endl;
