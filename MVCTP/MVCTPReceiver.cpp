@@ -304,6 +304,10 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
+	char str[500];
+	sprintf(str, "Started disk-to-disk file transfer. Size: %d", transfer_msg.data_len);
+	status_proxy->SendMessage(INFORMATIONAL, str);
+
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	uint32_t session_id = transfer_msg.session_id;
