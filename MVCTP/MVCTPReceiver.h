@@ -40,6 +40,7 @@ public:
 	void 	SetPacketLossRate(int rate);
 	int 	GetPacketLossRate();
 	void 	SendSessionStatistics();
+	void	ResetSessionStatistics();
 	void 	SetStatusProxy(StatusProxy* proxy);
 	const struct MvctpReceiverStats GetBufferStats();
 
@@ -61,8 +62,10 @@ private:
 	void 	ReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);
 	void 	DoMemoryDataRetransmission(char* mem_data, const list<MvctpNackMessage>& nack_list);
 	// Disk-to-disk data transfer
-	void 	ReceiveFile(const MvctpTransferMessage & msg);
-	void 	DoFileRetransmission();
+	void 	ReceiveFile(const MvctpTransferMessage & transfer_msg);
+	void 	DoFileRetransmission(int fd, const list<MvctpNackMessage>& nack_list);
+	void	SendNackMessages(const list<MvctpNackMessage>& nack_list);
+	void 	HandleMissingPackets(list<MvctpNackMessage>& nack_list, int current_offset, int received_seq);
 };
 
 #endif /* MVCTPRECEIVER_H_ */

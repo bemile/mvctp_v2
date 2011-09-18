@@ -51,6 +51,7 @@ public:
 	void 	SetSendRate(int num_mbps);
 	void 	SendAllStatistics();
 	void 	SendSessionStatistics();
+	void	ResetSessionStatistics();
 	// For memory-to-memory data tranfer
 	void 	SendMemoryData(void* data, size_t length);
 	// For disk-to-disk data transfer

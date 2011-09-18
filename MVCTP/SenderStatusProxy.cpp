@@ -56,7 +56,7 @@ int SenderStatusProxy::HandleCommand(char* command) {
 			}
 		}
 	}
-	else if (parts.front().compare("GenDataFile") == 0) {
+	else if (parts.front().compare("CreateDataFile") == 0) {
 		if (parts.size() == 3) {
 			parts.pop_front();
 			string file_name = parts.front();

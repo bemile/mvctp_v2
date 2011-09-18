@@ -50,6 +50,19 @@ void MVCTPSender::SendSessionStatistics() {
 }
 
 
+// Clear session related statistics
+void MVCTPSender::ResetSessionStatistics() {
+	send_stats.session_sent_packets = 0;
+	send_stats.session_sent_bytes = 0;
+	send_stats.session_retrans_packets = 0;
+	send_stats.session_retrans_bytes = 0;
+	send_stats.session_retrans_percentage = 0.0;
+	send_stats.session_total_time = 0.0;
+	send_stats.session_trans_time = 0.0;
+	send_stats.session_retrans_time = 0.0;
+}
+
+
 // After binding the multicast address, the sender also needs to
 // start the thread to accept incoming connection requests
 int MVCTPSender::JoinGroup(string addr, u_short port) {
@@ -122,16 +135,7 @@ void MVCTPSender::SortSocketsByShortestJobs(int* ptr_socks,
 
 
 void MVCTPSender::SendMemoryData(void* data, size_t length) {
-	// Clear session related statistics
-	send_stats.session_sent_packets = 0;
-	send_stats.session_sent_bytes = 0;
-	send_stats.session_retrans_packets = 0;
-	send_stats.session_retrans_bytes = 0;
-	send_stats.session_retrans_percentage = 0.0;
-	send_stats.session_total_time = 0.0;
-	send_stats.session_trans_time = 0.0;
-	send_stats.session_retrans_time = 0.0;
-
+	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers before starting the memory transfer
 	struct MvctpTransferMessage msg;
@@ -252,16 +256,7 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 
 
 void MVCTPSender::SendFile(const char* file_name) {
-	// Clear session related statistics
-	send_stats.session_sent_packets = 0;
-	send_stats.session_sent_bytes = 0;
-	send_stats.session_retrans_packets = 0;
-	send_stats.session_retrans_bytes = 0;
-	send_stats.session_retrans_percentage = 0.0;
-	send_stats.session_total_time = 0.0;
-	send_stats.session_trans_time = 0.0;
-	send_stats.session_retrans_time = 0.0;
-
+	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
 	struct stat file_status;
@@ -273,6 +268,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	struct MvctpTransferMessage msg;
 	msg.event_type = FILE_TRANSFER_START;
 	msg.data_len = file_size;
+	strcpy(msg.text, file_name);
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
 	// Transfer the file using memory mapped I/O
@@ -380,7 +376,6 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 			send_stats.session_retrans_bytes += header->data_len;
 		}
 	}
-
 
 	// Clean up
 	delete missing_packet_map;
