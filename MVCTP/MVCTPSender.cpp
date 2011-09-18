@@ -273,7 +273,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
-	int fd = open(file_name, O_RDWR);
+	int fd = open(file_name, O_RDONLY);
 	char* buffer;
 	off_t offset = 0;
 	while (remained_size > 0) {
@@ -282,12 +282,10 @@ void MVCTPSender::SendFile(const char* file_name) {
 		buffer = (char*) mmap(0, map_size, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd,
 				offset);
 		if (buffer == MAP_FAILED) {
-			cout << "mmap() error" << endl;
+			SysError("MVCTPSender::SendFile()::mmap() error");
 		}
 
-		cout << "Sending memory section..." << endl;
 		DoMemoryTransfer(buffer, map_size, offset);
-		cout << "Memory section sent." << endl;
 
 		munmap(buffer, map_size);
 

@@ -320,7 +320,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	size_t mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
 						(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
 	char* file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
-								0, fd, file_start_pos);
+									MAP_FILE | MAP_SHARED, fd, file_start_pos);
 
 	list<MvctpNackMessage> nack_list;
 	char packet_buffer[MVCTP_PACKET_LEN];
@@ -363,7 +363,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 					mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
 											(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
 					file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
-													0, fd, file_start_pos);
+												MAP_FILE | MAP_SHARED, fd, file_start_pos);
 					pos = offset - file_start_pos;
 				}
 
