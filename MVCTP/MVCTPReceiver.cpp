@@ -144,7 +144,6 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
 
-			cout << "I received a new packet. Session ID:" << header->session_id << endl;
 			if (header->session_id != session_id) {
 				continue;
 			}
