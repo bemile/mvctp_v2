@@ -373,6 +373,9 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 											(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
 					file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
 												MAP_FILE | MAP_SHARED, fd, file_start_pos);
+					if (file_buffer == MAP_FAILED) {
+						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
+					}
 					pos = offset - file_start_pos;
 				}
 
@@ -409,12 +412,9 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				// Record total transfer and retransmission time
 				recv_stats.session_total_time = GetElapsedSeconds(cpu_counter);
-				recv_stats.session_retrans_time = recv_stats.session_total_time
-						- recv_stats.session_trans_time;
-				recv_stats.session_retrans_percentage
-						= recv_stats.session_retrans_packets * 1.0
-								/ (recv_stats.session_recv_packets
-										+ recv_stats.session_retrans_packets);
+				recv_stats.session_retrans_time = recv_stats.session_total_time - recv_stats.session_trans_time;
+				recv_stats.session_retrans_percentage = recv_stats.session_retrans_packets * 1.0 /
+								(recv_stats.session_recv_packets + recv_stats.session_retrans_packets);
 
 				status_proxy->SendMessage(INFORMATIONAL,
 						"Memory data transfer finished.");
