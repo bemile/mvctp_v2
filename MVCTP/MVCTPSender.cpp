@@ -299,7 +299,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	// Sleep for a few milliseconds to allow receivers to
 	// empty their multicast socket buffers
-	usleep(50000);
+	usleep(100000);
 
 	// Send a notification to all receivers to start retransmission
 	msg.event_type = FILE_TRANSFER_FINISH;
