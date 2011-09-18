@@ -333,6 +333,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	if (file_buffer == MAP_FAILED) {
 		SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 	}
+	// memory buffer to receive packets
+	char* data_buffer = (char*) malloc(mapped_size);
 
 	list<MvctpNackMessage> nack_list;
 	char packet_buffer[MVCTP_PACKET_LEN];
@@ -371,7 +373,9 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				uint32_t pos = offset - file_start_pos;
 				if (pos >= mapped_size) {
+					memcpy(file_buffer, data_buffer, mapped_size);
 					munmap(file_buffer, mapped_size);
+
 					file_start_pos += mapped_size;
 					mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
 											(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
@@ -380,10 +384,11 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 					if (file_buffer == MAP_FAILED) {
 						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 					}
+
 					pos = offset - file_start_pos;
 				}
 
-				memcpy(file_buffer + pos, packet_data, header->data_len);
+				memcpy(data_buffer + pos, packet_data, header->data_len);
 				offset = header->seq_number + header->data_len;
 
 				// Update statistics
@@ -403,7 +408,10 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 			switch (msg.event_type) {
 			case FILE_TRANSFER_FINISH:
+				memcpy(file_buffer, data_buffer, mapped_size);
 				munmap(file_buffer, mapped_size);
+				delete data_buffer;
+
 				if (transfer_msg.data_len > offset) {
 					HandleMissingPackets(nack_list, offset, transfer_msg.data_len);
 				}
