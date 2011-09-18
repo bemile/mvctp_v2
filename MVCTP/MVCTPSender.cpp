@@ -279,7 +279,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	while (remained_size > 0) {
 		int map_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size
 				: MAX_MAPPED_MEM_SIZE;
-		buffer = (char*) mmap(0, map_size, PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd,
+		buffer = (char*) mmap(0, map_size, PROT_READ, MAP_FILE | MAP_SHARED, fd,
 				offset);
 		if (buffer == MAP_FAILED) {
 			SysError("MVCTPSender::SendFile()::mmap() error");

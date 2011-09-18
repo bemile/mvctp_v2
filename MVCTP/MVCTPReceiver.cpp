@@ -305,17 +305,15 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
 	ResetSessionStatistics();
-
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	uint32_t session_id = transfer_msg.session_id;
 
 	// Create the disk file
-	int fd = creat(transfer_msg.text, O_WRONLY | O_TRUNC);
+	int fd = creat(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);
 	lseek(fd, transfer_msg.data_len - 1, SEEK_SET);
 	write(fd, "", 1);
-	close(fd);
 
 	// Initialize the memory mapped file buffer
-	fd = open(transfer_msg.text, O_RDWR);
 	uint32_t file_start_pos = 0;
 	size_t mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
 						(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
