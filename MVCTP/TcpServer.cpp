@@ -94,7 +94,7 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
 		if (FD_ISSET(*it, &read_fds)) {
-			res = recv(*it, buffer, length, 0);
+			res = recv(*it, buffer, length, MSG_WAITALL);
 			*conn_sock = *it;
 			break;
 		}
