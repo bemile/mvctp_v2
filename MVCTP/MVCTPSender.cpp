@@ -10,6 +10,7 @@
 
 MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT);
+	cur_session_id = 0;
 	last_packet_id = 0;
 }
 
@@ -38,17 +39,23 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	// Send a notification to all receivers before starting the memory transfer
 	struct MvctpTransferMessage msg;
 	msg.event_type = MEMORY_TRANSFER_START;
+	msg.session_id = cur_session_id;
 	msg.data_len = length;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
 	DoMemoryTransfer(data, length, 0);
 
+	// Sleep for a few milliseconds to allow receivers to
+	// empty their multicast socket buffers
 	usleep(50000);
+
 	// Send a notification to all receivers to start retransmission
 	msg.event_type = MEMORY_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
-
 	DoMemoryDataRetransmission(data);
+
+	// Increase the session id for the next transfer
+	cur_session_id++;
 }
 
 
@@ -65,7 +72,7 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 	char* packet_data = buffer + MVCTP_HLEN;
 	MvctpHeader* header = (MvctpHeader*) buffer;
 	bzero(header, MVCTP_HLEN);
-	header->protocol = MVCTP_PROTO_TYPE;
+	header->session_id = cur_session_id;
 
 	map<int, list<NACK_MSG> >::iterator it;
 	for (it = missing_packet_map.begin(); it != missing_packet_map.end(); it++) {

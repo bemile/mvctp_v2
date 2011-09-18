@@ -91,6 +91,7 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 	sprintf(str, "Started new memory data transfer. Size: %d", transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
+	uint32_t session_id = transfer_msg.session_id;
 	list<MvctpNackMessage> nack_list;
 
 	char packet_buffer[MVCTP_PACKET_LEN];
@@ -99,7 +100,6 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 	int recv_bytes;
 	int offset = 0;
-	bool is_first_packet = true;
 
 	fd_set read_set;
 	while (true) {
@@ -115,15 +115,9 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
 
-			// Need to check that the first packet starts with sequence number 0
-			//				if (is_first_packet) {
-			//					if (header->seq_number == 0) {
-			//						is_first_packet = false;
-			//					}
-			//					else {
-			//						continue;
-			//					}
-			//				}
+			if (header->session_id != session_id) {
+				continue;
+			}
 
 			// Add the received packet to the buffer
 			// When greater than packet_loss_rate, add the packet to the receive buffer
@@ -250,9 +244,7 @@ void MVCTPReceiver::DoMemoryDataRetransmission(char* mem_data, const list<MvctpN
 	int bytes;
 	for (int i = 0; i < size; i++) {
 		bytes = retrans_tcp_client->Receive(&header, MVCTP_HLEN);
-		cout << "Received header: " << bytes << " bytes." << endl;
 		bytes = retrans_tcp_client->Receive(packet_data, header.data_len);
-		cout << "Received payload: " << bytes << " bytes." << endl;
 		memcpy(mem_data+header.seq_number, packet_data, header.data_len);
 
 		//cout << "Retransmission packet received. Seq No.: " << header.seq_number <<

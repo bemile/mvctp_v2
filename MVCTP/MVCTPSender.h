@@ -30,7 +30,8 @@ public:
 
 private:
 	TcpServer*		retrans_tcp_server;
-	u_int32_t			last_packet_id;		// packet ID assigned to the latest received packet
+	u_int32_t		last_packet_id;		// packet ID assigned to the latest received packet
+	u_int32_t		cur_session_id;		// the session ID for a new transfer
 
 	void DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
 	void DoMemoryDataRetransmission(void* data);

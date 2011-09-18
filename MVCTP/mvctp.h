@@ -65,9 +65,9 @@ typedef struct sockaddr SA;
 typedef struct ifreq	IFREQ;
 
 typedef struct MvctpHeader {
-	int32_t 	protocol;
 	u_int16_t	src_port;
 	u_int16_t	dest_port;
+	u_int32_t 	session_id;
 	u_int32_t	seq_number;
 	u_int32_t	data_len;
 	u_int32_t	flags;
@@ -178,6 +178,7 @@ static const int DO_RETRANSMISSION = 7;
 
 struct MvctpTransferMessage {
 	int32_t		event_type;
+	uint32_t	session_id;
 	uint32_t 	data_len;
 	char       	text[30];
 };
