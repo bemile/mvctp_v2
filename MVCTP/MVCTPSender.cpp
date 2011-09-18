@@ -43,6 +43,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 
 	DoMemoryTransfer(data, length, 0);
 
+	usleep(50000);
 	// Send a notification to all receivers to start retransmission
 	msg.event_type = MEMORY_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
