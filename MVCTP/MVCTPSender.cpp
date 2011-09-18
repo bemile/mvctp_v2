@@ -272,8 +272,6 @@ void MVCTPSender::SendFile(const char* file_name) {
 	strcpy(msg.text, file_name);
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
-	usleep(500000);
-
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
 	int fd = open(file_name, O_RDWR);
@@ -298,6 +296,10 @@ void MVCTPSender::SendFile(const char* file_name) {
 	cout << "File transfer finished. Start retransmission..." << endl;
 	// Record memory data multicast time
 	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
+
+	// Sleep for a few milliseconds to allow receivers to
+	// empty their multicast socket buffers
+	usleep(100000);
 
 	// Send a notification to all receivers to start retransmission
 	msg.event_type = FILE_TRANSFER_FINISH;
