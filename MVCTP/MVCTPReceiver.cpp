@@ -310,11 +310,18 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 	// Create the disk file
 	int fd = creat(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);
-	lseek(fd, transfer_msg.data_len - 1, SEEK_SET);
-	write(fd, "", 1);
+	if (fd < 0) {
+		SysError("MVCTPReceiver::ReceiveFile()::creat() error");
+	}
+	if (lseek(fd, transfer_msg.data_len - 1, SEEK_SET) == -1) {
+		SysError("MVCTPReceiver::ReceiveFile()::lseek() error");
+	}
+	if (write(fd, "", 1) != 1) {
+		SysError("MVCTPReceiver::ReceiveFile()::write() error");
+	}
 
 	// Initialize the memory mapped file buffer
-	uint32_t file_start_pos = 0;
+	off_t file_start_pos = 0;
 	size_t mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
 						(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
 	char* file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
