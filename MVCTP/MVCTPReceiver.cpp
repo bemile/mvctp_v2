@@ -324,6 +324,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	off_t file_start_pos = 0;
 	size_t mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
 						(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
+	cout << "mapped_size: " << mapped_size << endl;
 	char* file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
 									MAP_FILE | MAP_SHARED, fd, file_start_pos);
 	if (file_buffer == MAP_FAILED) {
