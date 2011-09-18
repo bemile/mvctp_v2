@@ -310,8 +310,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 	// Create the disk file
 	int fd = creat(transfer_msg.text, O_WRONLY | O_TRUNC);
-	lseek(fd, transfer_msg.data_len, SEEK_SET);
-	write(fd, '\0', 1);
+	lseek(fd, transfer_msg.data_len - 1, SEEK_SET);
+	write(fd, "", 1);
 	close(fd);
 
 	// Initialize the memory mapped file buffer
