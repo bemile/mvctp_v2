@@ -273,7 +273,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
-	int fd = open(file_name, O_RDONLY);
+	int fd = open(file_name, O_RDWR);
 	char* buffer;
 	off_t offset = 0;
 	while (remained_size > 0) {
