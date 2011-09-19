@@ -314,7 +314,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	uint32_t session_id = transfer_msg.session_id;
 
 	// Create the disk file
-	int fd = open(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC | O_DIRECT);
+	int fd = open(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);
 	if (fd < 0) {
 		SysError("MVCTPReceiver::ReceiveFile()::creat() error");
 	}
@@ -324,6 +324,9 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	if (write(fd, "", 1) != 1) {
 		SysError("MVCTPReceiver::ReceiveFile()::write() error");
 	}
+	close(fd);
+	fd = open(transfer_msg.text, O_RDWR | O_DIRECT);
+
 
 	// Initialize the memory mapped file buffer
 	off_t file_start_pos = 0;
