@@ -13,6 +13,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <strings.h>
+#include <unistd.h>
 #include <arpa/inet.h>
 #include <net/if.h>
 #include <netinet/in.h>
