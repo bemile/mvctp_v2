@@ -497,7 +497,9 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 	  my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
 	  my_aiocb.aio_sigevent.sigev_value.sival_ptr = &info;
 
-	  aio_write( &my_aiocb );
+	  if (aio_write( &my_aiocb ) < 0) {
+		  perror("aio_write() error");
+	  }
 }
 
 
