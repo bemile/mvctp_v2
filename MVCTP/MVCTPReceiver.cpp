@@ -509,15 +509,16 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 
 void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 	struct aio_info *info = (struct aio_info *)sigval.sival_ptr;
-	cout << "AIO write completed." << endl;
+
+	/* Request completed successfully, get the return status */
+	size_t ret = aio_return(info->ptr_aiocb);
+	if (ret != info->ptr_aiocb->aio_nbytes) {
+		cout << "Incomplete AIO write. Return value:" << ret << endl;
+	}
+
 
 	int errno;
 	if ( (errno = aio_error(info->ptr_aiocb)) == 0) {
-		/* Request completed successfully, get the return status */
-		size_t ret = aio_return(info->ptr_aiocb);
-		if (ret != info->ptr_aiocb->aio_nbytes) {
-			cout << "Incomplete AIO write." << endl;
-		}
 	}
 	else {
 		cout << "AIO write error! Error #: " << errno << endl;
