@@ -508,7 +508,8 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 
 void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 	struct aio_info *info = (struct aio_info *)sigval.sival_ptr;
-	cout << "Async write completed. Offset: " << info->ptr_aiocb->aio_offset << "    Length: " << info->ptr_aiocb->aio_nbytes << endl;
+	cout << "Async write completed. fd: " << info->ptr_aiocb->aio_fildes << "    Offset: "
+				<< info->ptr_aiocb->aio_offset << "    Length: " << info->ptr_aiocb->aio_nbytes << endl;
 
 
 	int errno;
