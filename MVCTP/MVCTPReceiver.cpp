@@ -512,18 +512,21 @@ void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 	struct aio_info *info = (struct aio_info *)sigval.sival_ptr;
 	cout << "Async write completed. aio_info pointer: " << info << endl;
 
-	/* Request completed successfully, get the return status */
-	size_t ret = aio_return(info->ptr_aiocb);
-	if (ret != info->ptr_aiocb->aio_nbytes) {
-		cout << "Incomplete AIO write. Return value:" << ret << endl;
-	}
-
 
 	int errno;
 	if ( (errno = aio_error(info->ptr_aiocb)) == 0) {
+		/* Request completed successfully, get the return status */
+		size_t ret = aio_return(info->ptr_aiocb);
+		if (ret != info->ptr_aiocb->aio_nbytes) {
+			cout << "Incomplete AIO write. Return value:" << ret << endl;
+		}
 	}
 	else {
 		cout << "AIO write error! Error #: " << errno << endl;
+		size_t ret = aio_return(info->ptr_aiocb);
+		if (ret != info->ptr_aiocb->aio_nbytes) {
+			cout << "Incomplete AIO write. Return value:" << ret << endl;
+		}
 	}
 
 	// Free the memory buffer
