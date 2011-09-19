@@ -411,7 +411,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 			switch (msg.event_type) {
 			case FILE_TRANSFER_FINISH:
-				DoAsynchronousWrite(fd, offset, data_buffer, mapped_size);
+				DoAsynchronousWrite(fd, file_start_pos, data_buffer, mapped_size);
 				munmap(file_buffer, mapped_size);
 
 				if (transfer_msg.data_len > offset) {
@@ -478,6 +478,7 @@ struct aio_info {
 	aiocb* 	ptr_aiocb;
 };
 
+
 void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length) {
 	 struct aiocb my_aiocb;
 	 struct aio_info info;
@@ -499,6 +500,9 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 
 	  if (aio_write( &my_aiocb ) < 0) {
 		  perror("aio_write() error");
+	  }
+	  else {
+		  cout << "aio_write() started." << endl;
 	  }
 }
 
