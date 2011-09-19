@@ -8,6 +8,7 @@
 #ifndef TCPSERVER_H_
 #define TCPSERVER_H_
 
+#include <iostream>
 #include <list>
 #include <pthread.h>
 #include <stdio.h>

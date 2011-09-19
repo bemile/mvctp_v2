@@ -85,6 +85,7 @@ int TcpServer::SelectSend(int conn_sock, const void* data, size_t length) {
 		pthread_mutex_lock(&sock_list_mutex);
 		close(conn_sock);
 		conn_sock_list.remove(conn_sock);
+		cout << "SelectSend()::Once socket deleted: " << conn_sock << endl;
 		pthread_mutex_unlock(&sock_list_mutex);
 	}
 	return res;
@@ -106,6 +107,7 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 			if (res < 0) {
 				close(*it);
 				conn_sock_list.remove(*it);
+				cout << "SelectReceive()::Once socket deleted: " << *it << endl;
 			}
 			*conn_sock = *it;
 			break;
