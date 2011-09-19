@@ -332,12 +332,12 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	off_t file_start_pos = 0;
 	size_t mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
 						(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
-	char* data_buffer = (char*) malloc(mapped_size);
-	//char* file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
-	//								MAP_FILE | MAP_SHARED, fd, file_start_pos);
-	//if (file_buffer == MAP_FAILED) {
-	//	SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
-	//}
+	char* file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
+									MAP_FILE | MAP_SHARED, fd, file_start_pos);
+	if (file_buffer == MAP_FAILED) {
+		SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
+	}
+	//char* data_buffer = (char*) malloc(mapped_size);
 
 
 	list<MvctpNackMessage> nack_list;
@@ -377,23 +377,23 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				uint32_t pos = offset - file_start_pos;
 				if (pos >= mapped_size) {
-					DoAsynchronousWrite(fd, file_start_pos, data_buffer, mapped_size);
-					//munmap(file_buffer, mapped_size);
+					//DoAsynchronousWrite(fd, file_start_pos, data_buffer, mapped_size);
+					munmap(file_buffer, mapped_size);
 
 					file_start_pos += mapped_size;
 					mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
 											(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
-//					file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
-//												MAP_FILE | MAP_SHARED, fd, file_start_pos);
-//					if (file_buffer == MAP_FAILED) {
-//						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
-//					}
-					data_buffer = (char*) malloc(mapped_size);
+					file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
+												MAP_FILE | MAP_SHARED, fd, file_start_pos);
+					if (file_buffer == MAP_FAILED) {
+						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
+					}
+					//data_buffer = (char*) malloc(mapped_size);
 
 					pos = offset - file_start_pos;
 				}
 
-				memcpy(data_buffer + pos, packet_data, header->data_len);
+				memcpy(file_buffer + pos, packet_data, header->data_len);
 				offset = header->seq_number + header->data_len;
 
 				// Update statistics
@@ -413,8 +413,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 			switch (msg.event_type) {
 			case FILE_TRANSFER_FINISH:
-				DoAsynchronousWrite(fd, file_start_pos, data_buffer, mapped_size);
-				//munmap(file_buffer, mapped_size);
+				//DoAsynchronousWrite(fd, file_start_pos, data_buffer, mapped_size);
+				munmap(file_buffer, mapped_size);
 
 				if (transfer_msg.data_len > offset) {
 					HandleMissingPackets(nack_list, offset, transfer_msg.data_len);
@@ -515,7 +515,7 @@ void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 	int errno;
 	if ( (errno = aio_error(info->ptr_aiocb)) == 0) {
 		/* Request completed successfully, get the return status */
-		size_t ret = aio_return(info->ptr_aiocb);
+		int ret = aio_return(info->ptr_aiocb);
 		if (ret != info->ptr_aiocb->aio_nbytes) {
 			cout << "Incomplete AIO write. Return value:" << ret << endl;
 		}
