@@ -487,7 +487,7 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 	struct aio_info* info = (struct aio_info*)malloc(sizeof(aio_info));
 	info->ptr_aiocb = my_aiocb;
 	info->data_buffer = data_buffer;
-	cout << "aio_info pointer: " << info << endl;
+	cout << "aio_info pointer: " << info << "   fd: " << fd << endl;
 
 	/* Set up the AIO request */
 	bzero(my_aiocb, sizeof(struct aiocb));
