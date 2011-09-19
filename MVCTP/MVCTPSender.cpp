@@ -153,7 +153,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 
 	// Sleep for a few milliseconds to allow receivers to
 	// empty their multicast socket buffers
-	usleep(50000);
+	//usleep(50000);
 
 	// Send a notification to all receivers to start retransmission
 	msg.event_type = MEMORY_TRANSFER_FINISH;
