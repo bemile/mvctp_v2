@@ -40,7 +40,7 @@ void MVCTPSender::SendAllStatistics() {
 
 void MVCTPSender::SendSessionStatistics() {
 	char buf[512];
-	double send_rate = send_stats.session_sent_bytes / 1000.0 / 1000.0 * 8 / send_stats.session_total_time;
+	double send_rate = send_stats.session_sent_bytes / 1000.0 / 1000.0 * 8 / send_stats.session_total_time * SEND_RATE_RATIO;
 	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
 			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
 			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n", send_stats.session_sent_packets, send_stats.session_retrans_packets,

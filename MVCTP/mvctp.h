@@ -167,6 +167,7 @@ static const int INIT_RTT	= 50;		// in milliseconds
 
 
 // parameters for data transfer
+static const double SEND_RATE_RATIO = (MVCTP_PACKET_LEN + 8 + ETH_HLEN) * 1.0 / MVCTP_DATA_LEN;
 static const int MAX_NUM_RECEIVERS = 200;
 static const int MAX_MAPPED_MEM_SIZE = 4096 * MVCTP_DATA_LEN;
 
