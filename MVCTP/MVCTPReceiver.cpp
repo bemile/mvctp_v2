@@ -375,7 +375,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				uint32_t pos = offset - file_start_pos;
 				if (pos >= mapped_size) {
-					DoAsynchronousWrite(fd, offset, data_buffer, mapped_size);
+					DoAsynchronousWrite(fd, file_start_pos, data_buffer, mapped_size);
 					munmap(file_buffer, mapped_size);
 
 					file_start_pos += mapped_size;
