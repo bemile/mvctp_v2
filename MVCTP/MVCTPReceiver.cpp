@@ -488,7 +488,7 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 	  my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
 	  my_aiocb.aio_sigevent.sigev_value.sival_ptr = &my_aiocb;
 
-	  int ret = aio_write( &my_aiocb );
+	  aio_write( &my_aiocb );
 }
 
 
@@ -497,8 +497,10 @@ void HandleAsyncWriteCompletion(sigval_t sigval) {
 	/* Did the request complete? */
 	if (aio_error( req ) == 0) {
 		/* Request completed successfully, get the return status */
-		int ret = aio_return( req );
-
+		size_t ret = aio_return( req );
+		if (ret != req->aio_nbytes) {
+			cout << "Incomplete AIO write." << endl;
+		}
 		// Free the memory buffer
 		free((char*)req->aio_buf);
 	}
