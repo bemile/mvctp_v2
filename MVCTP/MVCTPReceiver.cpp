@@ -186,6 +186,7 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 			switch (t_msg.event_type) {
 			case MEMORY_TRANSFER_FINISH: {
 				cout << "MEMORY_TRANSFER_FINISH signal received." << endl;
+				usleep(50000);
 				while ((recv_bytes = ptr_multicast_comm->RecvData(
 						packet_buffer, MVCTP_PACKET_LEN, MSG_DONTWAIT,
 						NULL, NULL)) > 0) {
