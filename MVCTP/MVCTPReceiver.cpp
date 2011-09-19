@@ -482,12 +482,10 @@ struct aio_info {
 
 
 void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length) {
-	cout << "New Async Write. Offset: " << offset << "    Length: " << length << endl;
 	struct aiocb * my_aiocb = (struct aiocb *)malloc(sizeof(aiocb));
 	struct aio_info* info = (struct aio_info*)malloc(sizeof(aio_info));
 	info->ptr_aiocb = my_aiocb;
 	info->data_buffer = data_buffer;
-	cout << "aio_info pointer: " << info << "   fd: " << fd << endl;
 
 	/* Set up the AIO request */
 	bzero(my_aiocb, sizeof(struct aiocb));
@@ -510,7 +508,7 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 
 void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 	struct aio_info *info = (struct aio_info *)sigval.sival_ptr;
-	cout << "Async write completed. aio_info pointer: " << info << endl;
+	cout << "Async write completed. Offset: " << info->ptr_aiocb->aio_offset << "    Length: " << info->ptr_aiocb->aio_nbytes << endl;
 
 
 	int errno;
