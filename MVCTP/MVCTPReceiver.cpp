@@ -325,7 +325,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 		SysError("MVCTPReceiver::ReceiveFile()::write() error");
 	}
 	close(fd);
-	fd = open(transfer_msg.text, O_RDWR | O_DIRECT);
+	fd = open(transfer_msg.text, O_DIRECT);
 
 
 	// Initialize the memory mapped file buffer
