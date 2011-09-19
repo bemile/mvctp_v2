@@ -168,6 +168,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	cur_session_id++;
 
 	SendSessionStatistics();
+	cout << "Statistics sent." << endl;
 }
 
 
