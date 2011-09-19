@@ -174,7 +174,7 @@ int SenderStatusProxy::GenerateDataFile(string file_name, int bytes) {
 	}
 
 	int remained_size = bytes;
-	ofstream myfile(file_name.c_str(), ios::out);
+	ofstream myfile(file_name.c_str(), ios::out | ios::trunc);
 	if (myfile.is_open()) {
 		while (remained_size > 0) {
 			int len = remained_size < buf_size ? remained_size : buf_size;
