@@ -303,10 +303,11 @@ void MVCTPReceiver::SendNackMessages(const list<MvctpNackMessage>& nack_list) {
 // Receive a file from the sender
 void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
-	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
+	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096 * 16;
 
 	char str[500];
-	sprintf(str, "Started disk-to-disk file transfer. Size: %d", transfer_msg.data_len);
+	sprintf(str, "Started disk-to-disk file transfer. Size: %d",
+			transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
 	ResetSessionStatistics();
@@ -324,27 +325,22 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	if (write(fd, "", 1) != 1) {
 		SysError("MVCTPReceiver::ReceiveFile()::write() error");
 	}
-	//close(fd);
-	//fd = open(transfer_msg.text, O_RDWR | O_DIRECT);
-
 
 	// Initialize the memory mapped file buffer
 	off_t file_start_pos = 0;
-	size_t mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
-						(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
+	size_t mapped_size = (transfer_msg.data_len - file_start_pos)
+			< MAPPED_BUFFER_SIZE ? (transfer_msg.data_len - file_start_pos)
+			: MAPPED_BUFFER_SIZE;
 	char* file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
-									MAP_FILE | MAP_SHARED, fd, file_start_pos);
+			MAP_FILE | MAP_SHARED, fd, file_start_pos);
 	if (file_buffer == MAP_FAILED) {
 		SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 	}
-	//char* data_buffer = (char*) malloc(mapped_size);
-
 
 	list<MvctpNackMessage> nack_list;
 	char packet_buffer[MVCTP_PACKET_LEN];
-	MvctpHeader* header = (MvctpHeader*)packet_buffer;
+	MvctpHeader* header = (MvctpHeader*) packet_buffer;
 	char* packet_data = packet_buffer + MVCTP_HLEN;
-
 
 	int recv_bytes;
 	uint32_t offset = 0;
@@ -357,7 +353,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 		if (FD_ISSET(multicast_sock, &read_set)) {
 			recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
-										MVCTP_PACKET_LEN, 0, NULL, NULL);
+					MVCTP_PACKET_LEN, 0, NULL, NULL);
 			if (recv_bytes < 0) {
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
@@ -377,18 +373,18 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				uint32_t pos = offset - file_start_pos;
 				if (pos >= mapped_size) {
-					//DoAsynchronousWrite(fd, file_start_pos, data_buffer, mapped_size);
 					munmap(file_buffer, mapped_size);
 
 					file_start_pos += mapped_size;
-					mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
-											(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
-					file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
-												MAP_FILE | MAP_SHARED, fd, file_start_pos);
+					mapped_size = (transfer_msg.data_len - file_start_pos)
+							< MAPPED_BUFFER_SIZE ? (transfer_msg.data_len
+							- file_start_pos) : MAPPED_BUFFER_SIZE;
+					file_buffer = (char*) mmap(0, mapped_size,
+							PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, fd,
+							file_start_pos);
 					if (file_buffer == MAP_FAILED) {
 						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 					}
-					//data_buffer = (char*) malloc(mapped_size);
 
 					pos = offset - file_start_pos;
 				}
@@ -404,8 +400,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 			}
 
 			continue;
-		}
-		else if (FD_ISSET(retrans_tcp_sock, &read_set)) {
+		} else if (FD_ISSET(retrans_tcp_sock, &read_set)) {
 			struct MvctpTransferMessage msg;
 			if (recv(retrans_tcp_sock, &msg, sizeof(msg), 0) < 0) {
 				SysError("MVCTPReceiver::ReceiveFile()::recv() error");
@@ -413,11 +408,11 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 			switch (msg.event_type) {
 			case FILE_TRANSFER_FINISH:
-				//DoAsynchronousWrite(fd, file_start_pos, data_buffer, mapped_size);
 				munmap(file_buffer, mapped_size);
 
 				if (transfer_msg.data_len > offset) {
-					HandleMissingPackets(nack_list, offset, transfer_msg.data_len);
+					HandleMissingPackets(nack_list, offset,
+							transfer_msg.data_len);
 				}
 
 				// Record memory data multicast time
@@ -428,9 +423,12 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				// Record total transfer and retransmission time
 				recv_stats.session_total_time = GetElapsedSeconds(cpu_counter);
-				recv_stats.session_retrans_time = recv_stats.session_total_time - recv_stats.session_trans_time;
-				recv_stats.session_retrans_percentage = recv_stats.session_retrans_packets * 1.0 /
-								(recv_stats.session_recv_packets + recv_stats.session_retrans_packets);
+				recv_stats.session_retrans_time = recv_stats.session_total_time
+						- recv_stats.session_trans_time;
+				recv_stats.session_retrans_percentage
+						= recv_stats.session_retrans_packets * 1.0
+								/ (recv_stats.session_recv_packets
+										+ recv_stats.session_retrans_packets);
 
 				status_proxy->SendMessage(INFORMATIONAL,
 						"Memory data transfer finished.");
@@ -449,7 +447,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 void MVCTPReceiver::DoFileRetransmission(int fd, const list<MvctpNackMessage>& nack_list) {
 	char str[500];
-	sprintf(str, "Start retransmission. Total missing packets: %d", nack_list.size());
+	sprintf(str, "Start retransmission. Total missing packets: %d",
+			nack_list.size());
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
 	SendNackMessages(nack_list);
@@ -473,6 +472,7 @@ void MVCTPReceiver::DoFileRetransmission(int fd, const list<MvctpNackMessage>& n
 		recv_stats.session_retrans_bytes += header.data_len;
 	}
 }
+
 
 
 struct aio_info {
