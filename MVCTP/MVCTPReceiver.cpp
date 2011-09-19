@@ -489,7 +489,7 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 	info.data_buffer = data_buffer;
 
 	/* Set up the AIO request */
-	bzero((char *) &my_aiocb, sizeof(struct aiocb));
+	bzero(my_aiocb, sizeof(struct aiocb));
 	my_aiocb->aio_fildes = fd;
 	my_aiocb->aio_buf = data_buffer;
 	my_aiocb->aio_nbytes = length;
