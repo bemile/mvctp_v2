@@ -25,8 +25,6 @@ void Tester::StartTest() {
 
 	if (IsSender()) {
 		ptr_mvctp_sender = new MVCTPSender(send_buf_size);
-		ptr_mvctp_sender->JoinGroup(group_id, mvctp_port);
-		ptr_mvctp_sender->SetSendRate(50);
 
 		if (serv_addr.length() > 0) {
 			ptr_status_proxy = new SenderStatusProxy(serv_addr, atoi(port.c_str()), ptr_mvctp_sender);
@@ -35,6 +33,7 @@ void Tester::StartTest() {
 		}
 
 		ptr_mvctp_sender->SetStatusProxy(ptr_status_proxy);
+		ptr_mvctp_sender->JoinGroup(group_id, mvctp_port);
 		this->SendMessage(INFORMATIONAL, "I'm the sender. Just joined the multicast group.");
 
 		while (true) {
