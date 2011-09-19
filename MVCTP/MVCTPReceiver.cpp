@@ -357,7 +357,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 		if (FD_ISSET(multicast_sock, &read_set)) {
 			recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
-					MVCTP_PACKET_LEN, 0, NULL, NULL);
+										MVCTP_PACKET_LEN, 0, NULL, NULL);
 			if (recv_bytes < 0) {
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
