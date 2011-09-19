@@ -75,6 +75,7 @@ int SenderStatusProxy::HandleCommand(char* command) {
 
 
 void SenderStatusProxy::SetSendRate(int rate_mbps) {
+	double ratio = (MVCTP_PACKET_LEN + 8 + ETH_HLEN) * 1.0 / MVCTP_DATA_LEN;
 	double MBps = rate_mbps / 8.0;
 	char rate[25];
 	sprintf(rate, "%.2fMbps", MBps);
