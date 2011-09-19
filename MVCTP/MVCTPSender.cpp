@@ -157,6 +157,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	msg.event_type = MEMORY_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 	DoMemoryDataRetransmission(data);
+	cout << "Retransmission finished." << endl;
 
 	// Record total transfer and retransmission time
 	send_stats.session_total_time = GetElapsedSeconds(cpu_counter);
