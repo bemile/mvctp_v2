@@ -314,7 +314,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	uint32_t session_id = transfer_msg.session_id;
 
 	// Create the disk file
-	int fd = open(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);
+	int fd = open(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC | O_DIRECT);
 	if (fd < 0) {
 		SysError("MVCTPReceiver::ReceiveFile()::creat() error");
 	}
@@ -499,9 +499,6 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 
 	  if (aio_write( &my_aiocb ) < 0) {
 		  perror("aio_write() error");
-	  }
-	  else {
-		  cout << "aio_write() started." << endl;
 	  }
 }
 
