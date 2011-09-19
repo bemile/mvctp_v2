@@ -80,8 +80,7 @@ void SenderStatusProxy::SetSendRate(int rate_mbps) {
 	sprintf(rate, "%.2fMbps", MBps);
 
 	char command[256];
-	sprintf(command, "sudo rate-limit.sh %s %d %s", ptr_sender->GetInterfaceName().c_str(), PORT_NUM, rate);
-	SendMessage(INFORMATIONAL, command);
+	sprintf(command, "sudo ./rate-limit.sh %s %d %s", ptr_sender->GetInterfaceName().c_str(), PORT_NUM, rate);
 	ExecSysCommand(command);
 }
 
