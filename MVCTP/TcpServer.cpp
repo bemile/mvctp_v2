@@ -103,6 +103,10 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
 		if (FD_ISSET(*it, &read_fds)) {
 			res = recv(*it, buffer, length, MSG_WAITALL);
+			if (res < 0) {
+				close(*it);
+				conn_sock_list.remove(*it);
+			}
 			*conn_sock = *it;
 			break;
 		}
