@@ -40,6 +40,10 @@ MVCTPComm::~MVCTPComm() {
 }
 
 
+string MVCTPComm::GetInterfaceName() {
+	return if_name;
+}
+
 // Not IGMP join
 // Local register of multicast address
 int MVCTPComm::JoinGroup(string addr, ushort port) {

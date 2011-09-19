@@ -33,7 +33,7 @@ int SenderStatusProxy::HandleCommand(char* command) {
 	else if (parts.front().compare("SetRate") == 0) {
 		if (parts.size() == 2) {
 			int rate = atoi(parts.back().c_str());
-			ptr_sender->SetSendRate(rate);
+			SetSendRate(rate); //ptr_sender->SetSendRate(rate);
 			sprintf(msg, "Data sending rate has been set to %d Mbps.", rate);
 			SendMessage(COMMAND_RESPONSE, msg);
 		}
@@ -74,6 +74,16 @@ int SenderStatusProxy::HandleCommand(char* command) {
 }
 
 
+void SenderStatusProxy::SetSendRate(int rate_mbps) {
+	double MBps = rate_mbps / 8.0;
+	char rate[25];
+	sprintf(rate, "%.2fMbps", MBps);
+
+	char command[256];
+	sprintf(command, "sudo rate-limit.sh %s %d %s", ptr_sender->GetInterfaceName().c_str(), PORT_NUM, rate);
+	SendMessage(INFORMATIONAL, command);
+	ExecSysCommand(command);
+}
 
 
 //

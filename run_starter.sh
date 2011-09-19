@@ -5,6 +5,7 @@ make
 make clean
 sudo cp ./emustarter ~/$HOST/
 sudo cp ./config ~/$HOST/
+sudo cp ./rate-limit.sh ~/$HOST/
 cd ~/$HOST
 sudo ./emustarter config
 

@@ -424,7 +424,6 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				DoFileRetransmission(fd, nack_list);
 				close(fd);
-				CheckReceivedFile(transfer_msg.text, transfer_msg.data_len);
 
 				// Record total transfer and retransmission time
 				recv_stats.session_total_time = GetElapsedSeconds(cpu_counter);

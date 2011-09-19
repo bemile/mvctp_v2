@@ -19,6 +19,7 @@ public:
 	~MVCTPComm();
 
 	virtual int JoinGroup(string addr, u_short port);
+	string GetInterfaceName();
 
 protected:
 	NetInterfaceManager* if_manager;

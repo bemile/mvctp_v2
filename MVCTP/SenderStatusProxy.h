@@ -38,6 +38,7 @@ public:
 protected:
 	virtual int HandleCommand(char* command);
 	int HandleSendCommand(list<string>& slist);
+	void SetSendRate(int rate_mbps);
 
 	int TransferString(string str, bool send_out_packets);
 	int TransferMemoryData(int size);
