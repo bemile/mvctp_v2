@@ -72,6 +72,7 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 	}
 
 	for (it = bad_sock_list.begin(); it != bad_sock_list.end(); it++) {
+		close(*it);
 		conn_sock_list.remove(*it);
 	}
 	pthread_mutex_unlock(&sock_list_mutex);
@@ -79,7 +80,14 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 
 
 int TcpServer::SelectSend(int conn_sock, const void* data, size_t length) {
-	return send(conn_sock, data, length, 0);
+	int res = send(conn_sock, data, length, 0);
+	if (res < 0) {
+		pthread_mutex_lock(&sock_list_mutex);
+		close(conn_sock);
+		conn_sock_list.remove(conn_sock);
+		pthread_mutex_unlock(&sock_list_mutex);
+	}
+	return res;
 }
 
 
