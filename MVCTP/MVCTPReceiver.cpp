@@ -473,8 +473,17 @@ void MVCTPReceiver::DoFileRetransmission(int fd, const list<MvctpNackMessage>& n
 }
 
 
+struct aio_info {
+	char*	data_buffer;
+	aiocb* 	ptr_aiocb;
+};
+
 void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length) {
 	 struct aiocb my_aiocb;
+	 struct aio_info info;
+	 info.ptr_aiocb = &my_aiocb;
+	 info.data_buffer = data_buffer;
+
 	  /* Set up the AIO request */
 	  bzero( (char *)&my_aiocb, sizeof(struct aiocb) );
 	  my_aiocb.aio_fildes = fd;
@@ -486,24 +495,29 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 	  my_aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
 	  my_aiocb.aio_sigevent.sigev_notify_function = HandleAsyncWriteCompletion;
 	  my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
-	  my_aiocb.aio_sigevent.sigev_value.sival_ptr = &my_aiocb;
+	  my_aiocb.aio_sigevent.sigev_value.sival_ptr = &info;
 
 	  aio_write( &my_aiocb );
 }
 
 
 void HandleAsyncWriteCompletion(sigval_t sigval) {
-	struct aiocb *req = (struct aiocb *)sigval.sival_ptr;
-	/* Did the request complete? */
-	if (aio_error( req ) == 0) {
+	struct aio_info *info = (struct aio_info *)sigval.sival_ptr;
+
+	int errno;
+	if ( (errno = aio_error(info->ptr_aiocb)) == 0) {
 		/* Request completed successfully, get the return status */
-		size_t ret = aio_return( req );
-		if (ret != req->aio_nbytes) {
+		size_t ret = aio_return(info->ptr_aiocb);
+		if (ret != info->ptr_aiocb->aio_nbytes) {
 			cout << "Incomplete AIO write." << endl;
 		}
-		// Free the memory buffer
-		free((char*)req->aio_buf);
 	}
+	else {
+		cout << "AIO write error! Error #: " << errno << endl;
+	}
+
+	// Free the memory buffer
+	free(info->data_buffer);
 
 	return;
 }
