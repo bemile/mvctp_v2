@@ -7,8 +7,6 @@
 
 #include "MVCTPReceiver.h"
 
-void HandleAsyncWriteCompletion(sigval_t sigval);
-
 
 MVCTPReceiver::MVCTPReceiver(int buf_size) {
 	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_TCP_SEND_PORT);
@@ -508,7 +506,7 @@ void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer
 }
 
 
-void HandleAsyncWriteCompletion(sigval_t sigval) {
+void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 	struct aio_info *info = (struct aio_info *)sigval.sival_ptr;
 	cout << "AIO write completed." << endl;
 
