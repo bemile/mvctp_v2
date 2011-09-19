@@ -325,7 +325,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 		SysError("MVCTPReceiver::ReceiveFile()::write() error");
 	}
 	close(fd);
-	fd = open(transfer_msg.text, O_DIRECT);
+	fd = open(transfer_msg.text, O_RDWR | O_DIRECT);
 
 
 	// Initialize the memory mapped file buffer
@@ -482,27 +482,28 @@ struct aio_info {
 
 
 void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length) {
-	 struct aiocb my_aiocb;
-	 struct aio_info info;
-	 info.ptr_aiocb = &my_aiocb;
-	 info.data_buffer = data_buffer;
+	cout << "New Async Write. Offset: " << offset << "    Length: " << length << endl;
+	struct aiocb my_aiocb;
+	struct aio_info info;
+	info.ptr_aiocb = &my_aiocb;
+	info.data_buffer = data_buffer;
 
-	  /* Set up the AIO request */
-	  bzero( (char *)&my_aiocb, sizeof(struct aiocb) );
-	  my_aiocb.aio_fildes = fd;
-	  my_aiocb.aio_buf = data_buffer;
-	  my_aiocb.aio_nbytes = length;
-	  my_aiocb.aio_offset = offset;
+	/* Set up the AIO request */
+	bzero((char *) &my_aiocb, sizeof(struct aiocb));
+	my_aiocb.aio_fildes = fd;
+	my_aiocb.aio_buf = data_buffer;
+	my_aiocb.aio_nbytes = length;
+	my_aiocb.aio_offset = offset;
 
-	  /* Link the AIO request with a thread callback */
-	  my_aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
-	  my_aiocb.aio_sigevent.sigev_notify_function = HandleAsyncWriteCompletion;
-	  my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
-	  my_aiocb.aio_sigevent.sigev_value.sival_ptr = &info;
+	/* Link the AIO request with a thread callback */
+	my_aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
+	my_aiocb.aio_sigevent.sigev_notify_function = HandleAsyncWriteCompletion;
+	my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
+	my_aiocb.aio_sigevent.sigev_value.sival_ptr = &info;
 
-	  if (aio_write( &my_aiocb ) < 0) {
-		  perror("aio_write() error");
-	  }
+	if (aio_write(&my_aiocb) < 0) {
+		perror("aio_write() error");
+	}
 }
 
 
