@@ -79,8 +79,8 @@ void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_pack
 
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
 	while (!sock_list.empty()) {
-		retrans_tcp_server->SelectReceive(&client_sock, &retrans_msg, msg_size);
-		if (retrans_msg.num_requests == 0) {
+		int bytes = retrans_tcp_server->SelectReceive(&client_sock, &retrans_msg, msg_size);
+		if (retrans_msg.num_requests == 0 || bytes < 0) {
 			sock_list.remove(client_sock);
 			continue;
 		}
