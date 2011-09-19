@@ -8,9 +8,11 @@
 #ifndef MVCTP_H_
 #define MVCTP_H_
 
+#include <aio.h>
 #include <ctime>
 #include <cstdio>
 #include <cstdlib>
+#include <errno.h>
 #include <fcntl.h>
 #include <iostream>
 #include <list>

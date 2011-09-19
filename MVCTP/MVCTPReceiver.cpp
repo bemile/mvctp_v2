@@ -7,6 +7,9 @@
 
 #include "MVCTPReceiver.h"
 
+void HandleAsyncWriteCompletion(sigval_t sigval);
+
+
 MVCTPReceiver::MVCTPReceiver(int buf_size) {
 	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_TCP_SEND_PORT);
 	retrans_tcp_client->Connect();
@@ -333,6 +336,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	if (file_buffer == MAP_FAILED) {
 		SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 	}
+	char* data_buffer = (char*) malloc(mapped_size);
 
 	list<MvctpNackMessage> nack_list;
 	char packet_buffer[MVCTP_PACKET_LEN];
@@ -371,6 +375,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				uint32_t pos = offset - file_start_pos;
 				if (pos >= mapped_size) {
+					DoAsynchronousWrite(fd, offset, data_buffer, mapped_size);
 					munmap(file_buffer, mapped_size);
 
 					file_start_pos += mapped_size;
@@ -381,11 +386,12 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 					if (file_buffer == MAP_FAILED) {
 						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 					}
+					data_buffer = (char*) malloc(mapped_size);
 
 					pos = offset - file_start_pos;
 				}
 
-				memcpy(file_buffer + pos, packet_data, header->data_len);
+				memcpy(data_buffer + pos, packet_data, header->data_len);
 				offset = header->seq_number + header->data_len;
 
 				// Update statistics
@@ -405,6 +411,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 			switch (msg.event_type) {
 			case FILE_TRANSFER_FINISH:
+				DoAsynchronousWrite(fd, offset, data_buffer, mapped_size);
 				munmap(file_buffer, mapped_size);
 
 				if (transfer_msg.data_len > offset) {
@@ -463,6 +470,40 @@ void MVCTPReceiver::DoFileRetransmission(int fd, const list<MvctpNackMessage>& n
 		recv_stats.session_retrans_packets++;
 		recv_stats.session_retrans_bytes += header.data_len;
 	}
+}
+
+
+void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length) {
+	 struct aiocb my_aiocb;
+	  /* Set up the AIO request */
+	  bzero( (char *)&my_aiocb, sizeof(struct aiocb) );
+	  my_aiocb.aio_fildes = fd;
+	  my_aiocb.aio_buf = data_buffer;
+	  my_aiocb.aio_nbytes = length;
+	  my_aiocb.aio_offset = offset;
+
+	  /* Link the AIO request with a thread callback */
+	  my_aiocb.aio_sigevent.sigev_notify = SIGEV_THREAD;
+	  my_aiocb.aio_sigevent.sigev_notify_function = HandleAsyncWriteCompletion;
+	  my_aiocb.aio_sigevent.sigev_notify_attributes = NULL;
+	  my_aiocb.aio_sigevent.sigev_value.sival_ptr = &my_aiocb;
+
+	  int ret = aio_write( &my_aiocb );
+}
+
+
+void HandleAsyncWriteCompletion(sigval_t sigval) {
+	struct aiocb *req = (struct aiocb *)sigval.sival_ptr;
+	/* Did the request complete? */
+	if (aio_error( req ) == 0) {
+		/* Request completed successfully, get the return status */
+		int ret = aio_return( req );
+
+		// Free the memory buffer
+		free((char*)req->aio_buf);
+	}
+
+	return;
 }
 
 
