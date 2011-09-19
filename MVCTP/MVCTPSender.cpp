@@ -80,8 +80,9 @@ void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_pack
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
 	while (!sock_list.empty()) {
 		int bytes = retrans_tcp_server->SelectReceive(&client_sock, &retrans_msg, msg_size);
+		if (bytes < 0)
+			cout << "Bad socket: " << client_sock << endl;
 		if (retrans_msg.num_requests == 0 || bytes < 0) {
-			cout << "One socket deleted: " << client_sock << endl;
 			sock_list.remove(client_sock);
 			continue;
 		}
