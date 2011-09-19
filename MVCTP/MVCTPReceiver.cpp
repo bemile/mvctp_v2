@@ -484,6 +484,7 @@ struct aio_info {
 void MVCTPReceiver::DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length) {
 	cout << "New Async Write. Offset: " << offset << "    Length: " << length << endl;
 	struct aiocb my_aiocb;
+	bzero(&my_aiocb, sizeof(my_aiocb));
 	struct aio_info info;
 	info.ptr_aiocb = &my_aiocb;
 	info.data_buffer = data_buffer;
