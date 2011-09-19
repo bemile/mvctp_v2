@@ -67,6 +67,7 @@ private:
 
 	void 	DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length);
 	static void HandleAsyncWriteCompletion(sigval_t sigval);
+	void	CheckReceivedFile(const char* file_name, size_t length);
 	void	SendNackMessages(const list<MvctpNackMessage>& nack_list);
 	void 	HandleMissingPackets(list<MvctpNackMessage>& nack_list, int current_offset, int received_seq);
 };

@@ -424,6 +424,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				DoFileRetransmission(fd, nack_list);
 				close(fd);
+				CheckReceivedFile(transfer_msg.text, transfer_msg.data_len);
 
 				// Record total transfer and retransmission time
 				recv_stats.session_total_time = GetElapsedSeconds(cpu_counter);
@@ -477,6 +478,23 @@ void MVCTPReceiver::DoFileRetransmission(int fd, const list<MvctpNackMessage>& n
 	}
 }
 
+
+void MVCTPReceiver::CheckReceivedFile(const char* file_name, size_t length) {
+	int fd = open(file_name, O_RDWR);
+	char buffer[256];
+	int read_bytes;
+	while ( (read_bytes = read(fd, buffer, 256) > 0)) {
+		for (int i = 0; i < read_bytes; i++) {
+			if (buffer[i] != i) {
+				status_proxy->SendMessage(INFORMATIONAL, "Invalid received file!");
+				close(fd);
+				return;
+			}
+		}
+	}
+	close(fd);
+	status_proxy->SendMessage(INFORMATIONAL, "Received file is valid!");
+}
 
 
 struct aio_info {

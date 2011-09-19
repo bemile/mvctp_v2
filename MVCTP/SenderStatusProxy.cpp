@@ -167,9 +167,11 @@ int SenderStatusProxy::TransferString(string str, bool send_out_packets) {
 
 // Generate a local data file for disk-to-disk transfer experiments
 int SenderStatusProxy::GenerateDataFile(string file_name, int bytes) {
-	int buf_size = 4096;
+	int buf_size = 256;
 	char buffer[buf_size];
-	memset(buffer, 'a', buf_size);
+	for (int i = 0; i < buf_size; i++) {
+		buffer[i] = i;
+	}
 
 	int remained_size = bytes;
 	ofstream myfile(file_name.c_str(), ios::out);
