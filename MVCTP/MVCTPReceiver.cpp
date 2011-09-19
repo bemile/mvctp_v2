@@ -10,7 +10,6 @@
 
 MVCTPReceiver::MVCTPReceiver(int buf_size) {
 	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_TCP_SEND_PORT);
-	retrans_tcp_client->Connect();
 
 	multicast_sock = ptr_multicast_comm->GetSocket();
 	retrans_tcp_sock = retrans_tcp_client->GetSocket();
@@ -71,6 +70,7 @@ void MVCTPReceiver::ResetSessionStatistics() {
 
 int MVCTPReceiver::JoinGroup(string addr, ushort port) {
 	MVCTPComm::JoinGroup(group_id, port);
+	retrans_tcp_client->Connect();
 	return 1;
 }
 

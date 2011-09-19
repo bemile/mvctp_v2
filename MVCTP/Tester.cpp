@@ -48,7 +48,6 @@ void Tester::StartTest() {
 //		sched_setscheduler(0, SCHED_RR, &sp);
 
 		ptr_mvctp_receiver = new MVCTPReceiver(recv_buf_size);
-		ptr_mvctp_receiver->JoinGroup(group_id, mvctp_port);
 
 		if (serv_addr.length() > 0) {
 			ptr_status_proxy = new ReceiverStatusProxy(serv_addr, atoi(port.c_str()), ptr_mvctp_receiver);
@@ -59,6 +58,7 @@ void Tester::StartTest() {
 		ptr_mvctp_receiver->SetStatusProxy(ptr_status_proxy);
 		this->SendMessage(INFORMATIONAL, "I'm a receiver. Just joined the multicast group.");
 
+		ptr_mvctp_receiver->JoinGroup(group_id, mvctp_port);
 		ptr_mvctp_receiver->Start();
 	}
 }
