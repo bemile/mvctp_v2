@@ -53,6 +53,11 @@ void MVCTPReceiver::SendSessionStatistics() {
 			recv_stats.session_retrans_percentage, recv_stats.session_total_time, recv_stats.session_trans_time,
 			recv_stats.session_retrans_time, send_rate);
 	status_proxy->SendMessage(INFORMATIONAL, buf);
+
+	sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n", recv_stats.session_total_time, recv_stats.session_trans_time,
+			recv_stats.session_retrans_time, send_rate, recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
+			recv_stats.session_retrans_percentage);
+	status_proxy->SendMessage(EXP_RESULT_REPORT, buf);
 }
 
 // Clear session related statistics
@@ -116,7 +121,7 @@ void MVCTPReceiver::Start() {
 void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg, char* mem_data) {
 	ResetSessionStatistics();
 
-	char str[500];
+	char str[256];
 	sprintf(str, "Started new memory data transfer. Size: %d", transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
@@ -242,10 +247,6 @@ void MVCTPReceiver::HandleMissingPackets(list<MvctpNackMessage>& nack_list, int 
 
 //
 void MVCTPReceiver::DoMemoryDataRetransmission(char* mem_data, const list<MvctpNackMessage>& nack_list) {
-	char str[500];
-	sprintf(str, "Start retransmission. Total missing packets: %d", nack_list.size());
-	status_proxy->SendMessage(INFORMATIONAL, str);
-
 	SendNackMessages(nack_list);
 
 	// Receive packets from the sender
@@ -305,7 +306,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
-	char str[500];
+	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer. Size: %d",
 			transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
@@ -362,7 +363,6 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 			if (header->session_id != session_id) {
 				continue;
 			}
-			//cout << "One packet received. Seq No.: " << header->seq_number << "    Length: " << header->data_len << endl;
 
 			// Add the received packet to the buffer
 			// When greater than packet_loss_rate, add the packet to the receive buffer
@@ -429,13 +429,10 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 				recv_stats.session_total_time = GetElapsedSeconds(cpu_counter);
 				recv_stats.session_retrans_time = recv_stats.session_total_time
 						- recv_stats.session_trans_time;
-				recv_stats.session_retrans_percentage
-						= recv_stats.session_retrans_packets * 1.0
-								/ (recv_stats.session_recv_packets
-										+ recv_stats.session_retrans_packets);
+				recv_stats.session_retrans_percentage = recv_stats.session_retrans_packets * 1.0
+								/ (recv_stats.session_recv_packets + recv_stats.session_retrans_packets);
 
-				status_proxy->SendMessage(INFORMATIONAL,
-						"Memory data transfer finished.");
+				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
 
 				// Transfer finished, so return directly
@@ -450,11 +447,6 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 
 void MVCTPReceiver::DoFileRetransmission(int fd, const list<MvctpNackMessage>& nack_list) {
-	char str[500];
-	sprintf(str, "Start retransmission. Total missing packets: %d",
-			nack_list.size());
-	status_proxy->SendMessage(INFORMATIONAL, str);
-
 	SendNackMessages(nack_list);
 
 	// Receive packets from the sender
