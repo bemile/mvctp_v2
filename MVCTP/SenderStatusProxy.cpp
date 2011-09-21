@@ -147,7 +147,7 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 // Transfer memory-to-memory data to all receivers
 // size: the size of data to transfer (in megabytes)
 int SenderStatusProxy::TransferMemoryData(int size) {
-	SendMessage(COMMAND_RESPONSE, "Transferring memory data...");
+	SendMessage(INFORMATIONAL, "Transferring memory data...");
 
 	char* buffer = (char*)malloc(size);
 	ptr_sender->SendMemoryData(buffer, size);
@@ -160,7 +160,7 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 
 // Transfer a disk file to all receivers
 void SenderStatusProxy::TransferFile(string file_name) {
-	SendMessage(COMMAND_RESPONSE, "Transferring file...");
+	SendMessage(INFORMATIONAL, "Transferring file...");
 	ptr_sender->SendFile(file_name.c_str());
 	SendMessage(COMMAND_RESPONSE, "File transfer completed.");
 }
