@@ -228,7 +228,7 @@ int SenderStatusProxy::TcpTransferMemoryData(int size) {
 	SendMessage(INFORMATIONAL, "Transferring memory data...");
 
 	char* buffer = (char*)malloc(size);
-	ptr_sender->SendMemoryData(buffer, size);
+	ptr_sender->TcpSendMemoryData(buffer, size);
 	free(buffer);
 
 	SendMessage(COMMAND_RESPONSE, "Memory data transfer completed.");
@@ -238,7 +238,7 @@ int SenderStatusProxy::TcpTransferMemoryData(int size) {
 
 void SenderStatusProxy::TcpTransferFile(string file_name) {
 	SendMessage(INFORMATIONAL, "Transferring file...");
-	ptr_sender->SendFile(file_name.c_str());
+	ptr_sender->TcpSendFile(file_name.c_str());
 	SendMessage(COMMAND_RESPONSE, "File transfer completed.");
 }
 

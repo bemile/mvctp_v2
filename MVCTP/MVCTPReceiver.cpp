@@ -567,7 +567,7 @@ void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 // ============ Functions related to TCP data transfer =============
 void MVCTPReceiver::TcpReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data) {
 	char str[256];
-	sprintf(str, "Started memory-to-memory transfer. Size: %d", msg.data_len);
+	sprintf(str, "Started memory-to-memory transfer using TCP. Size: %d", msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
@@ -588,7 +588,7 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	static const int RECV_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
 	char str[256];
-	sprintf(str, "Started disk-to-disk file transfer. Size: %d",
+	sprintf(str, "Started disk-to-disk file transfer using TCP. Size: %d",
 			transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
