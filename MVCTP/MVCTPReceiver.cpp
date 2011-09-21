@@ -425,6 +425,9 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				DoFileRetransmission(fd, nack_list);
 				close(fd);
+				// TODO: Delte the file only for experiment pupose.
+				//       Shoule comment out this in practical environments.
+				unlink(transfer_msg.text);
 
 				// Record total transfer and retransmission time
 				recv_stats.session_total_time = GetElapsedSeconds(cpu_counter);
