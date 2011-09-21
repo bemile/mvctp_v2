@@ -613,6 +613,7 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	}
 	close(fd);
 	free(buffer);
+	unlink(transfer_msg.text);
 
 	// Record memory data multicast time
 	double trans_time = GetElapsedSeconds(cpu_counter);
