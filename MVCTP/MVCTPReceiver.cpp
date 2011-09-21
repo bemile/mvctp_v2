@@ -105,6 +105,15 @@ void MVCTPReceiver::Start() {
 			case FILE_TRANSFER_START:
 				ReceiveFile(msg);
 				break;
+			case TCP_MEMORY_TRANSFER_START: {
+				char* buf = (char*) malloc(msg.data_len);
+				TcpReceiveMemoryData(msg, buf);
+				free(buf);
+				break;
+			}
+			case TCP_FILE_TRANSFER_START:
+				TcpReceiveFile(msg);
+				break;
 			default:
 				break;
 			}
@@ -550,6 +559,68 @@ void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 	free(info->ptr_aiocb);
 	free(info);
 	return;
+}
+
+
+
+
+// ============ Functions related to TCP data transfer =============
+void MVCTPReceiver::TcpReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data) {
+	char str[256];
+	sprintf(str, "Started memory-to-memory transfer. Size: %d", msg.data_len);
+	status_proxy->SendMessage(INFORMATIONAL, str);
+
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+
+	retrans_tcp_client->Receive(mem_data, msg.data_len);
+
+	// Record memory data multicast time
+	double trans_time = GetElapsedSeconds(cpu_counter);
+	double send_rate = msg.data_len / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
+
+	sprintf(str, "***** TCP Receive Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
+	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
+}
+
+
+void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
+	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
+	static const int RECV_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
+
+	char str[256];
+	sprintf(str, "Started disk-to-disk file transfer. Size: %d",
+			transfer_msg.data_len);
+	status_proxy->SendMessage(INFORMATIONAL, str);
+
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+	uint32_t session_id = transfer_msg.session_id;
+
+	// Create the disk file
+	char* buffer = (char*)malloc(RECV_BUFFER_SIZE);
+	int fd = open(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);
+	if (fd < 0) {
+		SysError("MVCTPReceiver::ReceiveFile()::creat() error");
+	}
+
+	size_t remained_size = transfer_msg.data_len;
+	while (remained_size > 0) {
+		int map_size = remained_size < RECV_BUFFER_SIZE ? remained_size
+				: RECV_BUFFER_SIZE;
+		retrans_tcp_client->Receive(buffer, map_size);
+		write(fd, buffer, map_size);
+
+		remained_size -= map_size;
+	}
+	close(fd);
+	free(buffer);
+
+	// Record memory data multicast time
+	double trans_time = GetElapsedSeconds(cpu_counter);
+	double send_rate = transfer_msg.data_len / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
+
+	sprintf(str, "***** TCP Receive Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
+	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
+
 }
 
 

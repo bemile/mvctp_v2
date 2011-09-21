@@ -37,13 +37,16 @@ public:
 
 protected:
 	virtual int HandleCommand(char* command);
-	int HandleSendCommand(list<string>& slist);
-	void SetSendRate(int rate_mbps);
+	int 	HandleSendCommand(list<string>& slist);
+	int 	HandleTcpSendCommand(list<string>& slist);
+	void 	SetSendRate(int rate_mbps);
 
-	int TransferString(string str, bool send_out_packets);
-	int TransferMemoryData(int size);
-	void TransferFile(string file_name);
-	void SendMemoryData(void* buffer, size_t length);
+	int 	TransferString(string str, bool send_out_packets);
+	int 	TransferMemoryData(int size);
+	void 	TransferFile(string file_name);
+	int 	TcpTransferMemoryData(int size);
+	void 	TcpTransferFile(string file_name);
+	void 	SendMemoryData(void* buffer, size_t length);
 
 private:
 	MVCTPSender* ptr_sender;

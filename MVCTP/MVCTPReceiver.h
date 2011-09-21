@@ -70,6 +70,10 @@ private:
 	void	CheckReceivedFile(const char* file_name, size_t length);
 	void	SendNackMessages(const list<MvctpNackMessage>& nack_list);
 	void 	HandleMissingPackets(list<MvctpNackMessage>& nack_list, int current_offset, int received_seq);
+
+	// Functions related to TCP data transfer
+	void 	TcpReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);
+	void 	TcpReceiveFile(const MvctpTransferMessage & transfer_msg);
 };
 
 #endif /* MVCTPRECEIVER_H_ */

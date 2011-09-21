@@ -30,6 +30,10 @@ int SenderStatusProxy::HandleCommand(char* command) {
 		parts.erase(parts.begin());
 		HandleSendCommand(parts);
 	}
+	else if (parts.front().compare("TcpSend") == 0) {
+			parts.erase(parts.begin());
+			HandleTcpSendCommand(parts);
+	}
 	else if (parts.front().compare("SetRate") == 0) {
 		if (parts.size() == 2) {
 			int rate = atoi(parts.back().c_str());
@@ -172,6 +176,72 @@ int SenderStatusProxy::TransferString(string str, bool send_out_packets) {
 	SendMessage(COMMAND_RESPONSE, "Specified string successfully sent.");
 	return 1;
 }
+
+
+// Send data using TCP connections (for performance comparison)
+int SenderStatusProxy::HandleTcpSendCommand(list<string>& slist) {
+	bool memory_transfer = false;
+	bool file_transfer = false;
+	bool send_out_packets = true;
+
+	int mem_transfer_size = 0;
+	string file_name;
+
+	string arg = "";
+	list<string>::iterator it;
+	for (it = slist.begin(); it != slist.end(); it++) {
+		if ((*it)[0] == '-') {
+			switch ((*it)[1]) {
+			case 'm':
+				memory_transfer = true;
+				it++;
+				mem_transfer_size = atoi((*it).c_str()); // in Megabytes
+				break;
+			case 'f':
+				file_transfer = true;
+				it++;
+				file_name = *it;
+				break;
+			case 'n':
+				send_out_packets = false;
+				break;
+			default:
+				break;
+			}
+		} else {
+			arg.append(*it);
+			arg.append(" ");
+		}
+	}
+
+	//ptr_sender->IPSend(&command[index + 1], args.length(), true);
+	if (memory_transfer) {
+		TcpTransferMemoryData(mem_transfer_size);
+	} else if (file_transfer) {
+		TcpTransferFile(file_name);
+	} else {
+	}
+}
+
+
+int SenderStatusProxy::TcpTransferMemoryData(int size) {
+	SendMessage(INFORMATIONAL, "Transferring memory data...");
+
+	char* buffer = (char*)malloc(size);
+	ptr_sender->SendMemoryData(buffer, size);
+	free(buffer);
+
+	SendMessage(COMMAND_RESPONSE, "Memory data transfer completed.");
+	return 1;
+}
+
+
+void SenderStatusProxy::TcpTransferFile(string file_name) {
+	SendMessage(INFORMATIONAL, "Transferring file...");
+	ptr_sender->SendFile(file_name.c_str());
+	SendMessage(COMMAND_RESPONSE, "File transfer completed.");
+}
+
 
 
 // Generate a local data file for disk-to-disk transfer experiments

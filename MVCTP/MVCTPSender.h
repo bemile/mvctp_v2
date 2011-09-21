@@ -56,6 +56,9 @@ public:
 	void 	SendMemoryData(void* data, size_t length);
 	// For disk-to-disk data transfer
 	void 	SendFile(const char* file_name);
+	// Send data using TCP connections, for performance comparison
+	void 	TcpSendMemoryData(void* data, size_t length);
+	void 	TcpSendFile(const char* file_name);
 
 
 private:
@@ -70,6 +73,8 @@ private:
 	void DoFileRetransmission(int fd);
 	void ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map);
 	void SortSocketsByShortestJobs(int* ptr_socks, const map<int, list<NACK_MSG> >* missing_packet_map);
+
+	void DoTcpMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
 
 
 	int send_rate_in_mbps;

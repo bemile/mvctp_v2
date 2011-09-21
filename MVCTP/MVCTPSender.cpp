@@ -398,3 +398,76 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 	delete packet_map;
 }
 
+
+
+
+//=========== Functions related to data transfer using TCP ================
+void MVCTPSender::TcpSendMemoryData(void* data, size_t length) {
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+	// Send a notification to all receivers before starting the memory transfer
+	struct MvctpTransferMessage msg;
+	msg.event_type = TCP_MEMORY_TRANSFER_START;
+	msg.session_id = cur_session_id;
+	msg.data_len = length;
+	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+
+	retrans_tcp_server->SendToAll(data, length);
+
+	// Record memory data multicast time
+	double trans_time = GetElapsedSeconds(cpu_counter);
+	double send_rate = length / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
+	char str[256];
+	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
+	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
+
+
+	cur_session_id++;
+}
+
+
+void MVCTPSender::TcpSendFile(const char* file_name) {
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+
+	struct stat file_status;
+	stat(file_name, &file_status);
+	ulong file_size = file_status.st_size;
+	ulong remained_size = file_size;
+
+	// Send a notification to all receivers before starting the memory transfer
+	struct MvctpTransferMessage msg;
+	msg.session_id = cur_session_id;
+	msg.event_type = TCP_FILE_TRANSFER_START;
+	msg.data_len = file_size;
+	strcpy(msg.text, file_name);
+	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+
+	cout << "Start file transferring..." << endl;
+	// Transfer the file using memory mapped I/O
+	int fd = open(file_name, O_RDWR);
+	char* buffer = (char* )malloc(MAX_MAPPED_MEM_SIZE);
+	off_t offset = 0;
+	while (remained_size > 0) {
+		int map_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size
+				: MAX_MAPPED_MEM_SIZE;
+		read(fd, buffer, map_size);
+
+		retrans_tcp_server->SendToAll(buffer, map_size);
+
+		offset += map_size;
+		remained_size -= map_size;
+	}
+	close(fd);
+	free(buffer);
+
+	cout << "File transfer finished. Start retransmission..." << endl;
+	// Record memory data multicast time
+	double trans_time = GetElapsedSeconds(cpu_counter);
+	double send_rate = file_size / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
+	char str[256];
+	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
+	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
+
+
+	cur_session_id++;
+}
+

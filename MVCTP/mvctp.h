@@ -171,6 +171,7 @@ static const double SEND_RATE_RATIO = (MVCTP_PACKET_LEN + 8 + ETH_HLEN) * 1.0 / 
 static const int MAX_NUM_RECEIVERS = 200;
 static const int MAX_MAPPED_MEM_SIZE = 4096 * MVCTP_DATA_LEN;
 
+// message types for MVCTP data transfer
 static const int STRING_TRANSFER_START = 1;
 static const int STRING_TRANSFER_FINISH = 2;
 static const int MEMORY_TRANSFER_START = 3;
@@ -178,6 +179,12 @@ static const int MEMORY_TRANSFER_FINISH = 4;
 static const int FILE_TRANSFER_START = 5;
 static const int FILE_TRANSFER_FINISH = 6;
 static const int DO_RETRANSMISSION = 7;
+// message types related to TCP transfer (for performance comparison)
+static const int TCP_MEMORY_TRANSFER_START = 8;
+static const int TCP_MEMORY_TRANSFER_FINISH = 9;
+static const int TCP_FILE_TRANSFER_START = 10;
+static const int TCP_FILE_TRANSFER_FINISH = 11;
+
 
 struct MvctpTransferMessage {
 	int32_t		event_type;
