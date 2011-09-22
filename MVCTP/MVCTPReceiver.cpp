@@ -57,7 +57,7 @@ void MVCTPReceiver::SendSessionStatistics() {
 			recv_stats.session_retrans_time, send_rate);
 	status_proxy->SendMessage(INFORMATIONAL, buf);
 
-	sprintf(buf, "%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n\n", total_bytes, recv_stats.session_total_time, recv_stats.session_trans_time,
+	sprintf(buf, "%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n", total_bytes, recv_stats.session_total_time, recv_stats.session_trans_time,
 			recv_stats.session_retrans_time, send_rate, recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage);
 	status_proxy->SendMessage(EXP_RESULT_REPORT, buf);
