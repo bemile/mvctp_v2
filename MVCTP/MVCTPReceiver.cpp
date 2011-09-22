@@ -47,15 +47,17 @@ void MVCTPReceiver::SendSessionStatistics() {
 	char buf[512];
 	double send_rate = (recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes)
 						/ 1000.0 / 1000.0 * 8 / recv_stats.session_total_time * SEND_RATE_RATIO;
+	size_t total_bytes = recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes;
+
 	sprintf(buf, "***** Session Statistics *****\nTotal Received Bytes: %d\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
 			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
-			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n\n", recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes,
+			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n\n", total_bytes,
 			recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage, recv_stats.session_total_time, recv_stats.session_trans_time,
 			recv_stats.session_retrans_time, send_rate);
 	status_proxy->SendMessage(INFORMATIONAL, buf);
 
-	sprintf(buf, "%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n", recv_stats.session_total_time, recv_stats.session_trans_time,
+	sprintf(buf, "%d,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n\n", total_bytes, recv_stats.session_total_time, recv_stats.session_trans_time,
 			recv_stats.session_retrans_time, send_rate, recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage);
 	status_proxy->SendMessage(EXP_RESULT_REPORT, buf);
