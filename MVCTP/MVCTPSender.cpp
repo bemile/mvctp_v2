@@ -41,9 +41,10 @@ void MVCTPSender::SendAllStatistics() {
 void MVCTPSender::SendSessionStatistics() {
 	char buf[512];
 	double send_rate = send_stats.session_sent_bytes / 1000.0 / 1000.0 * 8 / send_stats.session_total_time * SEND_RATE_RATIO;
-	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
+	sprintf(buf, "***** Session Statistics *****\nTotal Sent Bytes: %d\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
 			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
-			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n", send_stats.session_sent_packets, send_stats.session_retrans_packets,
+			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n\n", send_stats.session_sent_bytes + send_stats.session_retrans_bytes,
+			send_stats.session_sent_packets, send_stats.session_retrans_packets,
 			send_stats.session_retrans_percentage, send_stats.session_total_time, send_stats.session_trans_time,
 			send_stats.session_retrans_time, send_rate);
 	status_proxy->SendMessage(INFORMATIONAL, buf);

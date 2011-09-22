@@ -47,9 +47,10 @@ void MVCTPReceiver::SendSessionStatistics() {
 	char buf[512];
 	double send_rate = (recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes)
 						/ 1000.0 / 1000.0 * 8 / recv_stats.session_total_time * SEND_RATE_RATIO;
-	sprintf(buf, "***** Session Statistics *****\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
+	sprintf(buf, "***** Session Statistics *****\nTotal Received Bytes: %d\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
 			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
-			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps", recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
+			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n\n", recv_stats.session_sent_bytes + recv_stats.session_retrans_bytes,
+			recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage, recv_stats.session_total_time, recv_stats.session_trans_time,
 			recv_stats.session_retrans_time, send_rate);
 	status_proxy->SendMessage(INFORMATIONAL, buf);
@@ -585,7 +586,7 @@ void MVCTPReceiver::TcpReceiveMemoryData(const MvctpTransferMessage & msg, char*
 
 void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
-	static const int RECV_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
+	static const size_t RECV_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer using TCP. Size: %d",
@@ -593,7 +594,6 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
-	uint32_t session_id = transfer_msg.session_id;
 
 	// Create the disk file
 	char* buffer = (char*)malloc(RECV_BUFFER_SIZE);
@@ -604,7 +604,7 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 	size_t remained_size = transfer_msg.data_len;
 	while (remained_size > 0) {
-		int map_size = remained_size < RECV_BUFFER_SIZE ? remained_size
+		size_t map_size = remained_size < RECV_BUFFER_SIZE ? remained_size
 				: RECV_BUFFER_SIZE;
 		retrans_tcp_client->Receive(buffer, map_size);
 		write(fd, buffer, map_size);
