@@ -39,6 +39,7 @@ public:
 
 	void 	SetPacketLossRate(int rate);
 	int 	GetPacketLossRate();
+	void	SetBufferSize(size_t size);
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
 	void 	SetStatusProxy(StatusProxy* proxy);

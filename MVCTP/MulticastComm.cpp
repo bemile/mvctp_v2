@@ -12,10 +12,7 @@ MulticastComm::MulticastComm() {
 		SysError("Cannot create new socket.");
 	}
 
-	int size = 10000000;
-	if (setsockopt(sock_fd, SOL_SOCKET, SO_RCVBUFFORCE, &size, sizeof(size)) < 0) {
-		SysError("Cannot set receive buffer size for raw socket.");
-	}
+	SetBufferSize(10000000);
 }
 
 MulticastComm::~MulticastComm() {

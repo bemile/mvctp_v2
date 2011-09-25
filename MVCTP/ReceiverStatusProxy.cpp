@@ -27,15 +27,31 @@ int ReceiverStatusProxy::HandleCommand(char* command) {
 
 	char msg[512];
 	if (parts.front().compare("SetLossRate") == 0) {
-		int rate = atoi(parts.back().c_str());
-		ptr_receiver->SetPacketLossRate(rate);
-		sprintf(msg, "Packet loss rate has been set to %d per thousand.", rate);
-		SendMessage(COMMAND_RESPONSE, msg);
+		if (parts.size() == 2) {
+			int rate = atoi(parts.back().c_str());
+			ptr_receiver->SetPacketLossRate(rate);
+			sprintf(msg, "Packet loss rate has been set to %d per thousand.", rate);
+			SendMessage(COMMAND_RESPONSE, msg);
+		}
+		else {
+			SendMessage(COMMAND_RESPONSE, "Usage: SetLossRate lost_packets_per_thousand)");
+		}
 	}
 	else if (parts.front().compare("GetLossRate") == 0) {
 		int rate = ptr_receiver->GetPacketLossRate();
 		sprintf(msg, "Packet loss rate: %d per thousand.", rate);
 		SendMessage(COMMAND_RESPONSE, msg);
+	}
+	else if (parts.front().compare("SetBufferSize") == 0) {
+		if (parts.size() == 2) {
+			int buf_size = atoi(parts.back().c_str());
+			ptr_receiver->SetBufferSize(buf_size);
+			sprintf(msg, "Receive buffer size has been set to %d.", buf_size);
+			SendMessage(COMMAND_RESPONSE, msg);
+		}
+		else {
+			SendMessage(COMMAND_RESPONSE, "Usage: SetBufferSize size_in_bytes");
+		}
 	}
 	else if (parts.front().compare("CreateLogFile") == 0) {
 		if (parts.size() == 2) {

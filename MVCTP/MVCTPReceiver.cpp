@@ -39,6 +39,10 @@ int MVCTPReceiver::GetPacketLossRate() {
 	return packet_loss_rate;
 }
 
+void MVCTPReceiver::SetBufferSize(size_t size) {
+	ptr_multicast_comm->SetBufferSize(size);
+}
+
 void MVCTPReceiver::SetStatusProxy(StatusProxy* proxy) {
 	status_proxy = proxy;
 }
