@@ -10,6 +10,15 @@
 ReceiverStatusProxy::ReceiverStatusProxy(string addr, int port, MVCTPReceiver* preceiver)
 		: StatusProxy(addr, port) {
 	ptr_receiver = preceiver;
+
+	// adjust udp (for multicasting) and tcp (for retransmission) receive buffer sizes
+	system("sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\"");
+	system("sudo sysctl -w net.ipv4.tcp_rmem=\"4096 8388608 16777216\"");
+	system("sudo sysctl -w net.ipv4.tcp_wmem=\"4096 8388608 16777216\"");
+	system("sudo sysctl -w net.core.rmem_default=\"8388608\"");
+	system("sudo sysctl -w net.core.rmem_max=\"16777216\"");
+	system("sudo sysctl -w net.core.wmem_default=\"8388608\"");
+	system("sudo sysctl -w net.core.wmem_max=\"16777216\"");
 }
 
 int ReceiverStatusProxy::HandleCommand(char* command) {
