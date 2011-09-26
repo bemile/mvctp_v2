@@ -11,8 +11,6 @@ MulticastComm::MulticastComm() {
 	if ( (sock_fd = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
 		SysError("Cannot create new socket.");
 	}
-
-	SetBufferSize(10000000);
 }
 
 MulticastComm::~MulticastComm() {
