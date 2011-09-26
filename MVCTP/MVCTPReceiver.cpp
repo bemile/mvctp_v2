@@ -34,6 +34,16 @@ const struct MvctpReceiverStats MVCTPReceiver::GetBufferStats() {
 
 void MVCTPReceiver::SetPacketLossRate(int rate) {
 	packet_loss_rate = rate;
+
+	// tcp socket
+	double loss_rate = rate / 10.0;
+	char rate_str[25];
+	sprintf(rate_str, "%.2f%", loss_rate);
+
+	char command[256];
+	sprintf(command, "sudo ./loss-rate-tcp.sh %s %d %s", GetInterfaceName().c_str(),
+						BUFFER_TCP_SEND_PORT, rate_str);
+	system(command);
 }
 
 int MVCTPReceiver::GetPacketLossRate() {

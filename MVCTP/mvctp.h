@@ -144,8 +144,8 @@ const static unsigned char group_mac_addr[6] = {0x01, 0x00, 0x5e, 0x01, 0x02, 0x
 const static ushort mvctp_port = 123;
 const static ushort BUFFER_UDP_SEND_PORT = 12345;
 const static ushort BUFFER_UDP_RECV_PORT = 12346;
-const static ushort BUFFER_TCP_SEND_PORT = 12345;
-const static ushort BUFFER_TCP_RECV_PORT = 12346;
+const static ushort BUFFER_TCP_SEND_PORT = 12347;
+const static ushort BUFFER_TCP_RECV_PORT = 12348;
 const static int PORT_NUM = 11001;
 const static int BUFF_SIZE = 10000;
 
