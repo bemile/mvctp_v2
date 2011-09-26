@@ -38,7 +38,7 @@ void MVCTPReceiver::SetPacketLossRate(int rate) {
 	// tcp socket
 	double loss_rate = rate / 10.0;
 	char rate_str[25];
-	sprintf(rate_str, "%.2f%", loss_rate);
+	sprintf(rate_str, "%.2f%%", loss_rate);
 
 	char command[256];
 	sprintf(command, "sudo ./loss-rate-tcp.sh %s %d %s", GetInterfaceName().c_str(),
