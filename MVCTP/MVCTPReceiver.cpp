@@ -403,7 +403,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 				}
 
 				uint32_t pos = header->seq_number - file_start_pos;
-				while (pos >= mapped_size) {
+				if (pos >= mapped_size) {
 					memcpy(file_buffer, data_buffer, mapped_size);
 					munmap(file_buffer, mapped_size);
 
@@ -445,8 +445,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 				munmap(file_buffer, mapped_size);
 
 				if (transfer_msg.data_len > offset) {
-					HandleMissingPackets(nack_list, offset,
-							transfer_msg.data_len);
+					HandleMissingPackets(nack_list, offset, transfer_msg.data_len);
 				}
 
 				// Record memory data multicast time
