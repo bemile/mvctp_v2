@@ -177,7 +177,7 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
 
-			if (header->session_id != session_id) {
+			if (header->session_id != session_id || header->seq_number < offset) {
 				continue;
 			}
 
@@ -217,10 +217,11 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				while ((recv_bytes = ptr_multicast_comm->RecvData(
 						packet_buffer, MVCTP_PACKET_LEN, MSG_DONTWAIT,
 						NULL, NULL)) > 0) {
-					cout << "Received a new packet. Seq No.: " << header->seq_number << "    Length: "
-							<< header->data_len << endl;
-
-					if (header->seq_number > offset) {
+					//cout << "Received a new packet. Seq No.: " << header->seq_number << "    Length: "
+					//		<< header->data_len << endl;
+					if (header->seq_number < offset)
+						continue;
+					else if (header->seq_number > offset) {
 						HandleMissingPackets(nack_list, offset, header->seq_number);
 					}
 
@@ -388,7 +389,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
 
-			if (header->session_id != session_id) {
+			if (header->session_id != session_id || header->seq_number < offset) {
 				continue;
 			}
 
