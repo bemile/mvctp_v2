@@ -402,8 +402,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 					HandleMissingPackets(nack_list, offset, header->seq_number);
 				}
 
-				uint32_t pos = offset - file_start_pos;
-				if (pos >= mapped_size) {
+				uint32_t pos = header->seq_number - file_start_pos;
+				while (pos >= mapped_size) {
 					memcpy(file_buffer, data_buffer, mapped_size);
 					munmap(file_buffer, mapped_size);
 
@@ -418,7 +418,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 					}
 
-					pos = offset - file_start_pos;
+					pos = header->seq_number - file_start_pos;
 				}
 
 				memcpy(data_buffer + pos, packet_data, header->data_len);
