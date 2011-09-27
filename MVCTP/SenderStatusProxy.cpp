@@ -173,8 +173,7 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 
 // Transfer a disk file to all receivers
 void SenderStatusProxy::TransferFile(string file_name) {
-	//system("sudo sync");
-	//system("sudo sysctl -w vm.drop_caches=3");
+	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
 	SendMessage(INFORMATIONAL, "Transferring file...");
 	ptr_sender->SendFile(file_name.c_str());
