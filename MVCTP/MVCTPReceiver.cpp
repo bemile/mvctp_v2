@@ -463,6 +463,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 				// TODO: Delte the file only for experiment pupose.
 				//       Shoule comment out this in practical environments.
 				unlink(transfer_msg.text);
+				system("sudo sync");
+				system("sudo sysctl -w vm.drop_caches=3");
 
 				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
