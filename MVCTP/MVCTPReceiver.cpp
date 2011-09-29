@@ -188,6 +188,8 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				//cout << "Received a new packet. Seq No.: " << header->seq_number << "    Length: "
 				//		<< header->data_len << endl;
 				if (header->seq_number > offset) {
+					cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
+										<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
 					HandleMissingPackets(nack_list, offset, header->seq_number);
 				}
 
@@ -398,8 +400,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 			// Otherwise, just drop the packet (emulates errored packet)
 			if (rand() % 1000 >= packet_loss_rate) {
 				if (header->seq_number > offset) {
-					//cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
-					//		<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
+					cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
+							<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
 					HandleMissingPackets(nack_list, offset, header->seq_number);
 				}
 
