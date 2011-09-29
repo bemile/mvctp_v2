@@ -185,11 +185,9 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 			// When greater than packet_loss_rate, add the packet to the receive buffer
 			// Otherwise, just drop the packet (emulates errored packet)
 			if (rand() % 1000 >= packet_loss_rate) {
-				//cout << "Received a new packet. Seq No.: " << header->seq_number << "    Length: "
-				//		<< header->data_len << endl;
 				if (header->seq_number > offset) {
-					cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
-										<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
+					//cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
+					//					<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
 					HandleMissingPackets(nack_list, offset, header->seq_number);
 				}
 
@@ -400,8 +398,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 			// Otherwise, just drop the packet (emulates errored packet)
 			if (rand() % 1000 >= packet_loss_rate) {
 				if (header->seq_number > offset) {
-					cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
-							<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
+					//cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
+					//		<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
 					HandleMissingPackets(nack_list, offset, header->seq_number);
 				}
 
@@ -448,8 +446,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 				munmap(file_buffer, mapped_size);
 
 				if (transfer_msg.data_len > offset) {
-					cout << "Missing packets in the end of transfer. Final offset: " << offset << "    Transfer Size:"
-							<< transfer_msg.data_len << endl;
+					//cout << "Missing packets in the end of transfer. Final offset: " << offset << "    Transfer Size:"
+					//		<< transfer_msg.data_len << endl;
 					HandleMissingPackets(nack_list, offset, transfer_msg.data_len);
 				}
 
