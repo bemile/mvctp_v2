@@ -446,8 +446,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 				munmap(file_buffer, mapped_size);
 
 				if (transfer_msg.data_len > offset) {
-					//cout << "Missing packets in the end of transfer. Final offset: " << offset << "    Transfer Size:"
-					//		<< transfer_msg.data_len << endl;
+					cout << "Missing packets in the end of transfer. Final offset: " << offset << "    Transfer Size:"
+							<< transfer_msg.data_len << endl;
 					HandleMissingPackets(nack_list, offset, transfer_msg.data_len);
 				}
 
