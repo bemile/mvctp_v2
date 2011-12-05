@@ -1,5 +1,5 @@
 CC=g++
-CFLAGS=-lpthread -lrt
+CFLAGS=-lpthread -lrt -D_FILE_OFFSET_BITS=64
 VPATH=starter:CommUtil:MVCTP
 OBJ=EmulabStarter.o ConfigInfo.o mvctp.o Tester.o MVCTPComm.o \
 MVCTPSender.o MVCTPReceiver.o MulticastComm.o RawSocketComm.o InetComm.o \
