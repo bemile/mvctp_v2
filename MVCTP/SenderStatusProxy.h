@@ -51,7 +51,7 @@ protected:
 private:
 	MVCTPSender* ptr_sender;
 
-	int GenerateDataFile(string file_name, unsigned long bytes);
+	int GenerateDataFile(string file_name, ulong bytes);
 };
 
 

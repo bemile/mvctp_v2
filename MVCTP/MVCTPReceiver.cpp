@@ -336,7 +336,7 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
 	char str[256];
-	sprintf(str, "Started disk-to-disk file transfer. Size: %d",
+	sprintf(str, "Started disk-to-disk file transfer. Size: %u",
 			transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
