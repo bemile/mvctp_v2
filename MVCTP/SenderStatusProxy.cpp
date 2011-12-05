@@ -74,7 +74,7 @@ int SenderStatusProxy::HandleCommand(char* command) {
 			parts.pop_front();
 			string file_name = parts.front();
 			parts.pop_front();
-			int size = atoi(parts.front().c_str());
+			unsigned long size = strtoul(parts.front().c_str(), NULL, 0);
 			GenerateDataFile(file_name, size);
 			SendMessage(COMMAND_RESPONSE, "Data file generated.");
 		}
@@ -258,14 +258,14 @@ void SenderStatusProxy::TcpTransferFile(string file_name) {
 
 
 // Generate a local data file for disk-to-disk transfer experiments
-int SenderStatusProxy::GenerateDataFile(string file_name, int bytes) {
+int SenderStatusProxy::GenerateDataFile(string file_name, unsigned long bytes) {
 	int buf_size = 256;
 	char buffer[buf_size];
 	for (int i = 0; i < buf_size; i++) {
 		buffer[i] = i;
 	}
 
-	int remained_size = bytes;
+	unsigned long remained_size = bytes;
 	ofstream myfile(file_name.c_str(), ios::out | ios::trunc);
 	if (myfile.is_open()) {
 		while (remained_size > 0) {
