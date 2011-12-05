@@ -278,6 +278,9 @@ void MVCTPSender::SendFile(const char* file_name) {
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
 	int fd = open(file_name, O_RDWR);
+	if (fd < 0) {
+		SysError("MVCTPSender()::SendFile(): File open error!");
+	}
 	char* buffer;
 	off_t offset = 0;
 	while (remained_size > 0) {
