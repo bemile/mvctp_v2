@@ -64,7 +64,7 @@ void MVCTPReceiver::SendSessionStatistics() {
 						/ 1000.0 / 1000.0 * 8 / recv_stats.session_total_time * SEND_RATE_RATIO;
 	size_t total_bytes = recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes;
 
-	sprintf(buf, "***** Session Statistics *****\nTotal Received Bytes: %d\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
+	sprintf(buf, "***** Session Statistics *****\nTotal Received Bytes: %u\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
 			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
 			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n\n", total_bytes,
 			recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
