@@ -8,6 +8,11 @@
 #ifndef MVCTP_H_
 #define MVCTP_H_
 
+
+#define _LARGEFILE_SOURCE 1
+#define _LARGEFILE64_SOURCE 1
+#define _FILE_OFFSET_BITS   64
+
 #include <aio.h>
 #include <ctime>
 #include <cstdio>
@@ -42,10 +47,6 @@
 
 
 #include "ConfigInfo.h"
-
-#define _LARGEFILE_SOURCE 1
-#define _LARGEFILE64_SOURCE 1
-#define _FILE_OFFSET_BITS   64
 
 
 using namespace std;
