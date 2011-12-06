@@ -64,8 +64,8 @@ void MVCTPReceiver::SendSessionStatistics() {
 						/ 1000.0 / 1000.0 * 8 / recv_stats.session_total_time * SEND_RATE_RATIO;
 	size_t total_bytes = recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes;
 
-	sprintf(buf, "***** Session Statistics *****\nTotal Received Bytes: %u\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
-			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
+	sprintf(buf, "***** Session Statistics *****\nTotal Received Bytes: %u\nTotal Received Packets: %d\nTotal Retrans. Packets: %d\n"
+			"Retrans. Percentage: %.4f\nTotal Transfer Time: %.2f sec\nMulticast Transfer Time: %.2f sec\n"
 			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n\n", total_bytes,
 			recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage, recv_stats.session_total_time, recv_stats.session_trans_time,
@@ -398,8 +398,8 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 			// Otherwise, just drop the packet (emulates errored packet)
 			if (rand() % 1000 >= packet_loss_rate) {
 				if (header->seq_number > offset) {
-					cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
-							<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
+					//cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
+					//		<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
 					HandleMissingPackets(nack_list, offset, header->seq_number);
 				}
 
@@ -465,13 +465,12 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 								/ (recv_stats.session_recv_packets + recv_stats.session_retrans_packets);
 
 
-				// TODO: Delte the file only for experiment pupose.
+				// TODO: Delte the file only for experiment purpose.
 				//       Shoule comment out this in practical environments.
 				//unlink(transfer_msg.text);
 				char command[256];
 				sprintf(command, "sudo rm %s", transfer_msg.text);
 				system(command);
-
 
 				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
