@@ -469,7 +469,7 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 	double send_rate = file_size / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 	char str[256];
 	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
-	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
+	status_proxy->SendMessage(INFORMATIONAL, str);
 
 
 	cur_session_id++;
