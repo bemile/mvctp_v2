@@ -615,7 +615,7 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	static const size_t RECV_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
 	char str[256];
-	sprintf(str, "Started disk-to-disk file transfer using TCP. Size: %d",
+	sprintf(str, "Started disk-to-disk file transfer using TCP. Size: %u",
 			transfer_msg.data_len);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
@@ -645,10 +645,10 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	double trans_time = GetElapsedSeconds(cpu_counter);
 	double send_rate = transfer_msg.data_len / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 
-	sprintf(str, "***** TCP Receive Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
+	sprintf(str, "***** TCP Receive Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n\n", trans_time, send_rate);
 	status_proxy->SendMessage(INFORMATIONAL, str);
 
-	sprintf(str, "%u,%.2f,%.2f", transfer_msg.data_len, trans_time, send_rate);
+	sprintf(str, "%u,%.2f,%.2f\n", transfer_msg.data_len, trans_time, send_rate);
 	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
 
 }
