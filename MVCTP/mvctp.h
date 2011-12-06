@@ -195,7 +195,7 @@ struct MvctpTransferMessage {
 	int32_t		event_type;
 	uint32_t	session_id;
 	uint32_t 	data_len;
-	char       	text[30];
+	char       	text[256];
 };
 
 const int MAX_NUM_NACK_REQ = 50;

@@ -467,7 +467,10 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 
 				// TODO: Delte the file only for experiment pupose.
 				//       Shoule comment out this in practical environments.
-				unlink(transfer_msg.text);
+				//unlink(transfer_msg.text);
+				char command[256];
+				sprintf(command, "sudo rm %s", transfer_msg.text);
+				system(command);
 
 
 				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
