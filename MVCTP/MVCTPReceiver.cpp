@@ -212,7 +212,7 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 			switch (t_msg.event_type) {
 			case MEMORY_TRANSFER_FINISH: {
-				cout << "MEMORY_TRANSFER_FINISH signal received." << endl;
+				//cout << "MEMORY_TRANSFER_FINISH signal received." << endl;
 				usleep(10000);
 				while ((recv_bytes = ptr_multicast_comm->RecvData(
 						packet_buffer, MVCTP_PACKET_LEN, MSG_DONTWAIT,
@@ -646,6 +646,9 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	double send_rate = transfer_msg.data_len / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 
 	sprintf(str, "***** TCP Receive Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
+	status_proxy->SendMessage(INFORMATIONAL, str);
+
+	sprintf(str, "%u,%.2f,%.2f", transfer_msg.data_len, trans_time, send_rate);
 	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
 
 }
