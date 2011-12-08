@@ -307,6 +307,11 @@ void MVCTPSender::SendFile(const char* file_name) {
 	// empty their multicast socket buffers
 	//usleep(200000);
 
+	// TODO: remove this in real implementation
+	// For test ONLY: clear system cache before doing retransmission
+	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers to start retransmission
 	msg.event_type = FILE_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
@@ -316,8 +321,8 @@ void MVCTPSender::SendFile(const char* file_name) {
 	close(fd);
 
 	// Record total transfer and retransmission time
-	send_stats.session_total_time = GetElapsedSeconds(cpu_counter);
-	send_stats.session_retrans_time = send_stats.session_total_time - send_stats.session_trans_time;
+	send_stats.session_retrans_time = GetElapsedSeconds(cpu_counter); //send_stats.session_total_time - send_stats.session_trans_time;
+	send_stats.session_total_time = send_stats.session_total_time + send_stats.session_retrans_time; //GetElapsedSeconds(cpu_counter);
 	send_stats.session_retrans_percentage = send_stats.session_retrans_packets  * 1.0
 								/ (send_stats.session_sent_packets + send_stats.session_retrans_packets);
 	// Increase the session id for the next transfer
