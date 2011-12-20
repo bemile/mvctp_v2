@@ -63,7 +63,8 @@ private:
 	void 	ReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);
 	void 	DoMemoryDataRetransmission(char* mem_data, const list<MvctpNackMessage>& nack_list);
 	// Disk-to-disk data transfer
-	void 	ReceiveFile(const MvctpTransferMessage & transfer_msg);
+	void 	ReceiveFileBufferedIO(const MvctpTransferMessage & transfer_msg);
+	void 	ReceiveFileMemoryMappedIO(const MvctpTransferMessage & transfer_msg);
 	void 	DoFileRetransmission(int fd, const list<MvctpNackMessage>& nack_list);
 
 	void 	DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length);

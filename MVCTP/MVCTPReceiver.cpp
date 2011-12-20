@@ -36,14 +36,14 @@ void MVCTPReceiver::SetPacketLossRate(int rate) {
 	packet_loss_rate = rate;
 
 	// tcp socket
-	double loss_rate = rate / 10.0;
-	char rate_str[25];
-	sprintf(rate_str, "%.2f%%", loss_rate);
-
-	char command[256];
-	sprintf(command, "sudo ./loss-rate-tcp.sh %s %d %s", GetInterfaceName().c_str(),
-						BUFFER_TCP_SEND_PORT, rate_str);
-	system(command);
+//	double loss_rate = rate / 10.0;
+//	char rate_str[25];
+//	sprintf(rate_str, "%.2f%%", loss_rate);
+//
+//	char command[256];
+//	sprintf(command, "sudo ./loss-rate-tcp.sh %s %d %s", GetInterfaceName().c_str(),
+//						BUFFER_TCP_SEND_PORT, rate_str);
+//	system(command);
 }
 
 int MVCTPReceiver::GetPacketLossRate() {
@@ -121,7 +121,7 @@ void MVCTPReceiver::Start() {
 				break;
 			}
 			case FILE_TRANSFER_START:
-				ReceiveFile(msg);
+				ReceiveFileMemoryMappedIO(msg);
 				break;
 			case TCP_MEMORY_TRANSFER_START: {
 				char* buf = (char*) malloc(msg.data_len);
@@ -329,9 +329,122 @@ void MVCTPReceiver::SendNackMessages(const list<MvctpNackMessage>& nack_list) {
 }
 
 
+void MVCTPReceiver::ReceiveFileBufferedIO(const MvctpTransferMessage & transfer_msg) {
+	char str[256];
+	sprintf(str, "Started disk-to-disk file transfer. Size: %u",
+			transfer_msg.data_len);
+	status_proxy->SendMessage(INFORMATIONAL, str);
+
+	ResetSessionStatistics();
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+	uint32_t session_id = transfer_msg.session_id;
+
+	// Create the disk file
+	int fd = open(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);
+	if (fd < 0) {
+		SysError("MVCTPReceiver::ReceiveFile()::creat() error");
+	}
+
+	list<MvctpNackMessage> nack_list;
+	char packet_buffer[MVCTP_PACKET_LEN];
+	MvctpHeader* header = (MvctpHeader*) packet_buffer;
+	char* packet_data = packet_buffer + MVCTP_HLEN;
+
+	int recv_bytes;
+	uint32_t offset = 0;
+	fd_set read_set;
+	while (true) {
+		read_set = read_sock_set;
+		if (select(max_sock_fd + 1, &read_set, NULL, NULL, NULL) == -1) {
+			SysError("TcpServer::SelectReceive::select() error");
+		}
+
+		if (FD_ISSET(multicast_sock, &read_set)) {
+			recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
+					MVCTP_PACKET_LEN, 0, NULL, NULL);
+			if (recv_bytes < 0) {
+				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
+			}
+
+			if (header->session_id != session_id || header->seq_number < offset) {
+				continue;
+			}
+
+			// Add the received packet to the buffer
+			// When greater than packet_loss_rate, add the packet to the receive buffer
+			// Otherwise, just drop the packet (emulates errored packet)
+			if (rand() % 1000 >= packet_loss_rate) {
+				if (header->seq_number > offset) {
+					//cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
+					//		<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
+					HandleMissingPackets(nack_list, offset, header->seq_number);
+					if (lseek(fd, header->seq_number, SEEK_SET) == -1) {
+						SysError("MVCTPReceiver::ReceiveFileBufferedIO()::lseek() error");
+					}
+				}
+
+				write(fd, packet_data, header->data_len);
+				offset = header->seq_number + header->data_len;
+
+				// Update statistics
+				recv_stats.total_recv_packets++;
+				recv_stats.total_recv_bytes += header->data_len;
+				recv_stats.session_recv_packets++;
+				recv_stats.session_recv_bytes += header->data_len;
+			}
+
+			continue;
+		}
+		else if (FD_ISSET(retrans_tcp_sock, &read_set)) {
+			struct MvctpTransferMessage msg;
+			if (recv(retrans_tcp_sock, &msg, sizeof(msg), 0) < 0) {
+				SysError("MVCTPReceiver::ReceiveFileBufferedIO()::recv() error");
+			}
+
+			switch (msg.event_type) {
+			case FILE_TRANSFER_FINISH:
+				if (transfer_msg.data_len > offset) {
+					cout    << "Missing packets in the end of transfer. Final offset: "
+							<< offset << "    Transfer Size:"
+							<< transfer_msg.data_len << endl;
+					HandleMissingPackets(nack_list, offset,
+							transfer_msg.data_len);
+				}
+
+				// Record memory data multicast time
+				recv_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
+
+				DoFileRetransmission(fd, nack_list);
+				close(fd);
+
+				// Record total transfer and retransmission time
+				recv_stats.session_total_time = GetElapsedSeconds(cpu_counter);
+				recv_stats.session_retrans_time = recv_stats.session_total_time - recv_stats.session_trans_time;
+				recv_stats.session_retrans_percentage = recv_stats.session_retrans_packets * 1.0
+										/ (recv_stats.session_recv_packets + recv_stats.session_retrans_packets);
+
+				// TODO: Delete the file only for experiment purpose.
+				//       Should comment out this in practical environments.
+				//unlink(transfer_msg.text);
+				char command[256];
+				sprintf(command, "sudo rm %s", transfer_msg.text);
+				system(command);
+				system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+
+				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
+				SendSessionStatistics();
+
+				// Transfer finished, so return directly
+				return;
+			default:
+				break;
+			}
+		}
+	}
+}
 
 // Receive a file from the sender
-void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
+void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & transfer_msg) {
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
@@ -470,8 +583,9 @@ void MVCTPReceiver::ReceiveFile(const MvctpTransferMessage & transfer_msg) {
 				//unlink(transfer_msg.text);
 				char command[256];
 				sprintf(command, "sudo rm %s", transfer_msg.text);
-				system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 				system(command);
+				system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+
 
 				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
