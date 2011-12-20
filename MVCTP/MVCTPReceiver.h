@@ -71,7 +71,7 @@ private:
 	static void HandleAsyncWriteCompletion(sigval_t sigval);
 	void	CheckReceivedFile(const char* file_name, size_t length);
 	void	SendNackMessages(const list<MvctpNackMessage>& nack_list);
-	void 	HandleMissingPackets(list<MvctpNackMessage>& nack_list, int current_offset, int received_seq);
+	void 	HandleMissingPackets(list<MvctpNackMessage>& nack_list, uint current_offset, uint received_seq);
 
 	// Functions related to TCP data transfer
 	void 	TcpReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);

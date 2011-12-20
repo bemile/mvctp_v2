@@ -261,10 +261,10 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 }
 
 
-void MVCTPReceiver::HandleMissingPackets(list<MvctpNackMessage>& nack_list, int current_offset, int received_seq) {
-	int pos_start = current_offset;
+void MVCTPReceiver::HandleMissingPackets(list<MvctpNackMessage>& nack_list, uint current_offset, uint received_seq) {
+	uint pos_start = current_offset;
 	while (pos_start < received_seq) {
-		int len = (received_seq - pos_start) < MVCTP_DATA_LEN ?
+		uint len = (received_seq - pos_start) < MVCTP_DATA_LEN ?
 					(received_seq - pos_start) : MVCTP_DATA_LEN;
 		MvctpNackMessage msg;
 		msg.seq_num = pos_start;
