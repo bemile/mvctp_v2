@@ -19,6 +19,10 @@ SenderStatusProxy::SenderStatusProxy(string addr, int port, MVCTPSender* psender
 	system("sudo sysctl -w net.core.rmem_max=\"16777216\"");
 	system("sudo sysctl -w net.core.wmem_default=\"8388608\"");
 	system("sudo sysctl -w net.core.wmem_max=\"16777216\"");
+
+	char command[256];
+	sprintf(command, "sudo ifconfig %s txqueuelen 10000", ptr_sender->GetInterfaceName().c_str());
+	system(command);
 }
 
 int SenderStatusProxy::HandleCommand(char* command) {

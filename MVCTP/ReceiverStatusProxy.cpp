@@ -19,6 +19,10 @@ ReceiverStatusProxy::ReceiverStatusProxy(string addr, int port, MVCTPReceiver* p
 	system("sudo sysctl -w net.core.rmem_max=\"16777216\"");
 	system("sudo sysctl -w net.core.wmem_default=\"8388608\"");
 	system("sudo sysctl -w net.core.wmem_max=\"16777216\"");
+
+	char command[256];
+	sprintf(command, "sudo ifconfig %s txqueuelen 10000", ptr_receiver->GetInterfaceName().c_str());
+	system(command);
 }
 
 int ReceiverStatusProxy::HandleCommand(char* command) {
