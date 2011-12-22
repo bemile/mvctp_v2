@@ -53,6 +53,7 @@ private:
 	int 	multicast_sock;
 	int		retrans_tcp_sock;
 	fd_set	read_sock_set;
+	ofstream retrans_info;
 
 	int 	packet_loss_rate;
 	MvctpReceiverStats 	recv_stats;

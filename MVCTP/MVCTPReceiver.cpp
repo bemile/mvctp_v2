@@ -262,6 +262,9 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 
 void MVCTPReceiver::HandleMissingPackets(list<MvctpNackMessage>& nack_list, uint current_offset, uint received_seq) {
+	retrans_info << "Start Seq. #: " << current_offset << "    End Seq. #: " << (received_seq - 1)
+			     << "    Missing Block Size: " << (received_seq - current_offset) << endl;
+
 	uint pos_start = current_offset;
 	while (pos_start < received_seq) {
 		uint len = (received_seq - pos_start) < MVCTP_DATA_LEN ?
@@ -446,6 +449,8 @@ void MVCTPReceiver::ReceiveFileBufferedIO(const MvctpTransferMessage & transfer_
 
 // Receive a file from the sender
 void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & transfer_msg) {
+	retrans_info.open("retrans_info.txt", ofstream::out | ofstream::trunc);
+
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
@@ -582,6 +587,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				// TODO: Delte the file only for experiment purpose.
 				//       Shoule comment out this in practical environments.
 				//unlink(transfer_msg.text);
+				retrans_info.close();
 				char command[256];
 				sprintf(command, "sudo rm %s", transfer_msg.text);
 				system(command);
@@ -603,13 +609,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 
 
 void MVCTPReceiver::DoFileRetransmission(int fd, const list<MvctpNackMessage>& nack_list) {
-	ofstream retrans_info("retrans_info.txt", ofstream::trunc);
-	list<MvctpNackMessage>::const_iterator it;
-	for (it = nack_list.begin(); it != nack_list.end(); it++) {
-		retrans_info << "Seq. #: " << it->seq_num << "    Block length: " << it->data_len << endl;
-	}
-	retrans_info.close();
-
 	SendNackMessages(nack_list);
 
 	// Receive packets from the sender
