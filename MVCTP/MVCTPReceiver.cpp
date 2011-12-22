@@ -606,7 +606,7 @@ void MVCTPReceiver::DoFileRetransmission(int fd, const list<MvctpNackMessage>& n
 	ofstream retrans_info("retrans_info.txt", ofstream::trunc);
 	list<MvctpNackMessage>::const_iterator it;
 	for (it = nack_list.begin(); it != nack_list.end(); it++) {
-		retrans_info << "Seq. #: " << it->seq_num << "    Block length: " << it->data_len;
+		retrans_info << "Seq. #: " << it->seq_num << "    Block length: " << it->data_len << endl;
 	}
 	retrans_info.close();
 
