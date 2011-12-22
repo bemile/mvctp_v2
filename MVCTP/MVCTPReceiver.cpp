@@ -121,8 +121,8 @@ void MVCTPReceiver::Start() {
 				break;
 			}
 			case FILE_TRANSFER_START:
-				//ReceiveFileMemoryMappedIO(msg);
-				ReceiveFileBufferedIO(msg);
+				ReceiveFileMemoryMappedIO(msg);
+				//ReceiveFileBufferedIO(msg);
 				break;
 			case TCP_MEMORY_TRANSFER_START: {
 				char* buf = (char*) malloc(msg.data_len);
