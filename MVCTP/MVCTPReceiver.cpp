@@ -262,7 +262,7 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 
 void MVCTPReceiver::HandleMissingPackets(list<MvctpNackMessage>& nack_list, uint current_offset, uint received_seq) {
-	retrans_info << "Start Seq. #: " << current_offset << "    End Seq. #: " << (received_seq - 1)
+	retrans_info << GetElapsedSeconds(cpu_counter) << "    Start Seq. #: " << current_offset << "    End Seq. #: " << (received_seq - 1)
 			     << "    Missing Block Size: " << (received_seq - current_offset) << endl;
 
 	uint pos_start = current_offset;
