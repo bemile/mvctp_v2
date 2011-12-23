@@ -506,6 +506,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
 
+			retrans_info << GetElapsedSeconds(cpu_counter) << "    Received a new packet. Seq. #: " << header->seq_number << endl;
+
 			if (header->session_id != session_id || header->seq_number < offset) {
 				continue;
 			}
@@ -523,7 +525,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				uint32_t pos = header->seq_number - file_start_pos;
 				while (pos >= mapped_size) {
 					//memcpy(file_buffer, data_buffer, mapped_size);
-					retrans_info << GetElapsedSeconds(cpu_counter) << "    Updating memory mapped buffer..." << endl;
 					munmap(file_buffer, mapped_size);
 
 					file_start_pos += mapped_size;
@@ -536,8 +537,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 					if (file_buffer == MAP_FAILED) {
 						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 					}
-
-					retrans_info << GetElapsedSeconds(cpu_counter) << "    Memory mapped buffer updated." << endl;
 
 					pos = header->seq_number - file_start_pos;
 				}
