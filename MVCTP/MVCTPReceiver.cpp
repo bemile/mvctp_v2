@@ -523,7 +523,9 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				uint32_t pos = header->seq_number - file_start_pos;
 				while (pos >= mapped_size) {
 					//memcpy(file_buffer, data_buffer, mapped_size);
+					retrans_info << GetElapsedSeconds(cpu_counter) << "    Updating memory mapped buffer..." << endl;
 					munmap(file_buffer, mapped_size);
+					retrans_info << GetElapsedSeconds(cpu_counter) << "    Memory mapped buffer updated." << endl;
 
 					file_start_pos += mapped_size;
 					mapped_size = (transfer_msg.data_len - file_start_pos)
@@ -588,8 +590,9 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				retrans_info.close();
 				char command[256];
 				sprintf(command, "sudo rm %s", transfer_msg.text);
-				system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 				system(command);
+				system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+
 
 				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
