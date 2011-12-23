@@ -477,9 +477,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 
 	// Initialize the memory mapped file buffer
 	off_t file_start_pos = 0;
-	size_t mapped_size = (transfer_msg.data_len - file_start_pos)
-			< MAPPED_BUFFER_SIZE ? (transfer_msg.data_len - file_start_pos)
-			: MAPPED_BUFFER_SIZE;
+	size_t mapped_size = (transfer_msg.data_len - file_start_pos) < MAPPED_BUFFER_SIZE ?
+			(transfer_msg.data_len - file_start_pos) : MAPPED_BUFFER_SIZE;
 	char* file_buffer = (char*) mmap(0, mapped_size, PROT_READ | PROT_WRITE,
 			MAP_FILE | MAP_SHARED, fd, file_start_pos);
 	if (file_buffer == MAP_FAILED) {
@@ -502,8 +501,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 		}
 
 		if (FD_ISSET(multicast_sock, &read_set)) {
-			recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
-					MVCTP_PACKET_LEN, 0, NULL, NULL);
+			recv_bytes = ptr_multicast_comm->RecvData(packet_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL);
 			if (recv_bytes < 0) {
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
@@ -590,9 +588,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				retrans_info.close();
 				char command[256];
 				sprintf(command, "sudo rm %s", transfer_msg.text);
-				system(command);
 				system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
-
+				system(command);
 
 				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
