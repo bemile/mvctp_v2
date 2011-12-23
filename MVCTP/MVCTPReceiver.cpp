@@ -525,7 +525,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 					//memcpy(file_buffer, data_buffer, mapped_size);
 					retrans_info << GetElapsedSeconds(cpu_counter) << "    Updating memory mapped buffer..." << endl;
 					munmap(file_buffer, mapped_size);
-					retrans_info << GetElapsedSeconds(cpu_counter) << "    Memory mapped buffer updated." << endl;
 
 					file_start_pos += mapped_size;
 					mapped_size = (transfer_msg.data_len - file_start_pos)
@@ -537,6 +536,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 					if (file_buffer == MAP_FAILED) {
 						SysError("MVCTPReceiver::ReceiveFile()::mmap() error");
 					}
+
+					retrans_info << GetElapsedSeconds(cpu_counter) << "    Memory mapped buffer updated." << endl;
 
 					pos = header->seq_number - file_start_pos;
 				}
