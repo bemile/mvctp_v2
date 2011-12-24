@@ -309,7 +309,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	// TODO: remove this in real implementation
 	// For test ONLY: clear system cache before doing retransmission
-	//system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers to start retransmission
@@ -396,9 +396,9 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 			send_stats.session_retrans_packets++;
 			send_stats.session_retrans_bytes += header->data_len;
 		}
-
 		double read_finish_time = GetElapsedSeconds(cpu_counter);
 		cout << "Time to read all retransmission data: " << (read_finish_time - start_time) << " Seconds" << endl;
+
 
 		for (list_it = retrans_list->begin(); list_it != retrans_list->end(); list_it++) {
 			if ( (packet_map_it = packet_map->find(list_it->seq_num)) != packet_map->end()) {
