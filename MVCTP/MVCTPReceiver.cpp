@@ -506,7 +506,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
 
-			retrans_info << GetElapsedSeconds(cpu_counter) << "    Received a new packet. Seq. #: " << header->seq_number << endl;
+			// retrans_info << GetElapsedSeconds(cpu_counter) << "    Received a new packet. Seq. #: " << header->seq_number << endl;
 
 			if (header->session_id != session_id || header->seq_number < offset) {
 				continue;
