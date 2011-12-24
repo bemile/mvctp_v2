@@ -362,13 +362,14 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 		list<NACK_MSG>* retrans_list = &(*missing_packet_map)[sock];
 		cout << "Socket " << sock << " has " << retrans_list->size() << " retransmission requests." << endl;
 
+		double start_time = GetElapsedSeconds(cpu_counter);
 		list<NACK_MSG>::iterator list_it;
 		for (list_it = retrans_list->begin(); list_it != retrans_list->end(); list_it++) {
 			// First check if the packet is already in the cache
-			if ( (packet_map_it = packet_map->find(list_it->seq_num)) != packet_map->end()) {
-				retrans_tcp_server->SelectSend(sock, packet_map_it->second, MVCTP_HLEN + list_it->data_len);
-				continue;
-			}
+//			if ( (packet_map_it = packet_map->find(list_it->seq_num)) != packet_map->end()) {
+//				retrans_tcp_server->SelectSend(sock, packet_map_it->second, MVCTP_HLEN + list_it->data_len);
+//				continue;
+//			}
 
 			// If not, read the packet in from the disk file
 			if (ptr_cache->cur_pos == ptr_cache->end_pos) {
@@ -384,7 +385,7 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 			packet_data = ptr_cache->cur_pos + MVCTP_HLEN;
 			lseek(fd, list_it->seq_num, SEEK_SET);
 			read(fd, packet_data, list_it->data_len);
-			retrans_tcp_server->SelectSend(sock, ptr_cache->cur_pos, MVCTP_HLEN + list_it->data_len);
+			//retrans_tcp_server->SelectSend(sock, ptr_cache->cur_pos, MVCTP_HLEN + list_it->data_len);
 
 			(*packet_map)[list_it->seq_num] = ptr_cache->cur_pos;
 			ptr_cache->cur_pos += MVCTP_PACKET_LEN;
@@ -395,6 +396,17 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 			send_stats.session_retrans_packets++;
 			send_stats.session_retrans_bytes += header->data_len;
 		}
+
+		double read_finish_time = GetElapsedSeconds(cpu_counter);
+		cout << "Time to read all retransmission data: " << (read_finish_time - start_time) << " Seconds" << endl;
+
+		for (list_it = retrans_list->begin(); list_it != retrans_list->end(); list_it++) {
+			if ( (packet_map_it = packet_map->find(list_it->seq_num)) != packet_map->end()) {
+				retrans_tcp_server->SelectSend(sock, packet_map_it->second, MVCTP_HLEN + list_it->data_len);
+			}
+		}
+		double send_finish_time = GetElapsedSeconds(cpu_counter);
+		cout << "Time to send all retransmission data: " << (send_finish_time - read_finish_time) << " Seconds" << endl;
 	}
 
 	// Clean up
