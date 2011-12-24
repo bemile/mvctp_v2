@@ -309,7 +309,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	// TODO: remove this in real implementation
 	// For test ONLY: clear system cache before doing retransmission
-	 system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+	// system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers to start retransmission
