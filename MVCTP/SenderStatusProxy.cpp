@@ -46,7 +46,7 @@ void SenderStatusProxy::InitializeExecutionProcess() {
 	ptr_sender->SetStatusProxy(this);
 	ptr_sender->JoinGroup(mvctp_group_addr, mvctp_port_num);
 
-	ptr_sender->SendMessageLocal(INFORMATIONAL, "I'm the sender. Just joined the multicast group.");
+	SendMessageLocal(INFORMATIONAL, "I'm the sender. Just joined the multicast group.");
 
 	char command[256];
 	sprintf(command, "sudo ifconfig %s txqueuelen 10000",
