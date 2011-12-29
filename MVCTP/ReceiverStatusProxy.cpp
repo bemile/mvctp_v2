@@ -35,11 +35,6 @@ void ReceiverStatusProxy::ConfigureEnvironment() {
 	system("sudo sysctl -w net.core.rmem_max=\"36777216\""); // 16777216
 	system("sudo sysctl -w net.core.wmem_default=\"16777216\""); //8388608
 	system("sudo sysctl -w net.core.wmem_max=\"36777216\""); //
-
-	char command[256];
-	sprintf(command, "sudo ifconfig %s txqueuelen 10000",
-			ptr_receiver->GetInterfaceName().c_str());
-	system(command);
 }
 
 
@@ -51,6 +46,12 @@ void ReceiverStatusProxy::InitializeExecutionProcess() {
 	ptr_receiver = new MVCTPReceiver(buffer_size);
 	ptr_receiver->SetStatusProxy(this);
 	ptr_receiver->JoinGroup(mvctp_group_addr, mvctp_port_num);
+
+	char command[256];
+	sprintf(command, "sudo ifconfig %s txqueuelen 10000",
+	ptr_receiver->GetInterfaceName().c_str());
+	system(command);
+
 	ptr_receiver->Start();
 }
 
