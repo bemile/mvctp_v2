@@ -27,7 +27,11 @@ TcpServer::TcpServer(int port) {
 }
 
 TcpServer::~TcpServer() {
-	// TODO Auto-generated destructor stub
+	close(server_sock);
+	list<int>::iterator it;
+	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
+		close(*it);
+	}
 }
 
 

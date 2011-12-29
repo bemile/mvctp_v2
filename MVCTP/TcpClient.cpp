@@ -29,7 +29,7 @@ TcpClient::TcpClient(string serv_addr, int port) {
 }
 
 TcpClient::~TcpClient() {
-	// TODO Auto-generated destructor stub
+	close(sock_fd);
 }
 
 
@@ -37,9 +37,8 @@ int TcpClient::Connect() {
 	int res;
 	while ((res = connect(sock_fd, (sockaddr *) &server_addr,
 			sizeof(server_addr))) < 0) {
-		cout << "TcpClient::Connect()::connect() error. Retry in 5 seconds..." << endl;
-		sleep(5);
-		//return -1;
+		cout << "TcpClient::Connect()::connect() error. Retry in 10 seconds..." << endl;
+		sleep(10);
 	}
 	return res;
 }

@@ -10,7 +10,22 @@
 SenderStatusProxy::SenderStatusProxy(string addr, int port, MVCTPSender* psender)
 			: StatusProxy(addr, port) {
 	ptr_sender = psender;
+	ConfigureEnvironment();
+}
 
+
+SenderStatusProxy::SenderStatusProxy(string addr, int port, string group_addr, int mvctp_port, int buff_size)
+			: StatusProxy(addr, port) {
+	mvctp_group_addr = group_addr;
+	mvctp_port_num = mvctp_port;
+	buffer_size = buff_size;
+	ptr_sender = NULL;
+
+	ConfigureEnvironment();
+}
+
+
+void SenderStatusProxy::ConfigureEnvironment() {
 	// adjust udp (for multicasting) and tcp (for retransmission) receive buffer sizes
 	system("sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\"");
 	system("sudo sysctl -w net.ipv4.tcp_rmem=\"4096 8388608 16777216\"");
@@ -21,9 +36,21 @@ SenderStatusProxy::SenderStatusProxy(string addr, int port, MVCTPSender* psender
 	system("sudo sysctl -w net.core.wmem_max=\"16777216\"");
 
 	char command[256];
-	sprintf(command, "sudo ifconfig %s txqueuelen 10000", ptr_sender->GetInterfaceName().c_str());
+	sprintf(command, "sudo ifconfig %s txqueuelen 10000",
+			ptr_sender->GetInterfaceName().c_str());
 	system(command);
 }
+
+
+void SenderStatusProxy::InitializeExecutionProcess() {
+	if (ptr_sender != NULL)
+		delete ptr_sender;
+
+	ptr_sender = new MVCTPSender(buffer_size);
+	ptr_sender->SetStatusProxy(this);
+	ptr_sender->JoinGroup(mvctp_group_addr, mvctp_port_num);
+}
+
 
 int SenderStatusProxy::HandleCommand(char* command) {
 	string s = command;
@@ -52,24 +79,24 @@ int SenderStatusProxy::HandleCommand(char* command) {
 			int rate = atoi(parts.back().c_str());
 			SetSendRate(rate); //ptr_sender->SetSendRate(rate);
 			sprintf(msg, "Data sending rate has been set to %d Mbps.", rate);
-			SendMessage(COMMAND_RESPONSE, msg);
+			SendMessageLocal(COMMAND_RESPONSE, msg);
 		}
 	}
 	else if (parts.front().compare("CreateLogFile") == 0) {
 		if (parts.size() == 2) {
 			CreateNewLogFile(parts.back().c_str());
-			SendMessage(COMMAND_RESPONSE, "New log file created.");
+			SendMessageLocal(COMMAND_RESPONSE, "New log file created.");
 		}
 	}
 	else if (parts.front().compare("SetLogSwitch") == 0) {
 		if (parts.size() == 2) {
 			if (parts.back().compare("On") == 0) {
 				MVCTP::is_log_enabled = true;
-				SendMessage(COMMAND_RESPONSE, "Log switch set to ON.");
+				SendMessageLocal(COMMAND_RESPONSE, "Log switch set to ON.");
 			}
 			else if (parts.back().compare("Off") == 0) {
 				MVCTP::is_log_enabled = false;
-				SendMessage(COMMAND_RESPONSE, "Log switch set to OFF.");
+				SendMessageLocal(COMMAND_RESPONSE, "Log switch set to OFF.");
 			}
 		}
 	}
@@ -80,7 +107,7 @@ int SenderStatusProxy::HandleCommand(char* command) {
 			parts.pop_front();
 			unsigned long size = strtoul(parts.front().c_str(), NULL, 0);
 			GenerateDataFile(file_name, size);
-			SendMessage(COMMAND_RESPONSE, "Data file generated.");
+			SendMessageLocal(COMMAND_RESPONSE, "Data file generated.");
 		}
 	}
 	else {
@@ -165,13 +192,13 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 // Transfer memory-to-memory data to all receivers
 // size: the size of data to transfer (in megabytes)
 int SenderStatusProxy::TransferMemoryData(int size) {
-	SendMessage(INFORMATIONAL, "Transferring memory data...");
+	SendMessageLocal(INFORMATIONAL, "Transferring memory data...");
 
 	char* buffer = (char*)malloc(size);
 	ptr_sender->SendMemoryData(buffer, size);
 	free(buffer);
 
-	SendMessage(COMMAND_RESPONSE, "Memory data transfer completed.");
+	SendMessageLocal(COMMAND_RESPONSE, "Memory data transfer completed.");
 	return 1;
 }
 
@@ -180,9 +207,9 @@ int SenderStatusProxy::TransferMemoryData(int size) {
 void SenderStatusProxy::TransferFile(string file_name) {
 	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
-	SendMessage(INFORMATIONAL, "Transferring file...");
+	SendMessageLocal(INFORMATIONAL, "Transferring file...");
 	ptr_sender->SendFile(file_name.c_str());
-	SendMessage(COMMAND_RESPONSE, "File transfer completed.");
+	SendMessageLocal(COMMAND_RESPONSE, "File transfer completed.");
 
 }
 
@@ -190,7 +217,7 @@ void SenderStatusProxy::TransferFile(string file_name) {
 
 // Multicast a string message to receivers
 int SenderStatusProxy::TransferString(string str, bool send_out_packets) {
-	SendMessage(COMMAND_RESPONSE, "Specified string successfully sent.");
+	SendMessageLocal(COMMAND_RESPONSE, "Specified string successfully sent.");
 	return 1;
 }
 
@@ -242,21 +269,21 @@ int SenderStatusProxy::HandleTcpSendCommand(list<string>& slist) {
 
 
 int SenderStatusProxy::TcpTransferMemoryData(int size) {
-	SendMessage(INFORMATIONAL, "Transferring memory data...\n");
+	SendMessageLocal(INFORMATIONAL, "Transferring memory data...\n");
 
 	char* buffer = (char*)malloc(size);
 	ptr_sender->TcpSendMemoryData(buffer, size);
 	free(buffer);
 
-	SendMessage(COMMAND_RESPONSE, "Memory data transfer completed.\n\n");
+	SendMessageLocal(COMMAND_RESPONSE, "Memory data transfer completed.\n\n");
 	return 1;
 }
 
 
 void SenderStatusProxy::TcpTransferFile(string file_name) {
-	SendMessage(INFORMATIONAL, "Transferring file...\n");
+	SendMessageLocal(INFORMATIONAL, "Transferring file...\n");
 	ptr_sender->TcpSendFile(file_name.c_str());
-	SendMessage(COMMAND_RESPONSE, "File transfer completed.\n\n");
+	SendMessageLocal(COMMAND_RESPONSE, "File transfer completed.\n\n");
 }
 
 

@@ -23,6 +23,8 @@ StatusProxy::StatusProxy(string addr, int port) {
 
 	sockfd = -1;
 	isConnected = false;
+	proxy_started = false;
+	keep_alive = false;
 }
 
 StatusProxy::~StatusProxy() {
@@ -48,7 +50,8 @@ int StatusProxy::ConnectServer() {
 }
 
 
-int StatusProxy::SendMessage(int msg_type, string msg) {
+// Send a message to the remote manager
+int StatusProxy::SendMessageToManager(int msg_type, string msg) {
 	int res;
 	if ( (res = write(sockfd, &msg_type, sizeof(msg_type))) < 0) {
 		cout << "Error sending message. " << endl;
@@ -73,8 +76,135 @@ int StatusProxy::SendMessage(int msg_type, string msg) {
 }
 
 
+// Read a message from the remote manager
+int StatusProxy::ReadMessageFromManager(int& msg_type, string& msg) {
+	int res;
+	if ((res = read(sockfd, &msg_type, sizeof(msg_type))) < 0) {
+		cout << "read() error." << endl;
+		ReconnectServer();
+		return -1;
+	}
+
+	int msg_length;
+	if ((res = read(sockfd, &msg_length, sizeof(msg_length))) < 0) {
+		cout << "read() error." << endl;
+		ReconnectServer();
+		return -1;
+	}
+
+	char buffer[BUFFER_SIZE];
+	if ((res = read(sockfd, buffer, msg_length)) < 0) {
+		cout << "read() error." << endl;
+		ReconnectServer();
+		return -1;
+	} else {
+		buffer[res] = '\0';
+		msg = buffer;
+		return 1;
+	}
+}
+
+
+// Send a message to local parent/child process
+int StatusProxy::SendMessageLocal(int msg_type, string msg) {
+	int res;
+	if ((res = write(write_pipe_fd, &msg_type, sizeof(msg_type))) < 0) {
+		cout << "Error sending message. " << endl;
+		return -1;
+	}
+
+	int length = msg.length();
+	if ((res = write(write_pipe_fd, &length, sizeof(length))) < 0) {
+		cout << "Error sending message. " << endl;
+		return -1;
+	}
+
+	if ((res = write(write_pipe_fd, msg.c_str(), length)) < 0) {
+		cout << "Error sending message. " << endl;
+		return -1;
+	} else
+		return 1;
+}
+
+
+int StatusProxy::ReadMessageLocal(int& msg_type, string& msg) {
+	int res;
+	if ((res = read(read_pipe_fd, &msg_type, sizeof(msg_type))) < 0) {
+		cout << "read() error." << endl;
+		return -1;
+	}
+
+	int msg_length;
+	if ((res = read(read_pipe_fd, &msg_length, sizeof(msg_length))) < 0) {
+		cout << "read() error." << endl;
+		return -1;
+	}
+
+	char buffer[BUFFER_SIZE];
+	if ((res = read(read_pipe_fd, buffer, msg_length)) < 0) {
+		cout << "read() error." << endl;
+		return -1;
+	} else {
+		buffer[res] = '\0';
+		msg = buffer;
+		return 1;
+	}
+}
+
+
+void StatusProxy::InitializeExecutionProcess() {
+
+}
+
+void StatusProxy::StartExecutionProcess() {
+	if (proxy_started) {
+		close(read_pipe_fd);
+		close(write_pipe_fd);
+	}
+
+	if (pipe(read_pipe_fds) < 0) {
+		SysError("StatusProxy::StartService()::create read pipe error");
+	}
+
+	if (pipe(write_pipe_fds) < 0)
+		SysError("StatusProxy::StartService()::create write pipe error");
+
+	int pid;
+	if ((pid = fork()) < 0)
+		SysError("StatusProxy::StartService()::fork error");
+	else if (pid > 0) { // parent
+		read_pipe_fd = read_pipe_fds[0];
+		write_pipe_fd = write_pipe_fds[1];
+		close(read_pipe_fds[1]);
+		close(write_pipe_fds[0]);
+
+		keep_alive = true;
+		// Start the command execution thread
+		if (!proxy_started) {
+			proxy_started = true;
+			pthread_create(&manager_send_thread, NULL, &StatusProxy::StartManagerSendThread, this);
+			pthread_create(&manager_recv_thread, NULL, &StatusProxy::StartManagerReceiveThread, this);
+
+			// Send node identity to the server
+			SendNodeInfo();
+		}
+	} else { //child
+		read_pipe_fd = write_pipe_fds[0];
+		write_pipe_fd = read_pipe_fds[1];
+		close(read_pipe_fds[0]);
+		close(write_pipe_fds[1]);
+
+		keep_alive = true;
+		proxy_started = true;
+		InitializeExecutionProcess();
+		pthread_create(&proc_exec_thread, NULL, &StatusProxy::StartProcessExecutionThread, this);
+	}
+}
+
+
 void StatusProxy::StopService() {
 	keep_alive = false;
+	proxy_started = false;
 	is_connected = false;
 	close(sockfd);
 }
@@ -83,65 +213,82 @@ void StatusProxy::StopService() {
 void StatusProxy::StartService() {
 	if (!isConnected)
 		return;
+	else
+		StartExecutionProcess();
 
-	// Start the command execution thread
-	keep_alive = true;
-	pthread_create(&command_exec_thread, NULL, &StatusProxy::StartCommandExecThread, this);
-
-	// Send node identity to the server
-	SendNodeInfo();
-}
-
-int StatusProxy::SendNodeInfo() {
-	struct utsname host_name;
-	uname(&host_name);
-	SendMessage(NODE_NAME, host_name.nodename);
-	return 1;
 }
 
 
-void* StatusProxy::StartCommandExecThread(void* ptr) {
-	((StatusProxy*)ptr)->RunCommandExecThread();
+// start running the main process execution thread in the child process
+void* StatusProxy::StartProcessExecutionThread(void* ptr) {
+	((StatusProxy*)ptr)->RunProcessExecutionThread();
 	return NULL;
 }
 
 
-void StatusProxy::RunCommandExecThread() {
+void StatusProxy::RunProcessExecutionThread() {
 	while (keep_alive) {
 		int res;
 		int msg_type;
-
-		if ((res = read(sockfd, &msg_type, sizeof(msg_type))) < 0) {
-			cout << "read() error." << endl;
-			ReconnectServer();
-			continue;
-			//return;
-		}
-
-		int msg_length;
-		if ((res = read(sockfd, &msg_length, sizeof(msg_length))) < 0) {
-			cout << "read() error." << endl;
-			ReconnectServer();
-			continue;
-		}
-
-		char buffer[BUFFER_SIZE];
-		if ((res = read(sockfd, buffer, msg_length)) < 0) {
-			cout << "read() error." << endl;
-			ReconnectServer();
-			continue;
-		} else {
-			buffer[res] = '\0';
-		}
+		string msg;
+		ReadMessageLocal(msg_type, msg);
 
 		switch (msg_type) {
 		case COMMAND:
 		case PARAM_SETTING:
-			HandleCommand(buffer);
+			HandleCommand(msg.c_str());
 			break;
 		default:
 			break;
 		}
+	}
+}
+
+
+
+int StatusProxy::SendNodeInfo() {
+	struct utsname host_name;
+	uname(&host_name);
+	SendMessageToManager(NODE_NAME, host_name.nodename);
+	return 1;
+}
+
+
+void* StatusProxy::StartManagerSendThread(void* ptr) {
+	((StatusProxy*)ptr)->RunManagerSendThread();
+	return NULL;
+}
+
+
+void StatusProxy::RunManagerSendThread() {
+	while (keep_alive) {
+		// Read the response from the local process
+		int msg_type;
+		string msg;
+		if (ReadMessageLocal(msg_type, msg) < 0) {
+			SendMessageToManager(INFORMATIONAL, "The execution process has crashed. Restarting the process...");
+			StartExecutionProcess();
+			SendMessageToManager(INFORMATIONAL, "The execution process has been restarted.");
+			continue;
+		}
+		SendMessageToManager(msg_type, msg);
+	}
+}
+
+
+void* StatusProxy::StartManagerReceiveThread(void* ptr) {
+	((StatusProxy*)ptr)->RunManagerReceiveThread();
+	return NULL;
+}
+
+
+
+void StatusProxy::RunManagerReceiveThread() {
+	while (keep_alive) {
+		int msg_type;
+		string msg;
+		ReadMessageFromManager(msg_type, msg);
+		SendMessageLocal(msg_type, msg);
 	}
 }
 
@@ -154,11 +301,11 @@ void StatusProxy::ReconnectServer() {
 	is_connected = false;
 	ConnectServer();
 	SendNodeInfo();
-	SendMessage(INFORMATIONAL, "Socket error. Service reconnected.");
+	SendMessageToManager(INFORMATIONAL, "Socket error. Service reconnected.");
 }
 
 
-int StatusProxy::HandleCommand(char* command) {
+int StatusProxy::HandleCommand(const char* command) {
 	string s = command;
 	list<string> parts;
 	Split(s, ' ', parts);
@@ -191,14 +338,14 @@ void StatusProxy::HandleRestartCommand() {
 
 
 
-int StatusProxy::ExecSysCommand(char* command) {
+int StatusProxy::ExecSysCommand(const char* command) {
 	FILE* pFile = popen(command, "r");
 	if (pFile != NULL) {
 		char output[BUFFER_SIZE];
 		int bytes = fread(output, 1, BUFFER_SIZE, pFile);
 		output[bytes] = '\0';
 		pclose(pFile);
-		SendMessage(COMMAND_RESPONSE, output);
+		SendMessageLocal(COMMAND_RESPONSE, output);
 	} else {
 		cout << "Cannot get output from execution." << endl;
 	}
@@ -229,3 +376,9 @@ void StatusProxy::Split(string s, char c, list<string>& slist) {
 	}
 }
 
+
+
+void StatusProxy::SysError(string s) {
+	perror(s.c_str());
+	exit(-1);
+}

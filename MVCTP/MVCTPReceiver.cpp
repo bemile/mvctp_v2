@@ -25,6 +25,7 @@ MVCTPReceiver::MVCTPReceiver(int buf_size) {
 }
 
 MVCTPReceiver::~MVCTPReceiver() {
+	delete retrans_tcp_client;
 }
 
 
@@ -70,12 +71,12 @@ void MVCTPReceiver::SendSessionStatistics() {
 			recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage, recv_stats.session_total_time, recv_stats.session_trans_time,
 			recv_stats.session_retrans_time, send_rate);
-	status_proxy->SendMessage(INFORMATIONAL, buf);
+	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 
 	sprintf(buf, "%u,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n", total_bytes, recv_stats.session_total_time, recv_stats.session_trans_time,
 			recv_stats.session_retrans_time, send_rate, recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage);
-	status_proxy->SendMessage(EXP_RESULT_REPORT, buf);
+	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 }
 
 // Clear session related statistics
@@ -92,11 +93,17 @@ void MVCTPReceiver::ResetSessionStatistics() {
 
 
 int MVCTPReceiver::JoinGroup(string addr, ushort port) {
-	MVCTPComm::JoinGroup(group_id, port);
+	MVCTPComm::JoinGroup(addr, port);
 	retrans_tcp_client->Connect();
 	return 1;
 }
 
+int MVCTPReceiver::ReconnectSender() {
+	delete retrans_tcp_client;
+	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_TCP_SEND_PORT);
+	retrans_tcp_client->Connect();
+	return 1;
+}
 
 void MVCTPReceiver::Start() {
 	fd_set read_set;
@@ -151,7 +158,7 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 	char str[256];
 	sprintf(str, "Started new memory data transfer. Size: %d", transfer_msg.data_len);
-	status_proxy->SendMessage(INFORMATIONAL, str);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
@@ -246,7 +253,7 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 				recv_stats.session_retrans_percentage = recv_stats.session_retrans_packets  * 1.0
 										/ (recv_stats.session_recv_packets + recv_stats.session_retrans_packets);
 
-				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
+				status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
 
 				// Transfer finished, so return directly
@@ -337,7 +344,7 @@ void MVCTPReceiver::ReceiveFileBufferedIO(const MvctpTransferMessage & transfer_
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer. Size: %u",
 			transfer_msg.data_len);
-	status_proxy->SendMessage(INFORMATIONAL, str);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
@@ -435,7 +442,7 @@ void MVCTPReceiver::ReceiveFileBufferedIO(const MvctpTransferMessage & transfer_
 				system(command);
 				system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
-				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
+				status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
 
 				// Transfer finished, so return directly
@@ -457,7 +464,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer. Size: %u",
 			transfer_msg.data_len);
-	status_proxy->SendMessage(INFORMATIONAL, str);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
@@ -594,7 +601,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
 
-				status_proxy->SendMessage(INFORMATIONAL, "Memory data transfer finished.");
+				status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
 
 				// Transfer finished, so return directly
@@ -639,14 +646,14 @@ void MVCTPReceiver::CheckReceivedFile(const char* file_name, size_t length) {
 	while ( (read_bytes = read(fd, buffer, 256) > 0)) {
 		for (int i = 0; i < read_bytes; i++) {
 			if (buffer[i] != i) {
-				status_proxy->SendMessage(INFORMATIONAL, "Invalid received file!");
+				status_proxy->SendMessageLocal(INFORMATIONAL, "Invalid received file!");
 				close(fd);
 				return;
 			}
 		}
 	}
 	close(fd);
-	status_proxy->SendMessage(INFORMATIONAL, "Received file is valid!");
+	status_proxy->SendMessageLocal(INFORMATIONAL, "Received file is valid!");
 }
 
 
@@ -717,7 +724,7 @@ void MVCTPReceiver::HandleAsyncWriteCompletion(sigval_t sigval) {
 void MVCTPReceiver::TcpReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data) {
 	char str[256];
 	sprintf(str, "Started memory-to-memory transfer using TCP. Size: %d", msg.data_len);
-	status_proxy->SendMessage(INFORMATIONAL, str);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
@@ -728,7 +735,7 @@ void MVCTPReceiver::TcpReceiveMemoryData(const MvctpTransferMessage & msg, char*
 	double send_rate = msg.data_len / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 
 	sprintf(str, "***** TCP Receive Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
-	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
+	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, str);
 }
 
 
@@ -739,7 +746,7 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer using TCP. Size: %u",
 			transfer_msg.data_len);
-	status_proxy->SendMessage(INFORMATIONAL, str);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
@@ -768,10 +775,10 @@ void MVCTPReceiver::TcpReceiveFile(const MvctpTransferMessage & transfer_msg) {
 	double send_rate = transfer_msg.data_len / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 
 	sprintf(str, "***** TCP Receive Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n\n", trans_time, send_rate);
-	status_proxy->SendMessage(INFORMATIONAL, str);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 	sprintf(str, "%u,%.2f,%.2f\n", transfer_msg.data_len, trans_time, send_rate);
-	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
+	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, str);
 
 }
 

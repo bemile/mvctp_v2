@@ -44,9 +44,21 @@ string MVCTPComm::GetInterfaceName() {
 	return if_name;
 }
 
+string MVCTPComm::GetMulticastAddress() {
+	return group_addr;
+}
+
+int MVCTPComm::GetPortNumber() {
+	return port_num;
+}
+
+
 // Not IGMP join
 // Local register of multicast address
 int MVCTPComm::JoinGroup(string addr, ushort port) {
+	group_addr = addr;
+	port_num = port;
+
 	sockaddr_in sa;
 	sa.sin_family = AF_INET;
 	sa.sin_port = htons(PORT_NUM);

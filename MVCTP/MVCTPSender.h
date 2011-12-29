@@ -48,6 +48,7 @@ public:
 
 	void 	SetStatusProxy(StatusProxy* proxy);
 	int 	JoinGroup(string addr, u_short port);
+	int		RestartTcpServer();
 	void 	SetSendRate(int num_mbps);
 	void 	SendAllStatistics();
 	void 	SendSessionStatistics();

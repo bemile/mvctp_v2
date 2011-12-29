@@ -19,15 +19,22 @@ public:
 	~MVCTPComm();
 
 	virtual int JoinGroup(string addr, u_short port);
-	string GetInterfaceName();
+	string 		GetInterfaceName();
+
+	string		GetMulticastAddress();
+	int 		GetPortNumber();
+
 
 protected:
 	NetInterfaceManager* if_manager;
 	string if_name, if_ip;
 	RawSocketComm* ptr_raw_sock_comm;
 	MulticastComm* ptr_multicast_comm;
-	u_int32_t mvctp_group_id;
-	u_char mac_group_addr[6];
+
+	int			port_num;
+	string 		group_addr;
+	u_int32_t 	mvctp_group_id;
+	u_char 		mac_group_addr[6];
 
 private:
 	// single MVCTP packet send buffer

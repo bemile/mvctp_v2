@@ -24,28 +24,50 @@ public:
 	int ConnectServer();
 	void StartService();
 	void StopService();
-	int SendMessage(int msg_type, string msg);
-
+	int SendMessageToManager(int msg_type, string msg);
+	int ReadMessageFromManager(int& msg_type, string& msg);
+	int SendMessageLocal(int msg_type, string msg);
+	int ReadMessageLocal(int& msg_type, string& msg);
 
 protected:
 	int sockfd;
 	struct sockaddr_in servaddr;
 	bool isConnected;
 
+	bool proxy_started;
 	bool keep_alive;
 	bool is_connected;
 
-	pthread_t command_exec_thread;
-	static void* StartCommandExecThread(void* ptr);
-	void RunCommandExecThread();
+	// pipes used for message communication
+	int		read_pipe_fds[2];
+	int		write_pipe_fds[2];
+	int		read_pipe_fd;
+	int		write_pipe_fd;
+
+	pthread_t manager_send_thread;
+	static void* StartManagerSendThread(void* ptr);
+	void RunManagerSendThread();
+
+	pthread_t manager_recv_thread;
+	static void* StartManagerReceiveThread(void* ptr);
+	void RunManagerReceiveThread();
+
 	void ReconnectServer();
 
-	virtual int HandleCommand(char* command);
+	virtual int HandleCommand(const char* command);
 	void HandleRestartCommand();
-	int ExecSysCommand(char* command);
+	int ExecSysCommand(const char* command);
+
+
+	pthread_t proc_exec_thread;
+	static void* StartProcessExecutionThread(void* ptr);
+	void RunProcessExecutionThread();
+	void StartExecutionProcess();
+	virtual void InitializeExecutionProcess();
 
 	int SendNodeInfo();
 	void Split(string s, char c, list<string>& slist);
+	void SysError(string s);
 };
 
 

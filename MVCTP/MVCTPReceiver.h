@@ -35,6 +35,7 @@ public:
 	~MVCTPReceiver();
 
 	int 	JoinGroup(string addr, u_short port);
+	int		ReconnectSender();
 	void 	Start();
 
 	void 	SetPacketLossRate(int rate);

@@ -15,6 +15,7 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 }
 
 MVCTPSender::~MVCTPSender() {
+	delete retrans_tcp_server;
 }
 
 void MVCTPSender::SetSendRate(int num_mbps) {
@@ -35,7 +36,7 @@ void MVCTPSender::SendAllStatistics() {
 			send_stats.session_retrans_percentage, send_stats.session_total_time, send_stats.session_trans_time,
 			send_stats.session_retrans_time);
 
-	status_proxy->SendMessage(INFORMATIONAL, buf);
+	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 }
 
 void MVCTPSender::SendSessionStatistics() {
@@ -47,7 +48,7 @@ void MVCTPSender::SendSessionStatistics() {
 			send_stats.session_sent_packets, send_stats.session_retrans_packets,
 			send_stats.session_retrans_percentage, send_stats.session_total_time, send_stats.session_trans_time,
 			send_stats.session_retrans_time, send_rate);
-	status_proxy->SendMessage(INFORMATIONAL, buf);
+	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 }
 
 
@@ -72,6 +73,12 @@ int MVCTPSender::JoinGroup(string addr, u_short port) {
 	return 1;
 }
 
+int	MVCTPSender::RestartTcpServer() {
+	delete retrans_tcp_server;
+	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT);
+	retrans_tcp_server->Start();
+	return 1;
+}
 
 void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map) {
 	int client_sock;
@@ -440,7 +447,7 @@ void MVCTPSender::TcpSendMemoryData(void* data, size_t length) {
 	double send_rate = length / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 	char str[256];
 	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
-	status_proxy->SendMessage(EXP_RESULT_REPORT, str);
+	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, str);
 
 
 	cur_session_id++;
@@ -487,7 +494,7 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 	double send_rate = file_size / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 	char str[256];
 	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
-	status_proxy->SendMessage(INFORMATIONAL, str);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 
 	cur_session_id++;

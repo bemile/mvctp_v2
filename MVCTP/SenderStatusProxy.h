@@ -34,6 +34,7 @@ struct TransferMessage {
 class SenderStatusProxy : public StatusProxy {
 public:
 	SenderStatusProxy(string addr, int port, MVCTPSender* psender);
+	SenderStatusProxy(string addr, int port, string group_addr, int mvctp_port, int buff_size);
 
 protected:
 	virtual int HandleCommand(char* command);
@@ -48,10 +49,16 @@ protected:
 	void 	TcpTransferFile(string file_name);
 	void 	SendMemoryData(void* buffer, size_t length);
 
+	virtual void InitializeExecutionProcess();
+
 private:
 	MVCTPSender* ptr_sender;
+	string 		mvctp_group_addr;
+	int			mvctp_port_num;
+	int			buffer_size;
 
-	int GenerateDataFile(string file_name, ulong bytes);
+	void	ConfigureEnvironment();
+	int 	GenerateDataFile(string file_name, ulong bytes);
 };
 
 
