@@ -47,6 +47,8 @@ void ReceiverStatusProxy::InitializeExecutionProcess() {
 	ptr_receiver->SetStatusProxy(this);
 	ptr_receiver->JoinGroup(mvctp_group_addr, mvctp_port_num);
 
+	ptr_receiver->SendMessageLocal(INFORMATIONAL, "I'm a receiver. Just joined the multicast group.");
+
 	char command[256];
 	sprintf(command, "sudo ifconfig %s txqueuelen 10000",
 	ptr_receiver->GetInterfaceName().c_str());

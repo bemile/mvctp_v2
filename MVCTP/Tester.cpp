@@ -32,7 +32,7 @@ void Tester::StartTest() {
 			ptr_status_proxy->StartService();
 		}
 
-		this->SendMessage(INFORMATIONAL, "I'm the sender. Just joined the multicast group.");
+		//this->SendMessage(INFORMATIONAL, "I'm the sender. Just joined the multicast group.");
 		while (true) {
 			sleep(1);
 		}
@@ -49,7 +49,7 @@ void Tester::StartTest() {
 			ptr_status_proxy->StartService();
 		}
 
-		this->SendMessage(INFORMATIONAL, "I'm a receiver. Just joined the multicast group.");
+		//this->SendMessage(INFORMATIONAL, "I'm a receiver. Just joined the multicast group.");
 		while (true) {
 			sleep(1);
 		}
