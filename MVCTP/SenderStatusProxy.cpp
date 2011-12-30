@@ -55,7 +55,7 @@ void SenderStatusProxy::InitializeExecutionProcess() {
 }
 
 
-int SenderStatusProxy::HandleCommand(char* command) {
+int SenderStatusProxy::HandleCommand(const char* command) {
 	string s = command;
 	/*int length = s.length();
 	int index = s.find(' ');

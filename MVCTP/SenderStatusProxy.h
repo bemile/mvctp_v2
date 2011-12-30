@@ -37,7 +37,7 @@ public:
 	SenderStatusProxy(string addr, int port, string group_addr, int mvctp_port, int buff_size);
 
 protected:
-	virtual int HandleCommand(char* command);
+	virtual int HandleCommand(const char* command);
 	int 	HandleSendCommand(list<string>& slist);
 	int 	HandleTcpSendCommand(list<string>& slist);
 	void 	SetSendRate(int rate_mbps);

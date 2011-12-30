@@ -52,22 +52,24 @@ protected:
 	static void* StartManagerReceiveThread(void* ptr);
 	void RunManagerReceiveThread();
 
-	void ReconnectServer();
-
-	virtual int HandleCommand(const char* command);
-	void HandleRestartCommand();
-	int ExecSysCommand(const char* command);
-
-
 	pthread_t proc_exec_thread;
 	static void* StartProcessExecutionThread(void* ptr);
 	void RunProcessExecutionThread();
 	void StartExecutionProcess();
 	virtual void InitializeExecutionProcess();
 
+	void ReconnectServer();
+	virtual int HandleCommand(const char* command);
+	void HandleRestartCommand();
+	int ExecSysCommand(const char* command);
+
 	int SendNodeInfo();
 	void Split(string s, char c, list<string>& slist);
 	void SysError(string s);
+
+
+private:
+
 };
 
 

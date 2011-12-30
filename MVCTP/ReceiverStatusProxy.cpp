@@ -41,7 +41,7 @@ void ReceiverStatusProxy::ConfigureEnvironment() {
 //
 void ReceiverStatusProxy::InitializeExecutionProcess() {
 	if (ptr_receiver != NULL)
-			delete ptr_receiver;
+		delete ptr_receiver;
 
 	ptr_receiver = new MVCTPReceiver(buffer_size);
 	ptr_receiver->SetStatusProxy(this);
@@ -58,7 +58,7 @@ void ReceiverStatusProxy::InitializeExecutionProcess() {
 }
 
 
-int ReceiverStatusProxy::HandleCommand(char* command) {
+int ReceiverStatusProxy::HandleCommand(const char* command) {
 	string s = command;
 	/*int length = s.length();
 	int index = s.find(' ');
