@@ -10,6 +10,8 @@
 
 #include "CommUtil.h"
 #include <list>
+#include <signal.h>
+#include <sys/types.h>
 
 using namespace std;
 
@@ -43,6 +45,8 @@ protected:
 	int		write_pipe_fds[2];
 	int		read_pipe_fd;
 	int		write_pipe_fd;
+
+	int 	execution_pid;
 
 	pthread_t manager_send_thread;
 	static void* StartManagerSendThread(void* ptr);

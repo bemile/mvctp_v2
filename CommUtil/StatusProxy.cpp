@@ -25,6 +25,7 @@ StatusProxy::StatusProxy(string addr, int port) {
 	isConnected = false;
 	proxy_started = false;
 	keep_alive = false;
+	execution_pid = 0;
 }
 
 StatusProxy::~StatusProxy() {
@@ -169,10 +170,9 @@ void StatusProxy::StartExecutionProcess() {
 	if (pipe(write_pipe_fds) < 0)
 		SysError("StatusProxy::StartService()::create write pipe error");
 
-	int pid;
-	if ((pid = fork()) < 0)
+	if ((execution_pid = fork()) < 0)
 		SysError("StatusProxy::StartService()::fork error");
-	else if (pid > 0) { // parent
+	else if (execution_pid > 0) { // parent
 		read_pipe_fd = read_pipe_fds[0];
 		write_pipe_fd = write_pipe_fds[1];
 		close(read_pipe_fds[1]);
@@ -228,7 +228,6 @@ void* StatusProxy::StartProcessExecutionThread(void* ptr) {
 
 void StatusProxy::RunProcessExecutionThread() {
 	while (keep_alive) {
-		int res;
 		int msg_type;
 		string msg;
 		ReadMessageLocal(msg_type, msg);
@@ -288,7 +287,11 @@ void StatusProxy::RunManagerReceiveThread() {
 		int msg_type;
 		string msg;
 		ReadMessageFromManager(msg_type, msg);
-		SendMessageLocal(msg_type, msg);
+		if (msg.compare("Restart") == 0) {
+			HandleRestartCommand();
+		} else {
+			SendMessageLocal(msg_type, msg);
+		}
 	}
 }
 
@@ -312,25 +315,26 @@ int StatusProxy::HandleCommand(const char* command) {
 	if (parts.size() == 0)
 		return 0;
 
-	if (parts.front().compare("Restart") == 0) {
-		HandleRestartCommand();
-	} else {
-		ExecSysCommand(command);
-	}
-
+	ExecSysCommand(command);
 	return 1;
 }
 
 
 //
 void StatusProxy::HandleRestartCommand() {
-	//TODO: Ugly way to close all opened file descriptors (sockets).
-	//How to fix it?
-	for (int i = 3; i < 1000; i++) {
-		close(i);
-	}
+//	//TODO: Ugly way to close all opened file descriptors (sockets).
+//	//How to fix it?
+//	for (int i = 3; i < 1000; i++) {
+//		close(i);
+//	}
+//
+//	// Restart the emulab test
+//	chdir("/users/jieli/bin");
+//	execl("/bin/sh", "sh", "/users/jieli/bin/run_starter.sh", (char *) 0);
+//	exit(0);
 
-	// Restart the emulab test
+	kill(execution_pid, SIGINT);
+	// Restart the process
 	chdir("/users/jieli/bin");
 	execl("/bin/sh", "sh", "/users/jieli/bin/run_starter.sh", (char *) 0);
 	exit(0);
