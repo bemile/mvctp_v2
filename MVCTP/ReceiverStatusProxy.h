@@ -27,6 +27,10 @@ private:
 	int			mvctp_port_num;
 	int			buffer_size;
 
+	pthread_t receiver_thread;
+	static void* StartReceiverThread(void* ptr);
+	void RunReceiverThread();
+
 	void	ConfigureEnvironment();
 };
 

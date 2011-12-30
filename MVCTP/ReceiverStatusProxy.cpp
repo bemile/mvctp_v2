@@ -54,9 +54,19 @@ void ReceiverStatusProxy::InitializeExecutionProcess() {
 	ptr_receiver->GetInterfaceName().c_str());
 	system(command);
 
-	ptr_receiver->Start();
+	pthread_create(&receiver_thread, NULL, &ReceiverStatusProxy::StartReceiverThread, this);
 }
 
+
+void* ReceiverStatusProxy::StartReceiverThread(void* ptr) {
+	((ReceiverStatusProxy*)ptr)->RunReceiverThread();
+	return NULL;
+}
+
+
+void ReceiverStatusProxy::RunReceiverThread() {
+	ptr_receiver->Start();
+}
 
 int ReceiverStatusProxy::HandleCommand(const char* command) {
 	string s = command;
