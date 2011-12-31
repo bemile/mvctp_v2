@@ -45,7 +45,7 @@ int TcpClient::Connect() {
 		sleep(10);
 	}
 
-	cout << "TCP server connected" << endl;
+	cout << "TCP server connected." << endl;
 	return res;
 }
 
