@@ -11,6 +11,8 @@
 MVCTPReceiver::MVCTPReceiver(int buf_size) {
 	//ptr_multicast_comm->SetBufferSize(10000000);
 	retrans_tcp_client = NULL;
+	multicast_sock = ptr_multicast_comm->GetSocket();
+
 	srand(time(NULL));
 	packet_loss_rate = 0;
 	bzero(&recv_stats, sizeof(recv_stats));
@@ -96,7 +98,6 @@ int MVCTPReceiver::ConnectSenderOnTCP() {
 
 	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_TCP_SEND_PORT);
 	retrans_tcp_client->Connect();
-	multicast_sock = ptr_multicast_comm->GetSocket();
 	retrans_tcp_sock = retrans_tcp_client->GetSocket();
 	max_sock_fd = multicast_sock > retrans_tcp_sock ? multicast_sock : retrans_tcp_sock;
 	FD_ZERO(&read_sock_set);
@@ -119,6 +120,9 @@ void MVCTPReceiver::Start() {
 				SysError("MVCTPReceiver::Start()::recv() error");
 				retrans_tcp_client->Connect();
 				retrans_tcp_sock = retrans_tcp_client->GetSocket();
+				FD_ZERO(&read_sock_set);
+				FD_SET(multicast_sock, &read_sock_set);
+				FD_SET(retrans_tcp_sock, &read_sock_set);
 				if (max_sock_fd < retrans_tcp_sock)
 					max_sock_fd = retrans_tcp_sock;
 			}
