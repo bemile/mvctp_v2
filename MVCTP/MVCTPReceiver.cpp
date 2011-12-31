@@ -125,6 +125,8 @@ void MVCTPReceiver::Start() {
 				FD_SET(retrans_tcp_sock, &read_sock_set);
 				if (max_sock_fd < retrans_tcp_sock)
 					max_sock_fd = retrans_tcp_sock;
+
+				continue;
 			}
 
 			switch (msg.event_type) {
