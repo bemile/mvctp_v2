@@ -9,9 +9,6 @@
 
 TcpClient::TcpClient(string serv_addr, int port) {
 	server_port = port;
-	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
-		SysError("TcpClient::TcpClient()::socket() error");
-	}
 
 	bzero(&server_addr, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
@@ -34,6 +31,10 @@ TcpClient::~TcpClient() {
 
 
 int TcpClient::Connect() {
+	if ((sock_fd = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		SysError("TcpClient::TcpClient()::socket() error");
+	}
+
 	int res;
 	while ((res = connect(sock_fd, (sockaddr *) &server_addr,
 			sizeof(server_addr))) < 0) {
@@ -55,7 +56,13 @@ int TcpClient::Send(const void* data, size_t length) {
 
 
 int TcpClient::Receive(void* buffer, size_t length) {
-	return recv(sock_fd, buffer, length, MSG_WAITALL);
+	int res = recv(sock_fd, buffer, length, MSG_WAITALL);
+	while (res <= 0) {
+		close(sock_fd);
+		Connect();
+		res = recv(sock_fd, buffer, length, MSG_WAITALL);
+	}
+	return res;
 
 //	size_t remained_size = length;
 //	int recv_bytes;
