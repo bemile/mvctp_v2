@@ -111,20 +111,19 @@ int StatusProxy::SendMessageLocal(int msg_type, string msg) {
 	int res;
 	if ((res = write(write_pipe_fd, &msg_type, sizeof(msg_type))) < 0) {
 		cout << "Error sending message. " << endl;
-		return -1;
+		return res;
 	}
 
 	int length = msg.length();
 	if ((res = write(write_pipe_fd, &length, sizeof(length))) < 0) {
 		cout << "Error sending message. " << endl;
-		return -1;
+		return res;
 	}
 
 	if ((res = write(write_pipe_fd, msg.c_str(), length)) < 0) {
 		cout << "Error sending message. " << endl;
-		return -1;
-	} else
-		return 1;
+	}
+	return res;
 }
 
 
@@ -132,24 +131,23 @@ int StatusProxy::ReadMessageLocal(int& msg_type, string& msg) {
 	int res;
 	if ((res = read(read_pipe_fd, &msg_type, sizeof(msg_type))) < 0) {
 		cout << "read() error." << endl;
-		return -1;
+		return res;
 	}
 
 	int msg_length;
 	if ((res = read(read_pipe_fd, &msg_length, sizeof(msg_length))) < 0) {
 		cout << "read() error." << endl;
-		return -1;
+		return res;
 	}
 
 	char buffer[BUFFER_SIZE];
 	if ((res = read(read_pipe_fd, buffer, msg_length)) < 0) {
 		cout << "read() error." << endl;
-		return -1;
 	} else {
 		buffer[res] = '\0';
 		msg = buffer;
-		return 1;
 	}
+	return res;
 }
 
 
@@ -264,7 +262,7 @@ void StatusProxy::RunManagerSendThread() {
 		// Read the response from the local process
 		int msg_type;
 		string msg;
-		if (ReadMessageLocal(msg_type, msg) < 0) {
+		if (ReadMessageLocal(msg_type, msg) <= 0) {
 			SendMessageToManager(INFORMATIONAL, "The execution process has crashed. Restarting the process...");
 			StartExecutionProcess();
 			SendMessageToManager(INFORMATIONAL, "The execution process has been restarted.");
