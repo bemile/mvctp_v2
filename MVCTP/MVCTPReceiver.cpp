@@ -9,16 +9,8 @@
 
 
 MVCTPReceiver::MVCTPReceiver(int buf_size) {
-	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_TCP_SEND_PORT);
 	//ptr_multicast_comm->SetBufferSize(10000000);
-
-	multicast_sock = ptr_multicast_comm->GetSocket();
-	retrans_tcp_sock = retrans_tcp_client->GetSocket();
-	max_sock_fd = multicast_sock > retrans_tcp_sock ? multicast_sock : retrans_tcp_sock;
-	FD_ZERO(&read_sock_set);
-	FD_SET(multicast_sock, &read_sock_set);
-	FD_SET(retrans_tcp_sock, &read_sock_set);
-
+	retrans_tcp_client = NULL;
 	srand(time(NULL));
 	packet_loss_rate = 0;
 	bzero(&recv_stats, sizeof(recv_stats));
@@ -94,14 +86,22 @@ void MVCTPReceiver::ResetSessionStatistics() {
 
 int MVCTPReceiver::JoinGroup(string addr, ushort port) {
 	MVCTPComm::JoinGroup(addr, port);
-	retrans_tcp_client->Connect();
+	ConnectSenderOnTCP();
 	return 1;
 }
 
-int MVCTPReceiver::ReconnectSender() {
-	delete retrans_tcp_client;
+int MVCTPReceiver::ConnectSenderOnTCP() {
+	if (retrans_tcp_client != NULL)
+		delete retrans_tcp_client;
+
 	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_TCP_SEND_PORT);
 	retrans_tcp_client->Connect();
+	multicast_sock = ptr_multicast_comm->GetSocket();
+	retrans_tcp_sock = retrans_tcp_client->GetSocket();
+	max_sock_fd = multicast_sock > retrans_tcp_sock ? multicast_sock : retrans_tcp_sock;
+	FD_ZERO(&read_sock_set);
+	FD_SET(multicast_sock, &read_sock_set);
+	FD_SET(retrans_tcp_sock, &read_sock_set);
 	return 1;
 }
 

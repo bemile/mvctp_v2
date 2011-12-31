@@ -121,7 +121,7 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 	for (it = bad_socks.begin(); it != bad_socks.end(); it++) {
 		conn_sock_list.remove(*it);
 		close(*it);
-		cout << "SelectReceive()::Once socket deleted: " << *it << endl;
+		cout << "SelectReceive()::One broken socket deleted: " << *it << endl;
 	}
 	pthread_mutex_unlock(&sock_list_mutex);
 
