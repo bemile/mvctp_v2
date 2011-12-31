@@ -70,7 +70,7 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 	list<int>::iterator it;
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
-		if (send(*it, data, length, 0) < 0) {
+		if (send(*it, data, length, 0) <= 0) {
 			bad_sock_list.push_back(*it);
 		}
 	}
@@ -85,7 +85,7 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 
 int TcpServer::SelectSend(int conn_sock, const void* data, size_t length) {
 	int res = send(conn_sock, data, length, 0);
-	if (res < 0) {
+	if (res <= 0 && length > 0) {
 		pthread_mutex_lock(&sock_list_mutex);
 		close(conn_sock);
 		conn_sock_list.remove(conn_sock);
@@ -104,18 +104,24 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 
 	list<int>::iterator it;
 	int res;
+	list<int> bad_socks;
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
 		if (FD_ISSET(*it, &read_fds)) {
 			res = recv(*it, buffer, length, MSG_WAITALL);
-			if (res < 0) {
-				close(*it);
-				conn_sock_list.remove(*it);
-				cout << "SelectReceive()::Once socket deleted: " << *it << endl;
+			if (res <= 0) {
+				bad_socks.push_back(*it);
 			}
 			*conn_sock = *it;
 			break;
 		}
+	}
+
+	// remove all broken sockets
+	for (it = bad_socks.begin(); it != bad_socks.end(); it++) {
+		conn_sock_list.remove(*it);
+		close(*it);
+		cout << "SelectReceive()::Once socket deleted: " << *it << endl;
 	}
 	pthread_mutex_unlock(&sock_list_mutex);
 

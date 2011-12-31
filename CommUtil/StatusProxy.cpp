@@ -290,7 +290,6 @@ void StatusProxy::RunManagerReceiveThread() {
 		if (msg.compare("Restart") == 0) {
 			HandleRestartCommand();
 		} else {
-			cout << "Receive command: " << msg << endl;
 			SendMessageLocal(msg_type, msg);
 		}
 	}
