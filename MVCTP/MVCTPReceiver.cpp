@@ -115,8 +115,12 @@ void MVCTPReceiver::Start() {
 
 		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
 			struct MvctpTransferMessage msg;
-			if (recv(retrans_tcp_sock, &msg, sizeof(msg), 0) < 0) {
+			if (recv(retrans_tcp_sock, &msg, sizeof(msg), 0) <= 0) {
 				SysError("MVCTPReceiver::Start()::recv() error");
+				retrans_tcp_client->Connect();
+				retrans_tcp_sock = retrans_tcp_client->GetSocket();
+				if (max_sock_fd < retrans_tcp_sock)
+					max_sock_fd = retrans_tcp_sock;
 			}
 
 			switch (msg.event_type) {
