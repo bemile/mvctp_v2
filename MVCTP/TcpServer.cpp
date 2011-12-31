@@ -89,6 +89,7 @@ int TcpServer::SelectSend(int conn_sock, const void* data, size_t length) {
 		pthread_mutex_lock(&sock_list_mutex);
 		close(conn_sock);
 		conn_sock_list.remove(conn_sock);
+		FD_CLR(conn_sock, &master_read_fds);
 		cout << "TcpServer::SelectSend()::One socket deleted: " << conn_sock << endl;
 		pthread_mutex_unlock(&sock_list_mutex);
 	}
@@ -103,7 +104,7 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 	}
 
 	list<int>::iterator it;
-	int res;
+	int res = 0;
 	list<int> bad_socks;
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
@@ -111,6 +112,7 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 			res = recv(*it, buffer, length, MSG_WAITALL);
 			if (res <= 0) {
 				bad_socks.push_back(*it);
+				continue;
 			}
 			*conn_sock = *it;
 			break;
@@ -121,6 +123,7 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 	for (it = bad_socks.begin(); it != bad_socks.end(); it++) {
 		conn_sock_list.remove(*it);
 		close(*it);
+		FD_CLR(*it, &master_read_fds);
 		cout << "SelectReceive()::One broken socket deleted: " << *it << endl;
 	}
 	pthread_mutex_unlock(&sock_list_mutex);
