@@ -27,11 +27,11 @@ TcpServer::TcpServer(int port) {
 }
 
 TcpServer::~TcpServer() {
-	close(server_sock);
 	list<int>::iterator it;
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
 		close(*it);
 	}
+	close(server_sock);
 }
 
 
