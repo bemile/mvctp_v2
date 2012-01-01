@@ -117,7 +117,8 @@ void MVCTPReceiver::Start() {
 		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
 			struct MvctpTransferMessage msg;
 			if (recv(retrans_tcp_sock, &msg, sizeof(msg), 0) <= 0) {
-				SysError("MVCTPReceiver::Start()::recv() error");
+				//SysError("MVCTPReceiver::Start()::recv() error");
+				cout << "MVCTPReceiver::Start()::recv() error" << enl;
 				retrans_tcp_client->Connect();
 				retrans_tcp_sock = retrans_tcp_client->GetSocket();
 				FD_ZERO(&read_sock_set);
