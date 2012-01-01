@@ -114,8 +114,8 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 			res = recv(*it, buffer, length, MSG_WAITALL);
 			if (res <= 0) {
 				bad_socks.push_back(*it);
-				continue;
 			}
+
 			*conn_sock = *it;
 			break;
 		}
