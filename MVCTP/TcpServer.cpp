@@ -18,8 +18,10 @@ TcpServer::TcpServer(int port) {
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);
 	server_addr.sin_port = htons(port_num);
 
-	if (bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
-		SysError("TcpServer::TcpServer()::bind() error");
+	while (bind(server_sock, (struct sockaddr *)&server_addr, sizeof(server_addr)) < 0) {
+		//SysError("TcpServer::TcpServer()::bind() error");
+		cout << "TcpServer::TcpServer()::bind() error" << endl;
+		sleep(10);
 	}
 
 	// Used in the select() system call
