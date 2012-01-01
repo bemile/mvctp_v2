@@ -334,7 +334,7 @@ void StatusProxy::HandleRestartCommand() {
 	kill(execution_pid, SIGINT);
 	// Restart the process
 	chdir("/users/jieli/bin");
-	execl("/bin/sh", "sh", "/users/jieli/bin/run_starter.sh &", (char *) 0);
+	execl("/bin/sh", "sh", "/users/jieli/bin/run_starter.sh", (char *) 0);
 	exit(0);
 }
 
