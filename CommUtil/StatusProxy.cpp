@@ -86,14 +86,14 @@ int StatusProxy::SendMessageToManager(int msg_type, string msg) {
 // Read a message from the remote manager
 int StatusProxy::ReadMessageFromManager(int& msg_type, string& msg) {
 	int res;
-	if ((res = read(sockfd, &msg_type, sizeof(msg_type))) < 0) {
+	if ((res = read(sockfd, &msg_type, sizeof(msg_type))) <= 0) {
 		cout << "read() error." << endl;
 		ReconnectServer();
 		return -1;
 	}
 
 	int msg_length;
-	if ((res = read(sockfd, &msg_length, sizeof(msg_length))) < 0) {
+	if ((res = read(sockfd, &msg_length, sizeof(msg_length))) <= 0) {
 		cout << "read() error." << endl;
 		ReconnectServer();
 		return -1;
@@ -120,7 +120,6 @@ int StatusProxy::SendMessageLocal(int msg_type, string msg) {
 	if (length == 0)
 		return 1;
 
-	cout << "Message to send: " << msg << endl;
 	if ((res = write(write_pipe_fd, &type, sizeof(type))) < 0) {
 		cout << "Error sending message to local. " << endl;
 		return res;
@@ -141,13 +140,13 @@ int StatusProxy::SendMessageLocal(int msg_type, string msg) {
 
 int StatusProxy::ReadMessageLocal(int& msg_type, string& msg) {
 	int res;
-	if ((res = read(read_pipe_fd, &msg_type, sizeof(msg_type))) < 0) {
+	if ((res = read(read_pipe_fd, &msg_type, sizeof(msg_type))) <= 0) {
 		cout << "read() error." << endl;
 		return res;
 	}
 
 	int msg_length;
-	if ((res = read(read_pipe_fd, &msg_length, sizeof(msg_length))) < 0) {
+	if ((res = read(read_pipe_fd, &msg_length, sizeof(msg_length))) <= 0) {
 		cout << "read() error." << endl;
 		return res;
 	}
