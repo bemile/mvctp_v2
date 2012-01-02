@@ -72,21 +72,11 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 	list<int> bad_sock_list;
 
 	list<int>::iterator it;
-
-	cout << "Current sockets: ";
-	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
-		cout << *it << "    ";
-	}
-	cout << endl;
-
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
-		cout << "Sending message to socket " << *it << endl;
 		if (send(*it, data, length, 0) <= 0) {
 			bad_sock_list.push_back(*it);
-			cout << "Bad socket " << *it << " added to the list." << endl;
 		}
-		cout << "Message sent to socket " << *it << endl;
 	}
 
 	for (it = bad_sock_list.begin(); it != bad_sock_list.end(); it++) {
