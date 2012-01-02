@@ -335,6 +335,7 @@ void StatusProxy::HandleRestartCommand() {
 //	execl("/bin/sh", "sh", "/users/jieli/bin/run_starter.sh", (char *) 0);
 //	exit(0);
 
+	SendMessageToManager(INFORMATIONAL, "Restarting the execution process");
 	is_restarting = true;
 	kill(execution_pid, SIGINT);
 	// Restart the process
