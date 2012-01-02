@@ -154,6 +154,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 
 	cout << "Start memory to memory transfer" << endl;
 	DoMemoryTransfer(data, length, 0);
+	cout << "Memory to memory transfer finished." << endl;
 
 	// Record memory data multicast time
 	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
@@ -163,9 +164,9 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	//usleep(50000);
 
 	// Send a notification to all receivers to start retransmission
+	cout << "Start retransmission..." << endl;
 	msg.event_type = MEMORY_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
-	cout << "Start retransmission..." << endl;
 	DoMemoryDataRetransmission(data);
 
 	// Record total transfer and retransmission time
