@@ -263,11 +263,13 @@ void StatusProxy::RunManagerSendThread() {
 		// Read the response from the local process
 		int msg_type;
 		string msg;
-		if (ReadMessageLocal(msg_type, msg) <= 0 && !is_restarting) {
-			SendMessageToManager(INFORMATIONAL, "The execution process has crashed. Restarting the process...");
-			StartExecutionProcess();
-			SendMessageToManager(INFORMATIONAL, "The execution process has been restarted.");
-			is_restarting = false;
+		if (ReadMessageLocal(msg_type, msg) <= 0) {
+			if (!is_restarting) {
+				SendMessageToManager(INFORMATIONAL, "The execution process has crashed. Restarting the process...");
+				StartExecutionProcess();
+				SendMessageToManager(INFORMATIONAL, "The execution process has been restarted.");
+				is_restarting = false;
+			}
 			continue;
 		}
 		SendMessageToManager(msg_type, msg);

@@ -164,6 +164,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	// Send a notification to all receivers to start retransmission
 	msg.event_type = MEMORY_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+	cout << "Start retransmission..." << endl;
 	DoMemoryDataRetransmission(data);
 
 	// Record total transfer and retransmission time
