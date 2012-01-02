@@ -24,6 +24,8 @@ TcpServer::TcpServer(int port) {
 		sleep(10);
 	}
 
+	signal(SIGPIPE, SIG_IGN);
+
 	// Used in the select() system call
 	max_conn_sock = -1;
 }

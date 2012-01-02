@@ -19,6 +19,7 @@
 #include <net/if.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
+#include <signal.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/types.h>
