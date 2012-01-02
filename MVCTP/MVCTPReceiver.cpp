@@ -122,8 +122,10 @@ void MVCTPReceiver::Start() {
 			struct MvctpTransferMessage msg;
 			if (recv(retrans_tcp_sock, &msg, sizeof(msg), 0) <= 0) {
 				//SysError("MVCTPReceiver::Start()::recv() error");
-				cout << "MVCTPReceiver::Start()::recv() error" << endl;
+				status_proxy->SendMessageToManager(INFORMATIONAL, "Connection to the sender TCP server has broken. Reconnecting...");
 				retrans_tcp_client->Connect();
+				status_proxy->SendMessageToManager(INFORMATIONAL, "TCP server reconnected.");
+
 				retrans_tcp_sock = retrans_tcp_client->GetSocket();
 				FD_ZERO(&read_sock_set);
 				FD_SET(multicast_sock, &read_sock_set);
