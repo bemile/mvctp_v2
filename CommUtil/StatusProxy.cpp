@@ -56,13 +56,17 @@ int StatusProxy::ConnectServer() {
 int StatusProxy::SendMessageToManager(int msg_type, string msg) {
 	int res;
 	int type = msg_type;
+	int length = msg.length();
+	if (length == 0)
+		return 1;
+
 	if ( (res = write(sockfd, &type, sizeof(type))) < 0) {
 		cout << "Error sending message to remote manager. " << endl;
 		ReconnectServer();
 		return -1;
 	}
 
-	int length = msg.length();
+
 	if ( (res = write(sockfd, &length, sizeof(length))) < 0) {
 		cout << "Error sending message to remote manager. " << endl;
 		ReconnectServer();
@@ -112,13 +116,17 @@ int StatusProxy::ReadMessageFromManager(int& msg_type, string& msg) {
 int StatusProxy::SendMessageLocal(int msg_type, string msg) {
 	int res;
 	int type = msg_type;
+	int length = msg.length();
+	if (length == 0)
+		return 1;
+
 	cout << "Message to send: " << msg << endl;
 	if ((res = write(write_pipe_fd, &type, sizeof(type))) < 0) {
 		cout << "Error sending message to local. " << endl;
 		return res;
 	}
 
-	int length = msg.length();
+
 	if ((res = write(write_pipe_fd, &length, sizeof(length))) < 0) {
 		cout << "Error sending message to local. " << endl;
 		return res;
