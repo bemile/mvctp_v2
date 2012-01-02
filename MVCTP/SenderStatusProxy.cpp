@@ -82,7 +82,7 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 			int rate = atoi(parts.back().c_str());
 			SetSendRate(rate); //ptr_sender->SetSendRate(rate);
 			cout << "Data sending rate is set to " << rate << " Mbps" << endl;
-			SendMessageLocal(COMMAND_RESPONSE, msg);
+			SendMessageLocal(COMMAND_RESPONSE, "Data sending rate has been set.");
 			sprintf(msg, "Data sending rate has been set to %d Mbps.", rate);
 		}
 	}
