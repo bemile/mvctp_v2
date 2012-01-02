@@ -75,6 +75,7 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
 		cout << *it << "    ";
 	}
+	cout << endl;
 
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
