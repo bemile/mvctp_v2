@@ -79,6 +79,7 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
+		cout << "Sending message to socket " << *it << endl;
 		if (send(*it, data, length, 0) <= 0) {
 			bad_sock_list.push_back(*it);
 		}
