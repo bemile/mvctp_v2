@@ -39,6 +39,7 @@ protected:
 	bool proxy_started;
 	bool keep_alive;
 	bool is_connected;
+	bool is_restarting;
 
 	// pipes used for message communication
 	int		read_pipe_fds[2];

@@ -25,6 +25,7 @@ StatusProxy::StatusProxy(string addr, int port) {
 	isConnected = false;
 	proxy_started = false;
 	keep_alive = false;
+	is_restarting = false;
 	execution_pid = 0;
 }
 
@@ -262,10 +263,11 @@ void StatusProxy::RunManagerSendThread() {
 		// Read the response from the local process
 		int msg_type;
 		string msg;
-		if (ReadMessageLocal(msg_type, msg) <= 0) {
+		if (ReadMessageLocal(msg_type, msg) <= 0 && !is_restarting) {
 			SendMessageToManager(INFORMATIONAL, "The execution process has crashed. Restarting the process...");
 			StartExecutionProcess();
 			SendMessageToManager(INFORMATIONAL, "The execution process has been restarted.");
+			is_restarting = false;
 			continue;
 		}
 		SendMessageToManager(msg_type, msg);
@@ -331,6 +333,7 @@ void StatusProxy::HandleRestartCommand() {
 //	execl("/bin/sh", "sh", "/users/jieli/bin/run_starter.sh", (char *) 0);
 //	exit(0);
 
+	is_restarting = true;
 	kill(execution_pid, SIGINT);
 	// Restart the process
 	chdir("/users/jieli/bin");
