@@ -82,6 +82,7 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 		cout << "Sending message to socket " << *it << endl;
 		if (send(*it, data, length, 0) <= 0) {
 			bad_sock_list.push_back(*it);
+			cout << "Bad socket " << *it << " added to the list." << endl;
 		}
 		cout << "Message sent to socket " << *it << endl;
 	}
