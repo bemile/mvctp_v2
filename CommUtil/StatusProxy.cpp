@@ -55,21 +55,23 @@ int StatusProxy::ConnectServer() {
 // Send a message to the remote manager
 int StatusProxy::SendMessageToManager(int msg_type, string msg) {
 	int res;
-	if ( (res = write(sockfd, &msg_type, sizeof(msg_type))) < 0) {
-		cout << "Error sending message. " << endl;
+	int type = msg_type;
+	cout << "Message to send: " << msg << endl;
+	if ( (res = write(sockfd, &type, sizeof(type))) < 0) {
+		cout << "Error sending message to remote manager. " << endl;
 		ReconnectServer();
 		return -1;
 	}
 
 	int length = msg.length();
 	if ( (res = write(sockfd, &length, sizeof(length))) < 0) {
-		cout << "Error sending message. " << endl;
+		cout << "Error sending message to remote manager. " << endl;
 		ReconnectServer();
 		return -1;
 	}
 
 	if ( (res = write(sockfd, msg.c_str(), length)) < 0) {
-		cout << "Error sending message. " << endl;
+		cout << "Error sending message to remote manager. " << endl;
 		ReconnectServer();
 		return -1;
 	}
@@ -110,7 +112,9 @@ int StatusProxy::ReadMessageFromManager(int& msg_type, string& msg) {
 // Send a message to local parent/child process
 int StatusProxy::SendMessageLocal(int msg_type, string msg) {
 	int res;
-	if ((res = write(write_pipe_fd, &msg_type, sizeof(msg_type))) < 0) {
+	int type = msg_type;
+	cout << "Message to send: " << msg << endl;
+	if ((res = write(write_pipe_fd, &type, sizeof(type))) < 0) {
 		cout << "Error sending message. " << endl;
 		return res;
 	}
