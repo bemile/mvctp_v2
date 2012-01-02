@@ -152,6 +152,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	msg.data_len = length;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
+	cout << "Start memory to memory transfer" << endl;
 	DoMemoryTransfer(data, length, 0);
 
 	// Record memory data multicast time
