@@ -93,6 +93,8 @@ int MVCTPReceiver::JoinGroup(string addr, ushort port) {
 }
 
 int MVCTPReceiver::ConnectSenderOnTCP() {
+	status_proxy->SendMessageToManager(INFORMATIONAL, "Connecting TCP server at the sender...");
+
 	if (retrans_tcp_client != NULL)
 		delete retrans_tcp_client;
 
@@ -103,6 +105,8 @@ int MVCTPReceiver::ConnectSenderOnTCP() {
 	FD_ZERO(&read_sock_set);
 	FD_SET(multicast_sock, &read_sock_set);
 	FD_SET(retrans_tcp_sock, &read_sock_set);
+
+	status_proxy->SendMessageToManager(INFORMATIONAL, "TCP server connected.");
 	return 1;
 }
 
