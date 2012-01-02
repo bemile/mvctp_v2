@@ -70,6 +70,12 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 	list<int> bad_sock_list;
 
 	list<int>::iterator it;
+
+	cout << "Current sockets: ";
+	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
+		cout << *it << "    " << endl;
+	}
+
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
 		if (send(*it, data, length, 0) <= 0) {
@@ -77,12 +83,12 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 		}
 	}
 
-//	for (it = bad_sock_list.begin(); it != bad_sock_list.end(); it++) {
-//		close(*it);
-//		conn_sock_list.remove(*it);
-//		FD_CLR(*it, &master_read_fds);
-//		cout << "TcpServer::SendToAll()::One socket deleted: " << *it << endl;
-//	}
+	for (it = bad_sock_list.begin(); it != bad_sock_list.end(); it++) {
+		close(*it);
+		conn_sock_list.remove(*it);
+		FD_CLR(*it, &master_read_fds);
+		cout << "TcpServer::SendToAll()::One socket deleted: " << *it << endl;
+	}
 	pthread_mutex_unlock(&sock_list_mutex);
 }
 
