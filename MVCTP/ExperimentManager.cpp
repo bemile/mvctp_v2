@@ -10,7 +10,8 @@
 
 
 ExperimentManager::ExperimentManager() {
-
+	file_size = 0;
+	send_rate = 0;
 }
 
 
@@ -28,25 +29,26 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 	const int NUM_UDP_BUFF_SIZES = 2;
 
 	int file_sizes[NUM_FILE_SIZES] = {512, 1024, 2048, 4095};
-	int sending_rates[NUM_SENDING_RATES] = {200, 400, 600, 700, 800};
+	int send_rates[NUM_SENDING_RATES] = {200, 400, 600, 700, 800};
 	int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {1000, 10000};
 	string udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\"",
 								"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\""
 							   };
 
 	result_file.open("exp_results.csv", ofstream::out | ofstream::trunc);
+	result_file << "#Transfer Size (Bytes),Send Rate (Mbps),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate" << endl;
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
 		// Generate the data file with the given size
-		ulong file_size = file_sizes[i] * 1024 * 1024;
+		file_size = file_sizes[i] * 1024 * 1024;
 		sender_proxy->GenerateDataFile("/tmp/temp.dat", file_size);
 
 		for (int j = 0; j < NUM_SENDING_RATES; j++) {
-			sender_proxy->SetSendRate(sending_rates[j]);
-			result_file << sending_rates[j] << " Mbps" << endl;
+			send_rate = send_rates[j];
+			sender_proxy->SetSendRate(send_rate);
 			for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
 				sender_proxy->TransferFile("/tmp/temp.dat");
 			}
-			result_file << endl << endl << endl;
 		}
 
 		// delete the data file
@@ -60,7 +62,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 
 void ExperimentManager::HandleExpResults(string msg) {
 	if (result_file.is_open()) {
-		result_file << msg;
+		result_file << file_size << "," << send_rate << "," << msg;
 	}
 }
 

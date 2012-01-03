@@ -56,7 +56,8 @@ private:
 	fd_set	read_sock_set;
 	ofstream retrans_info;
 
-	int 	packet_loss_rate;
+	int 				packet_loss_rate;
+	uint				session_id;
 	MvctpReceiverStats 	recv_stats;
 	CpuCycleCounter		cpu_counter;
 	StatusProxy*		status_proxy;

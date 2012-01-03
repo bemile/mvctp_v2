@@ -67,12 +67,11 @@ void MVCTPReceiver::SendSessionStatistics() {
 			recv_stats.session_retrans_time, send_rate);
 	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 
-	sprintf(buf, "%u,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n", total_bytes, recv_stats.session_total_time, recv_stats.session_trans_time,
+	sprintf(buf, "%u,%s,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n", session_id, status_proxy->GetNodeId().c_str(), recv_stats.session_total_time, recv_stats.session_trans_time,
 			recv_stats.session_retrans_time, send_rate, recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage);
 	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 
-	sprintf(buf, "%s,%s", status_proxy->GetNodeId().c_str(), buf);
 	int len = strlen(buf);
 	retrans_tcp_client->Send(&len, sizeof(len));
 	retrans_tcp_client->Send(buf, len);
@@ -490,7 +489,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
-	uint32_t session_id = transfer_msg.session_id;
+	session_id = transfer_msg.session_id;
 
 	// Create the disk file
 	int fd = open(transfer_msg.text, O_RDWR | O_CREAT | O_TRUNC);

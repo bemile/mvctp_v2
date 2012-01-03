@@ -142,7 +142,7 @@ void SenderStatusProxy::SetSendRate(int rate_mbps) {
 					PORT_NUM, BUFFER_TCP_SEND_PORT, rate);
 	ExecSysCommand(command);
 
-	sprintf(command, "Data sending rate has been set to %d Mbps.", rate);
+	sprintf(command, "Data sending rate has been set to %d Mbps.", rate_mbps);
 	SendMessageLocal(COMMAND_RESPONSE, command);
 }
 
