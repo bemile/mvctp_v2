@@ -65,7 +65,7 @@ private:
 	int			buffer_size;
 
 	ExperimentManager  	exp_manager;
-	ofstream 			result_file;
+
 
 	void	ConfigureEnvironment();
 };

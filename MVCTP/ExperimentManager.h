@@ -29,6 +29,8 @@ public:
 private:
 	ulong file_size;
 	int send_rate;
+
+	ofstream 			result_file;
 };
 
 

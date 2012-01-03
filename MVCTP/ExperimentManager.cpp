@@ -35,6 +35,13 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 								"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\""
 							   };
 
+	result_file.open("exp_results.csv", ofstream::out | ofstream::trunc);
+	result_file
+			<< "#Transfer Size (Bytes),Send Rate (Mbps),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
+			<< endl;
+
+
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
 		// Generate the data file with the given size
 		file_size = file_sizes[i] * 1024 * 1024;
@@ -51,11 +58,16 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 		// delete the data file
 		system("sudo rm /tmp/temp.dat");
 	}
+
+	result_file.close();
 }
 
 
 void ExperimentManager::HandleExpResults(string msg) {
-
+	if (result_file.is_open()) {
+		cout << "I received exp report: " << msg << endl;
+		result_file << file_size << "," << send_rate << "," << msg;
+	}
 }
 
 
