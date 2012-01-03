@@ -24,12 +24,12 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 	// Experiment parameters
 	const int NUM_RUNS_PER_SETUP = 5;
 	const int NUM_FILE_SIZES = 4;
-	const int NUM_SENDING_RATES = 5;
+	const int NUM_SENDING_RATES = 4;
 	const int NUM_TXQUEUE_LENGTHS = 2;
 	const int NUM_UDP_BUFF_SIZES = 2;
 
 	int file_sizes[NUM_FILE_SIZES] = {512, 1024, 2048, 4095};
-	int send_rates[NUM_SENDING_RATES] = {200, 400, 600, 700, 800};
+	int send_rates[NUM_SENDING_RATES] = {500, 600, 700, 800};
 	int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {1000, 10000};
 	string udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\"",
 								"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\""
