@@ -59,7 +59,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
 			<< endl;
 
-
+	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
 		// Generate the data file with the given size
 		file_size = file_sizes[i] * 1024 * 1024;
@@ -69,6 +69,10 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 			send_rate = send_rates[j];
 			sender_proxy->SetSendRate(send_rate);
 			for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
+				sprintf(msg, "******** Run %d ********\nFile Size: %d MB\nSending Rate: %d Mbps\n",
+						n+1, file_sizes[i], send_rates[j]);
+				sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
+
 				finished_node_count = 0;
 				sender_proxy->TransferFile("/tmp/temp.dat");
 			}
