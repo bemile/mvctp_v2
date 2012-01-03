@@ -54,6 +54,7 @@ void SenderStatusProxy::InitializeExecutionProcess() {
 
 int SenderStatusProxy::SendMessageToManager(int msg_type, string msg) {
 	if (msg_type == EXP_RESULT_REPORT) {
+		cout << "I received exp report: " << msg << endl;
 		exp_manager.HandleExpResults(msg);
 		return 1;
 	}
