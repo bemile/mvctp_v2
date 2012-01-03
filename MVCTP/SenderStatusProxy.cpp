@@ -55,7 +55,10 @@ void SenderStatusProxy::InitializeExecutionProcess() {
 int SenderStatusProxy::SendMessageToManager(int msg_type, string msg) {
 	if (msg_type == EXP_RESULT_REPORT) {
 		cout << "I received exp report: " << msg << endl;
-		exp_manager.HandleExpResults(msg);
+		if (result_file.is_open()) {
+			result_file << exp_manager.GetFileSize() << "," << exp_manager.GetSendRate() << "," << msg;
+		}
+		//exp_manager.HandleExpResults(msg);
 		return 1;
 	}
 	else {
@@ -122,7 +125,13 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 	}
 	else if (parts.front().compare("StartExperiment") == 0) {
 		SendMessageLocal(INFORMATIONAL, "Starting experiments...");
+		result_file.open("exp_results.csv", ofstream::out | ofstream::trunc);
+		result_file << "#Transfer Size (Bytes),Send Rate (Mbps),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+					<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate" << endl;
+
 		exp_manager.StartExperiment(this);
+
+		result_file.close();
 		SendMessageLocal(INFORMATIONAL, "All experiments finished.");
 	}
 	else {

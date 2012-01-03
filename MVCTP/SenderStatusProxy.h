@@ -64,7 +64,8 @@ private:
 	int			mvctp_port_num;
 	int			buffer_size;
 
-	ExperimentManager  exp_manager;
+	ExperimentManager  	exp_manager;
+	ofstream 			result_file;
 
 	void	ConfigureEnvironment();
 };

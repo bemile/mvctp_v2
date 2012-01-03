@@ -23,8 +23,10 @@ public:
 	void StartExperiment(SenderStatusProxy* sender_proxy);
 	void HandleExpResults(string msg);
 
+	ulong 	GetFileSize() {return file_size;}
+	int 	GetSendRate() {return send_rate;}
+
 private:
-	ofstream result_file;
 	ulong file_size;
 	int send_rate;
 };
