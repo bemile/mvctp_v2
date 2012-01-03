@@ -55,6 +55,7 @@ void SenderStatusProxy::InitializeExecutionProcess() {
 int SenderStatusProxy::SendMessageLocal(int msg_type, string msg) {
 	if (msg_type == EXP_RESULT_REPORT) {
 		if (result_file.is_open()) {
+			cout << "I received exp report: " << msg << endl;
 			result_file << exp_manager.GetFileSize() << "," << exp_manager.GetSendRate() << "," << msg;
 		}
 		//exp_manager.HandleExpResults(msg);
