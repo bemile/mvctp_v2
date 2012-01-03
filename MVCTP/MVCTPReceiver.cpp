@@ -97,7 +97,7 @@ int MVCTPReceiver::JoinGroup(string addr, ushort port) {
 }
 
 int MVCTPReceiver::ConnectSenderOnTCP() {
-	status_proxy->SendMessageToManager(INFORMATIONAL, "Connecting TCP server at the sender...");
+	status_proxy->SendMessageLocal(INFORMATIONAL, "Connecting TCP server at the sender...");
 
 	if (retrans_tcp_client != NULL)
 		delete retrans_tcp_client;
@@ -110,7 +110,7 @@ int MVCTPReceiver::ConnectSenderOnTCP() {
 	FD_SET(multicast_sock, &read_sock_set);
 	FD_SET(retrans_tcp_sock, &read_sock_set);
 
-	status_proxy->SendMessageToManager(INFORMATIONAL, "TCP server connected.");
+	status_proxy->SendMessageLocal(INFORMATIONAL, "TCP server connected.");
 	return 1;
 }
 
@@ -160,6 +160,12 @@ void MVCTPReceiver::Start() {
 			}
 			case TCP_FILE_TRANSFER_START:
 				TcpReceiveFile(msg);
+				break;
+			case SPEED_TEST:
+				if (recv_stats.session_retrans_percentage > 0.5) {
+					status_proxy->SendMessageLocal(INFORMATIONAL, "I'm going offline because I'm a slow node...");
+					system("sudo reboot");
+				}
 				break;
 			default:
 				break;

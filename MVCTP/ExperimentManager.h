@@ -14,13 +14,14 @@
 #include <vector>
 
 class SenderStatusProxy;
+class MVCTPSender;
 
 class ExperimentManager {
 public:
 	ExperimentManager();
 	~ExperimentManager();
 
-	void StartExperiment(SenderStatusProxy* sender_proxy);
+	void StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	void HandleExpResults(string msg);
 
 	ulong 	GetFileSize() {return file_size;}
@@ -29,8 +30,11 @@ public:
 private:
 	ulong file_size;
 	int send_rate;
-
+	int num_test_nodes;
+	int finished_node_count;
 	ofstream 			result_file;
+
+	void DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 };
 
 

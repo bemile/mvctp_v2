@@ -19,8 +19,21 @@ ExperimentManager::~ExperimentManager() {
 
 }
 
+void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	sender_proxy->SendMessageLocal(INFORMATIONAL, "Doing file transfer test to remove slow nodes...");
+	sender_proxy->SetSendRate(600);
+	sender_proxy->GenerateDataFile("/tmp/temp.dat", 256 * 1024 * 1024);
 
-void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
+	sender_proxy->TransferFile("/tmp/temp.dat");
+	sender->RemoveSlowNodes();
+	sender_proxy->TransferFile("/tmp/temp.dat");
+
+	// we want number of test nodes to be a multiple of 5
+	num_test_nodes = sender->GetNumReceivers() / 5 * 5;
+	sender_proxy->SendMessageLocal(INFORMATIONAL, "File transfer test finished.");
+}
+
+void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	// Experiment parameters
 	const int NUM_RUNS_PER_SETUP = 5;
 	const int NUM_FILE_SIZES = 4;
@@ -35,6 +48,11 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 								"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\""
 							   };
 
+	// First do the speed test to remove slow nodes
+	DoSpeedTest(sender_proxy, sender);
+
+
+	// Do the experiments
 	result_file.open("exp_results.csv", ofstream::out | ofstream::trunc);
 	result_file
 			<< "#Transfer Size (Bytes),Send Rate (Mbps),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
@@ -51,6 +69,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 			send_rate = send_rates[j];
 			sender_proxy->SetSendRate(send_rate);
 			for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
+				finished_node_count = 0;
 				sender_proxy->TransferFile("/tmp/temp.dat");
 			}
 		}
@@ -64,8 +83,8 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 
 
 void ExperimentManager::HandleExpResults(string msg) {
-	if (result_file.is_open()) {
-		cout << "I received exp report: " << msg << endl;
+	if (result_file.is_open() && finished_node_count < num_test_nodes) {
+		finished_node_count++;
 		result_file << file_size << "," << send_rate << "," << msg;
 		result_file.flush();
 	}

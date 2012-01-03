@@ -103,6 +103,21 @@ int	MVCTPSender::RestartTcpServer() {
 	return 1;
 }
 
+
+int	MVCTPSender::GetNumReceivers() {
+	return retrans_tcp_server->GetSocketList().size();
+}
+
+
+void MVCTPSender::RemoveSlowNodes() {
+	struct MvctpTransferMessage msg;
+	msg.event_type = SPEED_TEST;
+	msg.session_id = cur_session_id;
+	msg.data_len = 0;
+	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+}
+
+
 void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map) {
 	int client_sock;
 	MvctpRetransMessage retrans_msg;
@@ -162,7 +177,6 @@ void MVCTPSender::SortSocketsByShortestJobs(int* ptr_socks,
 	}
 
 }
-
 
 
 void MVCTPSender::SendMemoryData(void* data, size_t length) {
