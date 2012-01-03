@@ -54,7 +54,7 @@ void SenderStatusProxy::InitializeExecutionProcess() {
 
 int SenderStatusProxy::SendMessageToManager(int msg_type, string msg) {
 	if (msg_type == EXP_RESULT_REPORT) {
-		cout << "I received exp report: " << msg << endl;
+		// cout << "I received exp report: " << msg << endl;
 		result_file << msg;
 		if (result_file.is_open()) {
 
