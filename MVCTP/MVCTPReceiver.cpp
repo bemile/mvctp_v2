@@ -181,6 +181,7 @@ void MVCTPReceiver::Start() {
 
 // Receive memory data from the sender
 void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg, char* mem_data) {
+	retrans_info.open("retrans_info.txt", ofstream::out | ofstream::trunc);
 	ResetSessionStatistics();
 
 	char str[256];
@@ -282,6 +283,8 @@ void MVCTPReceiver::ReceiveMemoryData(const MvctpTransferMessage & transfer_msg,
 
 				status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
+
+				retrans_info.close();
 
 				// Transfer finished, so return directly
 				return;
