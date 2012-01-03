@@ -84,9 +84,10 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 void ExperimentManager::HandleExpResults(string msg) {
 	if (result_file.is_open() && finished_node_count < num_test_nodes) {
-		finished_node_count++;
 		result_file << file_size << "," << send_rate << "," << msg;
-		result_file.flush();
+		finished_node_count++;
+		if (finished_node_count == num_test_nodes)
+			result_file.flush();
 	}
 }
 
