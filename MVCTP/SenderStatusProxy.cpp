@@ -61,7 +61,7 @@ int SenderStatusProxy::SendMessageLocal(int msg_type, string msg) {
 		return 1;
 	}
 	else {
-		return StatusProxy::SendMessageToManager(msg_type, msg);
+		return StatusProxy::SendMessageLocal(msg_type, msg);
 	}
 }
 
