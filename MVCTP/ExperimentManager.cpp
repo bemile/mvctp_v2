@@ -61,9 +61,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy) {
 
 
 void ExperimentManager::HandleExpResults(string msg) {
-	if (result_file.is_open()) {
-		result_file << file_size << "," << send_rate << "," << msg;
-	}
+	result_file << file_size << "," << send_rate << "," << msg;
 }
 
 
