@@ -10,6 +10,7 @@
 
 #include "../CommUtil/StatusProxy.h"
 #include "MVCTPSender.h"
+#include "ExperimentManager.h"
 #include <sys/time.h>
 
 
@@ -33,18 +34,24 @@ struct TransferMessage {
 
 class SenderStatusProxy : public StatusProxy {
 public:
-	SenderStatusProxy(string addr, int port, MVCTPSender* psender);
 	SenderStatusProxy(string addr, int port, string group_addr, int mvctp_port, int buff_size);
+	~SenderStatusProxy();
+
+	virtual int HandleCommand(const char* command);
+	virtual int SendMessageToManager(int msg_type, string msg);
+
+	// public functions for experiments
+	int 	GenerateDataFile(string file_name, ulong bytes);
+	void 	TransferFile(string file_name);
+	void 	SetSendRate(int rate_mbps);
+
 
 protected:
-	virtual int HandleCommand(const char* command);
 	int 	HandleSendCommand(list<string>& slist);
 	int 	HandleTcpSendCommand(list<string>& slist);
-	void 	SetSendRate(int rate_mbps);
 
 	int 	TransferString(string str, bool send_out_packets);
 	int 	TransferMemoryData(int size);
-	void 	TransferFile(string file_name);
 	int 	TcpTransferMemoryData(int size);
 	void 	TcpTransferFile(string file_name);
 	void 	SendMemoryData(void* buffer, size_t length);
@@ -57,8 +64,9 @@ private:
 	int			mvctp_port_num;
 	int			buffer_size;
 
+	ExperimentManager  exp_manager;
+
 	void	ConfigureEnvironment();
-	int 	GenerateDataFile(string file_name, ulong bytes);
 };
 
 

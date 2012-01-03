@@ -21,17 +21,21 @@ typedef struct sockaddr SA;
 class StatusProxy {
 public:
 	StatusProxy(string addr, int port);
-	~StatusProxy();
+	virtual ~StatusProxy();
 
 	int ConnectServer();
 	void StartService();
 	void StopService();
-	int SendMessageToManager(int msg_type, string msg);
+	string GetNodeId();
+	virtual int SendMessageToManager(int msg_type, string msg);
 	int ReadMessageFromManager(int& msg_type, string& msg);
 	int SendMessageLocal(int msg_type, string msg);
 	int ReadMessageLocal(int& msg_type, string& msg);
 
+	virtual int HandleCommand(const char* command);
+
 protected:
+	string node_id;
 	int sockfd;
 	struct sockaddr_in servaddr;
 	bool isConnected;
@@ -64,7 +68,6 @@ protected:
 	virtual void InitializeExecutionProcess();
 
 	void ReconnectServer();
-	virtual int HandleCommand(const char* command);
 	void HandleRestartCommand();
 	int ExecSysCommand(const char* command);
 

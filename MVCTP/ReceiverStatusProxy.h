@@ -14,11 +14,12 @@
 
 class ReceiverStatusProxy : public StatusProxy {
 public:
-	ReceiverStatusProxy(string addr, int port, MVCTPReceiver* preceiver);
 	ReceiverStatusProxy(string addr, int port, string group_addr, int mvctp_port, int buff_size);
+	~ReceiverStatusProxy();
+
+	virtual int 	HandleCommand(const char* command);
 
 protected:
-	virtual int 	HandleCommand(const char* command);
 	virtual void 	InitializeExecutionProcess();
 
 private:

@@ -37,6 +37,7 @@ public:
 	void 	SendToAll(const void* data, size_t length);
 	int		SelectSend(int conn_sock, const void* data, size_t length);
 	int 	SelectReceive(int* conn_sock, void* buffer, size_t length);
+	int		Receive(int sock_fd, void* buffer, size_t length);
 	list<int> GetSocketList();
 
 private:

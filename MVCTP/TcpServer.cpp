@@ -137,6 +137,21 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 	return res;
 }
 
+// Receive data from a given socket
+int TcpServer::Receive(int sock_fd, void* buffer, size_t length) {
+	int res = recv(sock_fd, buffer, length, MSG_WAITALL);
+	if (res <= 0) {
+		pthread_mutex_lock(&sock_list_mutex);
+		conn_sock_list.remove(sock_fd);
+		close(sock_fd);
+		FD_CLR(sock_fd, &master_read_fds);
+		cout << "SelectReceive()::One broken socket deleted: " << sock_fd << endl;
+		pthread_mutex_unlock(&sock_list_mutex);
+	}
+	return res;
+}
+
+
 void TcpServer::SysError(char* info) {
 	perror(info);
 	exit(-1);

@@ -52,6 +52,29 @@ void MVCTPSender::SendSessionStatistics() {
 }
 
 
+// Collect experiment results for file transfer from all receivers
+void MVCTPSender::CollectExpResults() {
+	char buf[512];
+	int client_sock;
+	list<int> sock_list = retrans_tcp_server->GetSocketList();
+	int str_len;
+	while (!sock_list.empty()) {
+		int bytes = retrans_tcp_server->SelectReceive(&client_sock, &str_len, sizeof(str_len));
+		if (bytes <= 0) {
+			sock_list.remove(client_sock);
+			continue;
+		}
+		else {
+			int bytes = retrans_tcp_server->Receive(client_sock, buf, str_len);
+			if (bytes >= 0) {
+				buf[bytes] = '\0';
+				status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
+			}
+			sock_list.remove(client_sock);
+		}
+	}
+}
+
 // Clear session related statistics
 void MVCTPSender::ResetSessionStatistics() {
 	send_stats.session_sent_packets = 0;
@@ -326,6 +349,9 @@ void MVCTPSender::SendFile(const char* file_name) {
 	DoFileRetransmission(fd);
 
 	close(fd);
+
+	// collect experiment results from receivers
+	CollectExpResults();
 
 	// Record total transfer and retransmission time
 	send_stats.session_retrans_time = GetElapsedSeconds(cpu_counter); //send_stats.session_total_time - send_stats.session_trans_time;

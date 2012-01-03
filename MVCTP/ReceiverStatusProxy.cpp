@@ -7,14 +7,6 @@
 
 #include "ReceiverStatusProxy.h"
 
-ReceiverStatusProxy::ReceiverStatusProxy(string addr, int port, MVCTPReceiver* preceiver)
-		: StatusProxy(addr, port) {
-	ptr_receiver = preceiver;
-
-
-}
-
-
 ReceiverStatusProxy::ReceiverStatusProxy(string addr, int port, string group_addr, int mvctp_port, int buff_size)
 		: StatusProxy(addr, port) {
 	mvctp_group_addr = group_addr;
@@ -23,6 +15,11 @@ ReceiverStatusProxy::ReceiverStatusProxy(string addr, int port, string group_add
 	ptr_receiver = NULL;
 
 	ConfigureEnvironment();
+}
+
+
+ReceiverStatusProxy::~ReceiverStatusProxy() {
+	delete ptr_receiver;
 }
 
 

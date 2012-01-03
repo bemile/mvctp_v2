@@ -257,8 +257,13 @@ void StatusProxy::RunProcessExecutionThread() {
 int StatusProxy::SendNodeInfo() {
 	struct utsname host_name;
 	uname(&host_name);
+	node_id = host_name.nodename;
 	SendMessageToManager(NODE_NAME, host_name.nodename);
 	return 1;
+}
+
+string StatusProxy::GetNodeId() {
+	return node_id;
 }
 
 

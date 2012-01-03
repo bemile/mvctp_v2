@@ -71,6 +71,11 @@ void MVCTPReceiver::SendSessionStatistics() {
 			recv_stats.session_retrans_time, send_rate, recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage);
 	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
+
+	sprintf(buf, "%s,%s", status_proxy->GetNodeId().c_str(), buf);
+	int len = strlen(buf);
+	retrans_tcp_client->Send(&len, sizeof(len));
+	retrans_tcp_client->Send(buf, len);
 }
 
 // Clear session related statistics

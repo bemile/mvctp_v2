@@ -60,7 +60,7 @@ public:
 	// Send data using TCP connections, for performance comparison
 	void 	TcpSendMemoryData(void* data, size_t length);
 	void 	TcpSendFile(const char* file_name);
-
+	void 	CollectExpResults();
 
 private:
 	TcpServer*			retrans_tcp_server;

@@ -7,13 +7,6 @@
 
 #include "SenderStatusProxy.h"
 
-SenderStatusProxy::SenderStatusProxy(string addr, int port, MVCTPSender* psender)
-			: StatusProxy(addr, port) {
-	ptr_sender = psender;
-	ConfigureEnvironment();
-}
-
-
 SenderStatusProxy::SenderStatusProxy(string addr, int port, string group_addr, int mvctp_port, int buff_size)
 			: StatusProxy(addr, port) {
 	mvctp_group_addr = group_addr;
@@ -22,6 +15,10 @@ SenderStatusProxy::SenderStatusProxy(string addr, int port, string group_addr, i
 	ptr_sender = NULL;
 
 	ConfigureEnvironment();
+}
+
+SenderStatusProxy::~SenderStatusProxy() {
+	delete ptr_sender;
 }
 
 
@@ -55,6 +52,17 @@ void SenderStatusProxy::InitializeExecutionProcess() {
 }
 
 
+int SenderStatusProxy::SendMessageToManager(int msg_type, string msg) {
+	if (msg_type == EXP_RESULT_REPORT) {
+		exp_manager.HandleExpResults(msg);
+		return 1;
+	}
+	else {
+		return StatusProxy::SendMessageToManager(msg_type, msg);
+	}
+}
+
+
 int SenderStatusProxy::HandleCommand(const char* command) {
 	string s = command;
 	/*int length = s.length();
@@ -81,9 +89,6 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 		if (parts.size() == 2) {
 			int rate = atoi(parts.back().c_str());
 			SetSendRate(rate); //ptr_sender->SetSendRate(rate);
-			cout << "Data sending rate is set to " << rate << " Mbps" << endl;
-			SendMessageLocal(COMMAND_RESPONSE, "Data sending rate has been set.");
-			sprintf(msg, "Data sending rate has been set to %d Mbps.", rate);
 		}
 	}
 	else if (parts.front().compare("CreateLogFile") == 0) {
@@ -114,6 +119,11 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 			SendMessageLocal(COMMAND_RESPONSE, "Data file generated.");
 		}
 	}
+	else if (parts.front().compare("StartExperiment") == 0) {
+		SendMessageLocal(INFORMATIONAL, "Starting experiments...");
+		exp_manager.StartExperiment(this);
+		SendMessageLocal(INFORMATIONAL, "All experiments finished.");
+	}
 	else {
 		StatusProxy::HandleCommand(command);
 	}
@@ -131,6 +141,9 @@ void SenderStatusProxy::SetSendRate(int rate_mbps) {
 	sprintf(command, "sudo ./rate-limit.sh %s %d %d %s", ptr_sender->GetInterfaceName().c_str(),
 					PORT_NUM, BUFFER_TCP_SEND_PORT, rate);
 	ExecSysCommand(command);
+
+	sprintf(command, "Data sending rate has been set to %d Mbps.", rate);
+	SendMessageLocal(COMMAND_RESPONSE, command);
 }
 
 
@@ -316,6 +329,13 @@ int SenderStatusProxy::GenerateDataFile(string file_name, ulong bytes) {
 		return -1;
 	}
 }
+
+
+
+
+
+
+
 
 
 
