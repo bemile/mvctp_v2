@@ -67,6 +67,7 @@ void ExperimentManager::HandleExpResults(string msg) {
 	if (result_file.is_open()) {
 		cout << "I received exp report: " << msg << endl;
 		result_file << file_size << "," << send_rate << "," << msg;
+		result_file.flush();
 	}
 }
 
