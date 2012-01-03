@@ -27,9 +27,9 @@ public:
 	void StartService();
 	void StopService();
 	string GetNodeId();
-	virtual int SendMessageToManager(int msg_type, string msg);
+	int SendMessageToManager(int msg_type, string msg);
 	int ReadMessageFromManager(int& msg_type, string& msg);
-	int SendMessageLocal(int msg_type, string msg);
+	virtual int SendMessageLocal(int msg_type, string msg);
 	int ReadMessageLocal(int& msg_type, string& msg);
 
 	virtual int HandleCommand(const char* command);

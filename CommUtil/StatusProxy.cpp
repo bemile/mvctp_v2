@@ -27,6 +27,10 @@ StatusProxy::StatusProxy(string addr, int port) {
 	keep_alive = false;
 	is_restarting = false;
 	execution_pid = 0;
+
+	struct utsname host_name;
+	uname(&host_name);
+	node_id = host_name.nodename;
 }
 
 StatusProxy::~StatusProxy() {
@@ -255,10 +259,7 @@ void StatusProxy::RunProcessExecutionThread() {
 
 
 int StatusProxy::SendNodeInfo() {
-	struct utsname host_name;
-	uname(&host_name);
-	node_id = string(host_name.nodename);
-	SendMessageToManager(NODE_NAME, host_name.nodename);
+	SendMessageToManager(NODE_NAME, node_id);
 	return 1;
 }
 

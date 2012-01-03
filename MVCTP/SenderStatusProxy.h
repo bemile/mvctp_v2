@@ -38,7 +38,7 @@ public:
 	~SenderStatusProxy();
 
 	virtual int HandleCommand(const char* command);
-	virtual int SendMessageToManager(int msg_type, string msg);
+	virtual int SendMessageLocal(int msg_type, string msg);
 
 	// public functions for experiments
 	int 	GenerateDataFile(string file_name, ulong bytes);
