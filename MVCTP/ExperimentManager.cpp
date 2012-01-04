@@ -36,7 +36,7 @@ void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender
 
 void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	// Experiment parameters
-	const int NUM_RUNS_PER_SETUP = 5;
+	const int NUM_RUNS_PER_SETUP = 30;
 	const int NUM_FILE_SIZES = 4;
 	const int NUM_SENDING_RATES = 4;
 	const int NUM_TXQUEUE_LENGTHS = 2;
@@ -46,7 +46,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	int send_rates[NUM_SENDING_RATES] = {500, 600, 700, 800};
 	int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {1000, 10000};
 	string udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\"",
-								"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\""
+								"sudo sysctl -w net.ipv4.udp_mem=\"4096 4194304 8388608\""
 							   };
 
 	// First do the speed test to remove slow nodes
@@ -70,7 +70,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 			send_rate = send_rates[j];
 			sender_proxy->SetSendRate(send_rate);
 			for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
-				sprintf(msg, "******** Run %d ********\nFile Size: %d MB\nSending Rate: %d Mbps\n",
+				sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nSending Rate: %d Mbps\n",
 						n+1, file_sizes[i], send_rates[j]);
 				sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
 
