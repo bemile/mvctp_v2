@@ -177,7 +177,7 @@ void MVCTPReceiver::Start() {
 				TcpReceiveFile(msg);
 				break;
 			case SPEED_TEST:
-				if (recv_stats.session_retrans_percentage > 0.5) {
+				if (recv_stats.session_retrans_percentage > 0.3) {
 					status_proxy->SendMessageLocal(INFORMATIONAL, "I'm going offline because I'm a slow node...");
 					system("sudo reboot");
 				}
