@@ -76,7 +76,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 				sender_proxy->SetSendRate(send_rate);
 				for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
 					sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nTxQueue Length:%d\nSending Rate: %d Mbps\n",
-							n+1, file_size, txqueue_len, send_rate);
+							n+1, file_sizes[i], txqueue_len, send_rate);
 					sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
 
 					finished_node_count = 0;
