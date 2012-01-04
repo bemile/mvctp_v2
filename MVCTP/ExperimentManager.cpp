@@ -26,6 +26,7 @@ void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender
 
 	sender_proxy->TransferFile("/tmp/temp.dat");
 	sender->RemoveSlowNodes();
+	sleep(3);
 	sender_proxy->TransferFile("/tmp/temp.dat");
 
 	// we want number of test nodes to be a multiple of 5
