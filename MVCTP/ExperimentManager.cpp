@@ -12,6 +12,7 @@
 ExperimentManager::ExperimentManager() {
 	file_size = 0;
 	send_rate = 0;
+	txqueue_len = 0;
 }
 
 
@@ -39,12 +40,12 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	const int NUM_RUNS_PER_SETUP = 30;
 	const int NUM_FILE_SIZES = 4;
 	const int NUM_SENDING_RATES = 4;
-	const int NUM_TXQUEUE_LENGTHS = 2;
+	const int NUM_TXQUEUE_LENGTHS = 3;
 	const int NUM_UDP_BUFF_SIZES = 2;
 
 	int file_sizes[NUM_FILE_SIZES] = {512, 1024, 2048, 4095};
 	int send_rates[NUM_SENDING_RATES] = {500, 600, 700, 800};
-	int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {1000, 10000};
+	int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {10000, 5000, 2500};
 	string udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\"",
 								"sudo sysctl -w net.ipv4.udp_mem=\"4096 4194304 8388608\""
 							   };
@@ -56,7 +57,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	// Do the experiments
 	result_file.open("exp_results.csv", ofstream::out | ofstream::trunc);
 	result_file
-			<< "#Transfer Size (Bytes),Send Rate (Mbps),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "Transfer Size (Bytes),TxQueue Length,Send Rate (Mbps),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
 			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
 			<< endl;
 
@@ -66,16 +67,21 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 		file_size = file_sizes[i] * 1024 * 1024;
 		sender_proxy->GenerateDataFile("/tmp/temp.dat", file_size);
 
-		for (int j = 0; j < NUM_SENDING_RATES; j++) {
-			send_rate = send_rates[j];
-			sender_proxy->SetSendRate(send_rate);
-			for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
-				sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nSending Rate: %d Mbps\n",
-						n+1, file_sizes[i], send_rates[j]);
-				sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
+		for (int l = 0; l < NUM_TXQUEUE_LENGTHS; l++) {
+			txqueue_len = txqueue_lengths[l];
+			sender_proxy->SetTxQueueLength(txqueue_len);
 
-				finished_node_count = 0;
-				sender_proxy->TransferFile("/tmp/temp.dat");
+			for (int j = 0; j < NUM_SENDING_RATES; j++) {
+				send_rate = send_rates[j];
+				sender_proxy->SetSendRate(send_rate);
+				for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
+					sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nTxQueue Length:%d\nSending Rate: %d Mbps\n",
+							n+1, file_size, txqueue_len, send_rate);
+					sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
+
+					finished_node_count = 0;
+					sender_proxy->TransferFile("/tmp/temp.dat");
+				}
 			}
 		}
 
@@ -89,7 +95,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 void ExperimentManager::HandleExpResults(string msg) {
 	if (result_file.is_open() && finished_node_count < num_test_nodes) {
-		result_file << file_size << "," << send_rate << "," << msg;
+		result_file << file_size << "," << txqueue_len << "," << send_rate << "," << msg;
 		finished_node_count++;
 		if (finished_node_count == num_test_nodes)
 			result_file.flush();

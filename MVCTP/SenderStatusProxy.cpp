@@ -45,9 +45,13 @@ void SenderStatusProxy::InitializeExecutionProcess() {
 
 	SendMessageLocal(INFORMATIONAL, "I'm the sender. Just joined the multicast group.");
 
+	SetTxQueueLength(10000);
+}
+
+
+void SenderStatusProxy::SetTxQueueLength(int length) {
 	char command[256];
-	sprintf(command, "sudo ifconfig %s txqueuelen 10000",
-	ptr_sender->GetInterfaceName().c_str());
+	sprintf(command, "sudo ifconfig %s txqueuelen %d", ptr_sender->GetInterfaceName().c_str(), length);
 	system(command);
 }
 

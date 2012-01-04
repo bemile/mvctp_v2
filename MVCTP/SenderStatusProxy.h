@@ -44,6 +44,7 @@ public:
 	int 	GenerateDataFile(string file_name, ulong bytes);
 	void 	TransferFile(string file_name);
 	void 	SetSendRate(int rate_mbps);
+	void	SetTxQueueLength(int length);
 
 
 protected:

@@ -30,6 +30,7 @@ public:
 private:
 	ulong file_size;
 	int send_rate;
+	int txqueue_len;
 	int num_test_nodes;
 	int finished_node_count;
 	ofstream 			result_file;
