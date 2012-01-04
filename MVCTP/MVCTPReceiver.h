@@ -43,6 +43,7 @@ public:
 	void	SetBufferSize(size_t size);
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
+	void	SendStatisticsToSender();
 	void 	SetStatusProxy(StatusProxy* proxy);
 	const struct MvctpReceiverStats GetBufferStats();
 

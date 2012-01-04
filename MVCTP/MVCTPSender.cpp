@@ -54,6 +54,14 @@ void MVCTPSender::SendSessionStatistics() {
 
 // Collect experiment results for file transfer from all receivers
 void MVCTPSender::CollectExpResults() {
+	// Send requests to all receivers
+	struct MvctpTransferMessage msg;
+	msg.event_type = COLLECT_STATISTICS;
+	msg.session_id = cur_session_id;
+	msg.data_len = 0;
+	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+
+
 	char buf[512];
 	int client_sock;
 	list<int> sock_list = retrans_tcp_server->GetSocketList();

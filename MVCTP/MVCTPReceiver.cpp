@@ -71,10 +71,6 @@ void MVCTPReceiver::SendSessionStatistics() {
 			recv_stats.session_retrans_time, send_rate, recv_stats.session_recv_packets, recv_stats.session_retrans_packets,
 			recv_stats.session_retrans_percentage);
 	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
-
-	int len = strlen(buf);
-	retrans_tcp_client->Send(&len, sizeof(len));
-	retrans_tcp_client->Send(buf, len);
 }
 
 // Clear session related statistics
@@ -87,6 +83,25 @@ void MVCTPReceiver::ResetSessionStatistics() {
 	recv_stats.session_total_time = 0.0;
 	recv_stats.session_trans_time = 0.0;
 	recv_stats.session_retrans_time = 0.0;
+}
+
+// Send session statistics to the sender through TCP connection
+void MVCTPReceiver::SendStatisticsToSender() {
+	char buf[512];
+	double send_rate = (recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes)
+							/ 1000.0 / 1000.0 * 8 / recv_stats.session_total_time * SEND_RATE_RATIO;
+	size_t total_bytes = recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes;
+
+	sprintf(buf, "%u,%s,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n", session_id,
+			status_proxy->GetNodeId().c_str(), recv_stats.session_total_time,
+			recv_stats.session_trans_time, recv_stats.session_retrans_time,
+			send_rate, recv_stats.session_recv_packets,
+			recv_stats.session_retrans_packets,
+			recv_stats.session_retrans_percentage);
+
+	int len = strlen(buf);
+	retrans_tcp_client->Send(&len, sizeof(len));
+	retrans_tcp_client->Send(buf, len);
 }
 
 
@@ -166,6 +181,9 @@ void MVCTPReceiver::Start() {
 					status_proxy->SendMessageLocal(INFORMATIONAL, "I'm going offline because I'm a slow node...");
 					system("sudo reboot");
 				}
+				break;
+			case COLLECT_STATISTICS:
+				SendStatisticsToSender();
 				break;
 			default:
 				break;
