@@ -205,6 +205,9 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	cout << "Start retransmission..." << endl;
 	DoMemoryDataRetransmission(data);
 
+	// collect experiment results from receivers
+	CollectExpResults();
+
 	// Record total transfer and retransmission time
 	send_stats.session_total_time = GetElapsedSeconds(cpu_counter);
 	send_stats.session_retrans_time = send_stats.session_total_time - send_stats.session_trans_time;
