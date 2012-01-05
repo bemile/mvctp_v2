@@ -30,6 +30,8 @@ void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender
 	sleep(3);
 	sender_proxy->TransferFile("/tmp/temp.dat");
 
+	system("sudo rm /tmp/temp.dat");
+
 	// we want number of test nodes to be a multiple of 5
 	num_test_nodes = sender->GetNumReceivers() / 5 * 5;
 	sender_proxy->SendMessageLocal(INFORMATIONAL, "File transfer test finished.");
@@ -63,9 +65,6 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
-		if (i <= 1)
-			continue;
-
 		// Generate the data file with the given size
 		file_size = file_sizes[i] * 1024 * 1024;
 		sender_proxy->GenerateDataFile("/tmp/temp.dat", file_size);
