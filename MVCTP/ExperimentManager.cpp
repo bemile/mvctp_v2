@@ -65,7 +65,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
-		if (i != 1)
+		if (i <= 1)
 			continue;
 
 		// Generate the data file with the given size
@@ -73,9 +73,6 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 		sender_proxy->GenerateDataFile("/tmp/temp.dat", file_size);
 
 		for (int l = 0; l < NUM_TXQUEUE_LENGTHS; l++) {
-			if (l != 2)
-				continue;
-
 			txqueue_len = txqueue_lengths[l];
 			sender_proxy->SetTxQueueLength(txqueue_len);
 
