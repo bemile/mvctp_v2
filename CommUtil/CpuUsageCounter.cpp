@@ -63,8 +63,8 @@ void CpuUsageCounter::RunCountThread() {
 
 		usage_ratio = cpu_time / elapsed_sec;
 		usage_percent = usage_ratio * 100;
-		if (usage_percent > 100)
-			usage_percent = 100;
+		//if (usage_percent > 100)
+		//	usage_percent = 100;
 
 		output << measure_time << "," << sys_time << "," << user_time << "," << usage_percent << endl;
 
