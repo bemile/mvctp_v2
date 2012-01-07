@@ -13,6 +13,8 @@
 #define _LARGEFILE64_SOURCE 1
 #define _FILE_OFFSET_BITS   64
 
+#include "../CommUtil/Timer.h"
+#include "ConfigInfo.h"
 #include <aio.h>
 #include <ctime>
 #include <cstdio>
@@ -45,24 +47,11 @@
 //#include <linux/if_arp.h>
 
 
-
-#include "ConfigInfo.h"
-
-
 using namespace std;
 
-struct CpuCycleCounter {
-	unsigned hi;
-	unsigned lo;
-};
 
 //global functions
 void MVCTPInit();
-void AccessCPUCounter(unsigned *hi, unsigned *lo);
-double GetElapsedCycles(unsigned hi, unsigned lo);
-double GetElapsedSeconds(CpuCycleCounter lastCount);
-double GetCPUMhz();
-double GetCurrentTime();
 void SysError(string s);
 void Log(char* format, ...);
 void CreateNewLogFile(const char* file_name);
@@ -215,10 +204,8 @@ typedef struct MvctpNackMessage {
 
 class MVCTP {
 public:
-	static double CPU_MHZ;
 	static FILE*  log_file;
 	static bool is_log_enabled;
-	static struct CpuCycleCounter start_time_counter;
 };
 
 #endif /* MVCTP_H_ */
