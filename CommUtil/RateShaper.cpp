@@ -31,6 +31,9 @@ void RateShaper::SetRate(double rate_bps) {
 	tokens_in_bucket = bucket_volume;
 	token_unit = bucket_volume;
 
+	cout << "Send Rate: " << rate << " bps" << endl;
+	cout << "Bucket volumn: " << bucket_volume << endl;
+
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	last_check_time = 0.0;
 }
@@ -57,6 +60,8 @@ void RateShaper::RetrieveTokens(int num_tokens) {
 		} else {
 			tokens_in_bucket = bucket_volume + overflow_tolerance;
 		}
+
+		tokens_in_bucket -= num_tokens;
 	}
 }
 
