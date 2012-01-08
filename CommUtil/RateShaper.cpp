@@ -13,7 +13,7 @@ RateShaper::RateShaper() {
 	tokens_in_bucket = 0;
 	token_unit = 0;
 
-	token_time_interval = 100;
+	token_time_interval = 200;
 	overflow_tolerance = 1500;
 
 	time_spec.tv_sec = 0;
@@ -27,7 +27,7 @@ RateShaper::~RateShaper() {
 
 void RateShaper::SetRate(double rate_bps) {
 	rate = rate_bps;
-	bucket_volume = token_time_interval / 1000000.0 * rate_bps;
+	bucket_volume = token_time_interval / 1000000.0 * rate_bps / 8;
 	tokens_in_bucket = bucket_volume;
 	token_unit = bucket_volume;
 
