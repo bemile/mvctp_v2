@@ -27,9 +27,10 @@ RateShaper::~RateShaper() {
 
 void RateShaper::SetRate(double rate_bps) {
 	rate = rate_bps;
-	bucket_volume = token_time_interval / 1000000.0 * rate_bps / 8;
-	tokens_in_bucket = bucket_volume;
-	token_unit = bucket_volume;
+	token_unit = token_time_interval / 1000000.0 * rate_bps / 8;
+	tokens_in_bucket = token_unit;
+	overflow_tolerance = rate_bps * 0.01;	// allow 10ms burst tolerance
+	bucket_volume = overflow_tolerance + token_unit;
 
 	cout << "Send Rate: " << rate << " bps" << endl;
 	cout << "Bucket volumn: " << bucket_volume << endl;
@@ -55,13 +56,11 @@ void RateShaper::RetrieveTokens(int num_tokens) {
 		}
 
 		last_check_time = elapsed_sec;
-		if (tokens_in_bucket <= overflow_tolerance) {
-			tokens_in_bucket += bucket_volume;
-		} else {
-			tokens_in_bucket = bucket_volume + overflow_tolerance;
+		int tokens = time_interval * 1000000.0 / token_time_interval * token_unit;
+		tokens_in_bucket += tokens - num_tokens;
+		if (tokens_in_bucket > bucket_volume) {
+			tokens_in_bucket = bucket_volume;
 		}
-
-		tokens_in_bucket -= num_tokens;
 	}
 }
 
