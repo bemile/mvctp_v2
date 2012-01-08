@@ -24,6 +24,8 @@ TcpServer::TcpServer(int port) {
 		sleep(10);
 	}
 
+	// ignore the SIGPIPE signal since it may happen when calling send()
+	// and cause process termination
 	signal(SIGPIPE, SIG_IGN);
 
 	// Used in the select() system call

@@ -12,6 +12,9 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT);
 	cur_session_id = 0;
 	bzero(&send_stats, sizeof(send_stats));
+
+	// Initially set the send rate limit to 10Gpbs (effectively no limit)
+	rate_shaper.SetRate(10000 * 1000000.0);
 }
 
 MVCTPSender::~MVCTPSender() {
@@ -20,6 +23,7 @@ MVCTPSender::~MVCTPSender() {
 
 void MVCTPSender::SetSendRate(int num_mbps) {
 	send_rate_in_mbps = num_mbps;
+	rate_shaper.SetRate(num_mbps * 1000000.0);
 }
 
 void MVCTPSender::SetStatusProxy(StatusProxy* proxy) {
@@ -297,6 +301,9 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 		header->seq_number = offset + start_seq_num;
 		header->data_len = data_size;
 		memcpy(packet_data, (char*)data + offset, data_size);
+
+		//Get tokens from the rate controller
+		rate_shaper.RetrieveTokens(data_size);
 		if (ptr_multicast_comm->SendData(buffer, MVCTP_HLEN + data_size, 0, NULL) < 0) {
 			SysError("MVCTPSender::DoMemoryTransfer()::SendPacket() error");
 		}

@@ -13,6 +13,7 @@
 #include "TcpServer.h"
 #include "../CommUtil/CpuUsageCounter.h"
 #include "../CommUtil/StatusProxy.h"
+#include "../CommUtil/RateShaper.h"
 
 struct MvctpSenderStats {
 	uint 	total_sent_packets;
@@ -71,6 +72,7 @@ private:
 	MvctpSenderStats	send_stats;			// data transfer statistics
 	CpuCycleCounter		cpu_counter;		// counter for elapsed CPU cycles
 	StatusProxy*		status_proxy;
+	RateShaper			rate_shaper;
 
 	void DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
 	void DoMemoryDataRetransmission(void* data);
