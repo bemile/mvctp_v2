@@ -8,13 +8,14 @@
 #ifndef RATESHAPER_H_
 #define RATESHAPER_H_
 
-#include "CommUtil.h"
 #include "Timer.h"
 #include <signal.h>
 #include <stdlib.h>
+#include <string.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <time.h>
+#include <unistd.h>
 
 
 class RateShaper {
