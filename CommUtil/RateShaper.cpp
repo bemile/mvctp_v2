@@ -49,8 +49,9 @@ void RateShaper::RetrieveTokens(int num_tokens) {
 		double elapsed_sec = GetElapsedSeconds(cpu_counter);
 		double time_interval = elapsed_sec - last_check_time;
 		while (time_interval * 1000000 < token_time_interval) {
-			//time_spec.tv_nsec =
-			//nanosleep();
+			time_spec.tv_nsec = (token_time_interval - time_interval * 1000000) * 1000;
+			nanosleep(&time_spec, NULL);
+
 			elapsed_sec = GetElapsedSeconds(cpu_counter);
 			time_interval = elapsed_sec - last_check_time;
 		}
