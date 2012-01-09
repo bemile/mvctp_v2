@@ -142,17 +142,17 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 
 
 void SenderStatusProxy::SetSendRate(int rate_mbps) {
-	char command[256];
-	ptr_sender->SetSendRate(rate_mbps);
+	//char command[256];
+	//ptr_sender->SetSendRate(rate_mbps);
 
-//	double MBps = rate_mbps / 8.0;
-//	char rate[25];
-//	sprintf(rate, "%.2fMbps", MBps);
-//
-//	char command[256];
-//	sprintf(command, "sudo ./rate-limit.sh %s %d %d %s", ptr_sender->GetInterfaceName().c_str(),
-//					PORT_NUM, BUFFER_TCP_SEND_PORT, rate);
-//	ExecSysCommand(command);
+	double MBps = rate_mbps / 8.0;
+	char rate[25];
+	sprintf(rate, "%.2fMbps", MBps);
+
+	char command[256];
+	sprintf(command, "sudo ./rate-limit.sh %s %d %d %s", ptr_sender->GetInterfaceName().c_str(),
+					PORT_NUM, BUFFER_TCP_SEND_PORT, rate);
+	ExecSysCommand(command);
 
 	sprintf(command, "Data sending rate has been set to %d Mbps.", rate_mbps);
 	SendMessageLocal(COMMAND_RESPONSE, command);
