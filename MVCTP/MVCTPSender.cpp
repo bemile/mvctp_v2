@@ -303,7 +303,7 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 		memcpy(packet_data, (char*)data + offset, data_size);
 
 		//Get tokens from the rate controller
-		rate_shaper.RetrieveTokens(22 + MVCTP_HLEN + data_size);
+		//rate_shaper.RetrieveTokens(22 + MVCTP_HLEN + data_size);
 		if (ptr_multicast_comm->SendData(buffer, MVCTP_HLEN + data_size, 0, NULL) < 0) {
 			SysError("MVCTPSender::DoMemoryTransfer()::SendPacket() error");
 		}
