@@ -29,7 +29,7 @@ void RateShaper::SetRate(double rate_bps) {
 	rate = rate_bps;
 	token_unit = token_time_interval / 1000000.0 * rate_bps / 8;
 	tokens_in_bucket = token_unit;
-	overflow_tolerance = rate_bps * 0.01;	// allow 10ms burst tolerance
+	overflow_tolerance = rate_bps * 0.005;	// allow 5ms burst tolerance
 	bucket_volume = overflow_tolerance + token_unit;
 
 	cout << "Send Rate: " << rate << " bps" << endl;
