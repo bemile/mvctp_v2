@@ -78,7 +78,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 		sender_proxy->GenerateDataFile("/tmp/temp.dat", bytes);
 
 		for (int j = 0; j < NUM_SENDING_RATES; j++) {
-			if (j <= 1)
+			if (j <= 2)
 				continue;
 
 			send_rate = send_rates[j];
