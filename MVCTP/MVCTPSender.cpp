@@ -406,6 +406,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 ///
 void MVCTPSender::DoFileRetransmission(int fd) {
+	static int MAX_NUM_CACHE_BUFFERS = 200;		// ~600 MB cache
 	// first: client socket; second: list of NACK_MSG info
 	map<int, list<NACK_MSG> >* missing_packet_map = new map<int, list<NACK_MSG> >();
 	ReceiveRetransRequests(missing_packet_map);
@@ -444,6 +445,16 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 
 			// If not, read the packet in from the disk file
 			if (ptr_cache->cur_pos == ptr_cache->end_pos) {
+				if (retrans_cache_list.size() > MAX_NUM_CACHE_BUFFERS) {
+					list<MvctpRetransBuffer *>::iterator it;
+					for (it = retrans_cache_list.begin(); it != retrans_cache_list.end(); it++) {
+						delete (*it);
+					}
+
+					retrans_cache_list.clear();
+					packet_map->clear();
+				}
+
 				ptr_cache = new MvctpRetransBuffer();
 				retrans_cache_list.push_back(ptr_cache);
 			}
