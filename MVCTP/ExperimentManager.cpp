@@ -69,20 +69,32 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
+		if (i != 1)
+			continue;
+
 		// Generate the data file with the given size
 		file_size = file_sizes[i];
 		int bytes = file_size * 1024 * 1024;
 		sender_proxy->GenerateDataFile("/tmp/temp.dat", bytes);
 
 		for (int j = 0; j < NUM_SENDING_RATES; j++) {
-						send_rate = send_rates[j];
-						sender_proxy->SetSendRate(send_rate);
+			if (j != 1)
+				continue;
+
+			send_rate = send_rates[j];
+			sender_proxy->SetSendRate(send_rate);
 
 			for (int l = 0; l < NUM_TXQUEUE_LENGTHS; l++) {
+				if (l != 1)
+					continue;
+
 				txqueue_len = txqueue_lengths[l];
 				sender_proxy->SetTxQueueLength(txqueue_len);
 
 				for (int s = 0; s < NUM_UDP_BUFF_SIZES; s++) {
+					if (s != 2)
+						continue;
+
 					buff_size = udp_buff_sizes[s] * 4096;
 					system(udp_buff_conf_commands[s].c_str());
 
