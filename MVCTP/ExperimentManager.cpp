@@ -13,6 +13,7 @@ ExperimentManager::ExperimentManager() {
 	file_size = 0;
 	send_rate = 0;
 	txqueue_len = 0;
+	buff_size = 0;
 }
 
 
@@ -39,18 +40,21 @@ void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender
 
 void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	// Experiment parameters
-	const int NUM_RUNS_PER_SETUP = 30;
-	const int NUM_FILE_SIZES = 4;
+	const int NUM_RUNS_PER_SETUP = 1; //30;
+	const int NUM_FILE_SIZES = 2;
 	const int NUM_SENDING_RATES = 4;
-	const int NUM_TXQUEUE_LENGTHS = 3;
-	const int NUM_UDP_BUFF_SIZES = 2;
+	const int NUM_TXQUEUE_LENGTHS = 2;
+	const int NUM_UDP_BUFF_SIZES = 3;
 
-	int file_sizes[NUM_FILE_SIZES] = {512, 1024, 2048, 4095};
+	int file_sizes[NUM_FILE_SIZES] = {1024, 4095};
 	int send_rates[NUM_SENDING_RATES] = {500, 600, 700, 800};
-	int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {10000, 5000, 2500};
-	string udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {"sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 16777216\"",
-								"sudo sysctl -w net.ipv4.udp_mem=\"4096 4194304 8388608\""
-							   };
+	int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {10000, 1000};
+	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {10, 50, 4096};
+	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
+													     "sudo sysctl -w net.ipv4.udp_mem=\"10 1024 4096\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"50 1024 4096\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 32768 65536\""
+													    };
 
 	// First do the speed test to remove slow nodes
 	DoSpeedTest(sender_proxy, sender);
@@ -59,33 +63,36 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	// Do the experiments
 	result_file.open("exp_results.csv", ofstream::out | ofstream::trunc);
 	result_file
-			<< "Transfer Size (Bytes),TxQueue Length,Send Rate (Mbps),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "Send Rate (Mbps),Transfer Size (Bytes),TxQueue Length,Buffer Size (Bytes),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
 			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
 			<< endl;
 
 	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
-		if (i <= 1)
-			continue;
-
 		// Generate the data file with the given size
 		file_size = file_sizes[i] * 1024 * 1024;
 		sender_proxy->GenerateDataFile("/tmp/temp.dat", file_size);
 
-		for (int l = 0; l < NUM_TXQUEUE_LENGTHS; l++) {
-			txqueue_len = txqueue_lengths[l];
-			sender_proxy->SetTxQueueLength(txqueue_len);
+		for (int j = 0; j < NUM_SENDING_RATES; j++) {
+						send_rate = send_rates[j];
+						sender_proxy->SetSendRate(send_rate);
 
-			for (int j = 0; j < NUM_SENDING_RATES; j++) {
-				send_rate = send_rates[j];
-				sender_proxy->SetSendRate(send_rate);
-				for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
-					sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nTxQueue Length:%d\nSending Rate: %d Mbps\n",
-							n+1, file_sizes[i], txqueue_len, send_rate);
-					sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
+			for (int l = 0; l < NUM_TXQUEUE_LENGTHS; l++) {
+				txqueue_len = txqueue_lengths[l];
+				sender_proxy->SetTxQueueLength(txqueue_len);
 
-					finished_node_count = 0;
-					sender_proxy->TransferFile("/tmp/temp.dat");
+				for (int s = 0; s < NUM_UDP_BUFF_SIZES; s++) {
+					buff_size = udp_buff_sizes[s] * 4096;
+					system(udp_buff_conf_commands[s].c_str());
+
+					for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
+						sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nTxQueue Length:%d\nSending Rate: %d Mbps\nBuffer Size: %d bytes\n",
+								n+1, file_sizes[i], txqueue_len, send_rate, buff_size);
+						sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
+
+						finished_node_count = 0;
+						sender_proxy->TransferFile("/tmp/temp.dat");
+					}
 				}
 			}
 		}
@@ -100,7 +107,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 void ExperimentManager::HandleExpResults(string msg) {
 	if (result_file.is_open() && finished_node_count < num_test_nodes) {
-		result_file << file_size << "," << txqueue_len << "," << send_rate << "," << msg;
+		result_file << file_size << "," << txqueue_len << "," << send_rate << "," << buff_size << "," << msg;
 		finished_node_count++;
 		if (finished_node_count == num_test_nodes)
 			result_file.flush();
