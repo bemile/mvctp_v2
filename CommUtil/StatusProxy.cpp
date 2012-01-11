@@ -316,9 +316,9 @@ void StatusProxy::RunManagerReceiveThread() {
 		if (msg.compare("Restart") == 0) {
 			HandleRestartCommand();
 		}
-		else if (parts.front().compare("KeepQuiet") == 0)
+		else if (msg.compare("KeepQuiet") == 0)
 			keep_quiet = true;
-		else if (parts.front().compare("BreakQuiet") == 0)
+		else if (msg.compare("BreakQuiet") == 0)
 			keep_quiet = false;
 		else {
 			SendMessageLocal(msg_type, msg);
