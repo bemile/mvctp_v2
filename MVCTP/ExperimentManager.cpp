@@ -63,15 +63,16 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	// Do the experiments
 	result_file.open("exp_results.csv", ofstream::out | ofstream::trunc);
 	result_file
-			<< "Send Rate (Mbps),Transfer Size (Bytes),TxQueue Length,Buffer Size (Bytes),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "File Size (MB),Send Rate (Mbps),TxQueue Length,Buffer Size (Bytes),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
 			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
 			<< endl;
 
 	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
 		// Generate the data file with the given size
-		file_size = file_sizes[i] * 1024 * 1024;
-		sender_proxy->GenerateDataFile("/tmp/temp.dat", file_size);
+		file_size = file_sizes[i];
+		int bytes = file_size * 1024 * 1024;
+		sender_proxy->GenerateDataFile("/tmp/temp.dat", bytes);
 
 		for (int j = 0; j < NUM_SENDING_RATES; j++) {
 						send_rate = send_rates[j];
@@ -86,8 +87,8 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 					system(udp_buff_conf_commands[s].c_str());
 
 					for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
-						sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nTxQueue Length:%d\nSending Rate: %d Mbps\nBuffer Size: %d bytes\n",
-								n+1, file_sizes[i], txqueue_len, send_rate, buff_size);
+						sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nSending Rate: %d Mbps\nTxQueue Length:%d\nBuffer Size: %d bytes\n",
+								n+1, file_size, send_rate, txqueue_len, buff_size);
 						sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
 
 						finished_node_count = 0;
@@ -107,7 +108,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 void ExperimentManager::HandleExpResults(string msg) {
 	if (result_file.is_open() && finished_node_count < num_test_nodes) {
-		result_file << file_size << "," << txqueue_len << "," << send_rate << "," << buff_size << "," << msg;
+		result_file << file_size << "," << send_rate << "," << txqueue_len << "," << buff_size << "," << msg;
 		finished_node_count++;
 		if (finished_node_count == num_test_nodes)
 			result_file.flush();

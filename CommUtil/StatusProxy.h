@@ -34,6 +34,8 @@ public:
 
 	virtual int HandleCommand(const char* command);
 
+	void SetQuiet(bool quiet);
+
 protected:
 	string node_id;
 	int sockfd;
@@ -42,6 +44,7 @@ protected:
 
 	bool proxy_started;
 	bool keep_alive;
+	bool keep_quiet;
 	bool is_connected;
 	bool is_restarting;
 

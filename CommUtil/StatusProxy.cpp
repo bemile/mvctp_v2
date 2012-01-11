@@ -25,6 +25,7 @@ StatusProxy::StatusProxy(string addr, int port) {
 	isConnected = false;
 	proxy_started = false;
 	keep_alive = false;
+	keep_quiet = false;
 	is_restarting = false;
 	execution_pid = 0;
 
@@ -47,7 +48,7 @@ int StatusProxy::ConnectServer() {
 	int res;
 	while ((res = connect(sockfd, (SA *) &servaddr, sizeof(servaddr))) < 0) {
 		cout << "connect() error" << endl;
-		sleep(15);
+		sleep(10);
 		//return -1;
 	}
 
@@ -288,8 +289,15 @@ void StatusProxy::RunManagerSendThread() {
 			}
 			continue;
 		}
-		SendMessageToManager(msg_type, msg);
+
+		if (!keep_quiet)
+			SendMessageToManager(msg_type, msg);
 	}
+}
+
+
+void StatusProxy::SetQuiet(bool quiet) {
+	keep_quiet = quiet;
 }
 
 
@@ -315,8 +323,8 @@ void StatusProxy::RunManagerReceiveThread() {
 
 
 void StatusProxy::ReconnectServer() {
-	if (errno == EINTR)
-		return;
+	//if (errno == EINTR)
+	//	return;
 
 	close(sockfd);
 	is_connected = false;
@@ -332,8 +340,12 @@ int StatusProxy::HandleCommand(const char* command) {
 	Split(s, ' ', parts);
 	if (parts.size() == 0)
 		return 0;
-
-	ExecSysCommand(command);
+	else if (parts.front().compare("KeepQuiet") == 0)
+		keep_quiet = true;
+	else if (parts.front().compare("BreakQuiet") == 0)
+		keep_quiet = false;
+	else
+		ExecSysCommand(command);
 	return 1;
 }
 
