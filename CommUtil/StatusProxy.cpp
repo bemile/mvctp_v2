@@ -315,7 +315,12 @@ void StatusProxy::RunManagerReceiveThread() {
 		ReadMessageFromManager(msg_type, msg);
 		if (msg.compare("Restart") == 0) {
 			HandleRestartCommand();
-		} else {
+		}
+		else if (parts.front().compare("KeepQuiet") == 0)
+			keep_quiet = true;
+		else if (parts.front().compare("BreakQuiet") == 0)
+			keep_quiet = false;
+		else {
 			SendMessageLocal(msg_type, msg);
 		}
 	}
@@ -340,10 +345,6 @@ int StatusProxy::HandleCommand(const char* command) {
 	Split(s, ' ', parts);
 	if (parts.size() == 0)
 		return 0;
-	else if (parts.front().compare("KeepQuiet") == 0)
-		keep_quiet = true;
-	else if (parts.front().compare("BreakQuiet") == 0)
-		keep_quiet = false;
 	else
 		ExecSysCommand(command);
 	return 1;
