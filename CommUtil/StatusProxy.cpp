@@ -310,18 +310,23 @@ void* StatusProxy::StartManagerReceiveThread(void* ptr) {
 
 void StatusProxy::RunManagerReceiveThread() {
 	while (keep_alive) {
-		int msg_type;
-		string msg;
-		ReadMessageFromManager(msg_type, msg);
-		if (msg.compare("Restart") == 0) {
-			HandleRestartCommand();
+		if (!keep_quiet) {
+			int msg_type;
+			string msg;
+			ReadMessageFromManager(msg_type, msg);
+			if (msg.compare("Restart") == 0) {
+				HandleRestartCommand();
+			}
+			else if (msg.compare("KeepQuiet") == 0)
+				keep_quiet = true;
+			else if (msg.compare("BreakQuiet") == 0)
+				keep_quiet = false;
+			else {
+				SendMessageLocal(msg_type, msg);
+			}
 		}
-		else if (msg.compare("KeepQuiet") == 0)
-			keep_quiet = true;
-		else if (msg.compare("BreakQuiet") == 0)
-			keep_quiet = false;
 		else {
-			SendMessageLocal(msg_type, msg);
+			sleep(1);
 		}
 	}
 }
