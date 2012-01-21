@@ -45,7 +45,7 @@ public:
 	void 	TransferFile(string file_name);
 	void 	SetSendRate(int rate_mbps);
 	void	SetTxQueueLength(int length);
-
+	void    SetRetransmissionBufferSize(int size_mb);
 
 protected:
 	int 	HandleSendCommand(list<string>& slist);

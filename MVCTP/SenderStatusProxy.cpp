@@ -159,6 +159,13 @@ void SenderStatusProxy::SetSendRate(int rate_mbps) {
 }
 
 
+void SenderStatusProxy::SetRetransmissionBufferSize(int size_mb) {
+	ptr_sender->SetRetransmissionBufferSize(size_mb);
+	char command[256];
+	sprintf(command, "Sender retransmission buffer size has been set to %d MB.", size_mb);
+	SendMessageLocal(COMMAND_RESPONSE, command);
+}
+
 //
 int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 	bool memory_transfer = false;

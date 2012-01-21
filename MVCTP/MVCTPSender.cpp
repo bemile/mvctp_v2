@@ -13,6 +13,8 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	cur_session_id = 0;
 	bzero(&send_stats, sizeof(send_stats));
 
+	// Initially set the maximum number of retransmission buffer to be 16 * 8 MB = 128 MB
+	max_num_retrans_buffs = 16;
 	// Initially set the send rate limit to 10Gpbs (effectively no limit)
 	rate_shaper.SetRate(10000 * 1000000.0);
 }
@@ -24,6 +26,13 @@ MVCTPSender::~MVCTPSender() {
 void MVCTPSender::SetSendRate(int num_mbps) {
 	send_rate_in_mbps = num_mbps;
 	rate_shaper.SetRate(num_mbps * 1000000.0);
+}
+
+
+void MVCTPSender::SetRetransmissionBufferSize(int size_mb) {
+	max_num_retrans_buffs = size_mb / 8;
+	if (max_num_retrans_buffs == 0)
+		max_num_retrans_buffs = 1;
 }
 
 void MVCTPSender::SetStatusProxy(StatusProxy* proxy) {
@@ -406,7 +415,6 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 ///
 void MVCTPSender::DoFileRetransmission(int fd) {
-	static int MAX_NUM_CACHE_BUFFERS = 200;		// ~600 MB cache
 	// first: client socket; second: list of NACK_MSG info
 	map<int, list<NACK_MSG> >* missing_packet_map = new map<int, list<NACK_MSG> >();
 	ReceiveRetransRequests(missing_packet_map);
@@ -445,7 +453,7 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 
 			// If not, read the packet in from the disk file
 			if (ptr_cache->cur_pos == ptr_cache->end_pos) {
-				if (retrans_cache_list.size() > MAX_NUM_CACHE_BUFFERS) {
+				if (retrans_cache_list.size() > max_num_retrans_buffs) {
 					list<MvctpRetransBuffer *>::iterator it;
 					for (it = retrans_cache_list.begin(); it != retrans_cache_list.end(); it++) {
 						delete (*it);

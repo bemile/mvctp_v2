@@ -31,9 +31,9 @@ struct MvctpSenderStats {
 };
 
 
-#define	BUFFER_PACKET_SIZE	2000
+#define	BUFFER_PACKET_SIZE	5480
 struct MvctpRetransBuffer {
-	char 	buffer[BUFFER_PACKET_SIZE * MVCTP_PACKET_LEN];
+	char 	buffer[BUFFER_PACKET_SIZE * MVCTP_PACKET_LEN];  // 8MB buffer size
 	char*	cur_pos;
 	char*	end_pos;
 
@@ -49,6 +49,7 @@ public:
 	~MVCTPSender();
 
 	void 	SetStatusProxy(StatusProxy* proxy);
+	void    SetRetransmissionBufferSize(int size_mb);
 	int 	JoinGroup(string addr, u_short port);
 	void	RemoveSlowNodes();
 	int		RestartTcpServer();
@@ -73,6 +74,7 @@ private:
 	CpuCycleCounter		cpu_counter;		// counter for elapsed CPU cycles
 	StatusProxy*		status_proxy;
 	RateShaper			rate_shaper;
+	int					max_num_retrans_buffs;
 
 	void DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
 	void DoMemoryDataRetransmission(void* data);

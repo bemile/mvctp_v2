@@ -31,6 +31,7 @@ private:
 	ulong file_size;
 	int send_rate;
 	int txqueue_len;
+	int retrans_buff_size;
 	int buff_size;
 	int num_test_nodes;
 	int finished_node_count;
