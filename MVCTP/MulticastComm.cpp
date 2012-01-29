@@ -38,7 +38,7 @@ int MulticastComm::JoinGroup(const SA* sa, int sa_len, const char *if_name) {
 				memcpy(&mreq.imr_interface, &((struct sockaddr_in *) &if_req.ifr_addr)->sin_addr,
 						sizeof(struct in_addr));
 
-				//setsockopt(sock_fd, SOL_SOCKET, SO_BINDTODEVICE, if_name, strlen(if_name));
+				setsockopt(sock_fd, SOL_SOCKET, SO_BINDTODEVICE, if_name, strlen(if_name));
 			}
 			else {
 				mreq.imr_interface.s_addr = htonl(INADDR_ANY);
