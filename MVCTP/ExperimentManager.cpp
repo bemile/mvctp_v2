@@ -54,9 +54,9 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	int retrans_buff_sizes[NUM_RETRANS_BUFF_SIZES] = {128, 512};
 	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {10, 50, 4096};
 	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
-													     "sudo sysctl -w net.ipv4.udp_mem=\"10 1024 4096\"",
-													     "sudo sysctl -w net.ipv4.udp_mem=\"50 1024 4096\"",
-													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 32768 65536\""
+													     "sudo sysctl -w net.ipv4.udp_mem=\"10 10 10\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"50 50 50\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 4096 4096\""
 													    };
 
 	// First do the speed test to remove slow nodes
