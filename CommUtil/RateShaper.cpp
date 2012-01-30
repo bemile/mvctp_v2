@@ -32,9 +32,6 @@ void RateShaper::SetRate(double rate_bps) {
 	overflow_tolerance = rate_bps * 0.005;	// allow 5ms burst tolerance
 	bucket_volume = overflow_tolerance + token_unit;
 
-	cout << "Send Rate: " << rate << " bps" << endl;
-	cout << "Bucket volumn: " << bucket_volume << endl;
-
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	last_check_time = 0.0;
 }

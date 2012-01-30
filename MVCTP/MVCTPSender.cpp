@@ -13,8 +13,8 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	cur_session_id = 0;
 	bzero(&send_stats, sizeof(send_stats));
 
-	// Initially set the maximum number of retransmission buffer to be 16 * 8 MB = 128 MB
-	max_num_retrans_buffs = 16;
+	// Initially set the maximum number of retransmission buffer to be 32 * 8 MB = 256 MB
+	max_num_retrans_buffs = 32;
 	// Initially set the send rate limit to 10Gpbs (effectively no limit)
 	rate_shaper.SetRate(10000 * 1000000.0);
 }
