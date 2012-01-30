@@ -41,7 +41,7 @@ void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender
 
 void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	// Experiment parameters
-	const int NUM_RUNS_PER_SETUP = 1; //30;
+	const int NUM_RUNS_PER_SETUP = 10; //30;
 	const int NUM_FILE_SIZES = 2;
 	const int NUM_SENDING_RATES = 4;
 	const int NUM_TXQUEUE_LENGTHS = 2;
