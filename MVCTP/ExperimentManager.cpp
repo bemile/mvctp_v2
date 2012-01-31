@@ -56,9 +56,9 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	int retrans_buff_sizes[NUM_RETRANS_BUFF_SIZES] = {128, 512};
 	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {10, 50, 4096};
 	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
-													     "sudo sysctl -w net.ipv4.udp_mem=\"10 10 10\" && sudo sysctl -w net.ipv4.udp_rmem_min=10",
-													     "sudo sysctl -w net.ipv4.udp_mem=\"50 50 50\" && sudo sysctl -w net.ipv4.udp_rmem_min=50",
-													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 4096 4096\" && sudo sysctl -w net.ipv4.udp_rmem_min=4096"
+													     "sudo sysctl -w net.ipv4.udp_mem=\"10 10 10\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"50 50 50\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 4096 4096\""
 													    };
 
 	// First do the speed test to remove slow nodes
@@ -76,8 +76,8 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
-		//if (i != 1)
-		//	continue;
+		if (i != 1)
+			continue;
 
 		// Generate the data file with the given size
 		file_size = file_sizes[i];
