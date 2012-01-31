@@ -36,6 +36,8 @@ void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender
 
 	// we want number of test nodes to be a multiple of 5
 	num_test_nodes = sender->GetNumReceivers() / 5 * 5;
+	if (num_test_nodes == 0)
+		num_test_nodes = sender->GetNumReceivers();
 	sender_proxy->SendMessageLocal(INFORMATIONAL, "File transfer test finished.");
 }
 
