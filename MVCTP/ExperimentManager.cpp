@@ -54,7 +54,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	int send_rates[NUM_SENDING_RATES] = {500, 600, 700, 800};
 	//int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {10000, 1000};
 	int retrans_buff_sizes[NUM_RETRANS_BUFF_SIZES] = {128, 512};
-	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {10, 50, 4096};
+	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {256, 1024, 4096}; //{10, 50, 4096};
 	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
 													     "sudo sysctl -w net.ipv4.udp_mem=\"128 256 256\"",
 													     "sudo sysctl -w net.ipv4.udp_mem=\"512 1024 1024\"",
@@ -74,8 +74,8 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
-		if (i != 1)
-			continue;
+		//if (i != 1)
+		//	continue;
 
 		// Generate the data file with the given size
 		file_size = file_sizes[i];
@@ -83,8 +83,8 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 		sender_proxy->GenerateDataFile("/tmp/temp.dat", bytes);
 
 		for (int j = 0; j < NUM_SENDING_RATES; j++) {
-			if (j <= 1)
-				continue;
+			//if (j <= 1)
+			//	continue;
 
 			send_rate = send_rates[j];
 			sender_proxy->SetSendRate(send_rate);
