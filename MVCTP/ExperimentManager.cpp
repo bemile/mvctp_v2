@@ -56,8 +56,8 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	int retrans_buff_sizes[NUM_RETRANS_BUFF_SIZES] = {128, 512};
 	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {10, 50, 4096};
 	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
-													     "sudo sysctl -w net.ipv4.udp_mem=\"10 10 10\"",
-													     "sudo sysctl -w net.ipv4.udp_mem=\"50 50 50\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"128 256 256\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"512 1024 1024\"",
 													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 4096 4096\""
 													    };
 
