@@ -66,7 +66,9 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 
 	// Do the experiments
-	result_file.open("exp_results.csv", ofstream::out | ofstream::trunc);
+	char buf[256];
+	sprintf(buf, "exp_results_%dnodes.csv", num_test_nodes);
+	result_file.open(buf, ofstream::out | ofstream::trunc);
 	result_file
 			<< "File Size (MB),Send Rate (Mbps),Retrans.Buff. Size (MB),Buffer Size (Bytes),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
 			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"

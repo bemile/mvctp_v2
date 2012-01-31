@@ -12,6 +12,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <stdio.h>
 
 class SenderStatusProxy;
 class MVCTPSender;
