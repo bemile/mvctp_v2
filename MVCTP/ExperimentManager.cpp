@@ -54,11 +54,11 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	int send_rates[NUM_SENDING_RATES] = {600, 700}; //{500, 600, 700, 800};
 	//int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {10000, 1000};
 	int retrans_buff_sizes[NUM_RETRANS_BUFF_SIZES] = {128, 512};
-	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {10, 50, 4096};
+	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {4096, 16384, 65536}; //{10, 50, 4096};
 	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
-													     "sudo sysctl -w net.ipv4.udp_mem=\"10 10 10\"",
-													     "sudo sysctl -w net.ipv4.udp_mem=\"50 50 50\"",
-													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 4096 4096\""
+													     "sudo sysctl -w net.ipv4.udp_mem=\"1024 2048 4096\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"",
+													     "sudo sysctl -w net.ipv4.udp_mem=\"16384 32768 65536\""
 													    };
 
 	// First do the speed test to remove slow nodes
@@ -70,7 +70,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	sprintf(buf, "exp_results_%dnodes.csv", num_test_nodes);
 	result_file.open(buf, ofstream::out | ofstream::trunc);
 	result_file
-			<< "File Size (MB),Send Rate (Mbps),Retrans.Buff. Size (MB),Buffer Size (Bytes),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "File Size (MB),Send Rate (Mbps),Retrans.Buff. Size (MB),Buffer Size (MB),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
 			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
 			<< endl;
 
@@ -100,11 +100,11 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 				sender_proxy->SetRetransmissionBufferSize(retrans_buff_size);
 
 				for (int s = 0; s < NUM_UDP_BUFF_SIZES; s++) {
-					buff_size = udp_buff_sizes[s] * 4096;
+					buff_size = udp_buff_sizes[s] * 4 / 1024; //* 4096;
 					system(udp_buff_conf_commands[s].c_str());
 
 					for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
-						sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nSending Rate: %d Mbps\nRetrans.Buff. Size:%d MB\nBuffer Size: %d bytes\n",
+						sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nSending Rate: %d Mbps\nRetrans.Buff. Size:%d MB\nBuffer Size: %d MB\n",
 								n+1, file_size, send_rate, retrans_buff_size, buff_size);
 						sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
 
