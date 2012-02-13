@@ -131,9 +131,9 @@ int MVCTPReceiver::ConnectSenderOnTCP() {
 
 void MVCTPReceiver::Start() {
 	// First set the process to SCHED_RR mode
-	struct sched_param sp;
-	sp.__sched_priority = sched_get_priority_max(SCHED_RR);
-	sched_setscheduler(0, SCHED_RR, &sp);
+	//struct sched_param sp;
+	//sp.__sched_priority = sched_get_priority_max(SCHED_RR);
+	//sched_setscheduler(0, SCHED_RR, &sp);
 
 
 	fd_set read_set;
