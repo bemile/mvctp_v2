@@ -570,6 +570,10 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 			// retrans_info << GetElapsedSeconds(cpu_counter) << "    Received a new packet. Seq. #: " << header->seq_number << endl;
 
 			if (header->session_id != session_id || header->seq_number < offset) {
+				if (header->seq_number < offset) {
+					retrans_info << "Out-of-order packets received.    Offset: " << offset << "    Received: " << header->seq_number
+							     << "    Total bytes: " << offset - header->seq_number << endl;
+				}
 				continue;
 			}
 
