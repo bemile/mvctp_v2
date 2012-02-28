@@ -170,8 +170,8 @@ void MVCTPReceiver::Start() {
 				break;
 			}
 			case FILE_TRANSFER_START:
-				ReceiveFileMemoryMappedIO(msg);
-				//ReceiveFileBufferedIO(msg);
+				//ReceiveFileMemoryMappedIO(msg);
+				ReceiveFileBufferedIO(msg);
 				break;
 			case TCP_MEMORY_TRANSFER_START: {
 				char* buf = (char*) malloc(msg.data_len);
@@ -395,6 +395,8 @@ void MVCTPReceiver::SendNackMessages(const list<MvctpNackMessage>& nack_list) {
 
 
 void MVCTPReceiver::ReceiveFileBufferedIO(const MvctpTransferMessage & transfer_msg) {
+	retrans_info.open("retrans_info.txt", ofstream::out | ofstream::trunc);
+
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer. Size: %u",
 			transfer_msg.data_len);
