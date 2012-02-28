@@ -51,7 +51,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	const int NUM_UDP_BUFF_SIZES = 3;
 
 	int file_sizes[NUM_FILE_SIZES] = {1024, 4095};
-	int send_rates[NUM_SENDING_RATES] = {600, 700}; //{500, 600, 700, 800};
+	int send_rates[NUM_SENDING_RATES] = {600, 650}; //{500, 600, 700, 800};
 	//int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {10000, 1000};
 	int retrans_buff_sizes[NUM_RETRANS_BUFF_SIZES] = {128, 512};
 	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {4096, 16384, 65536}; //{10, 50, 4096};
