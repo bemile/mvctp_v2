@@ -1,0 +1,160 @@
+/*
+ * CpuUsageCounter.cpp
+ *
+ *  Created on: Jan 7, 2012
+ *      Author: jie
+ */
+
+#include "PerformanceCounter.h"
+
+PerformanceCounter::PerformanceCounter(int interval) : interval(interval) {
+	keep_running = false;
+
+	measure_cpu = false;
+	measure_udp_recv_buffer = false;
+}
+
+PerformanceCounter::~PerformanceCounter() {
+	// TODO Auto-generated destructor stub
+}
+
+
+void PerformanceCounter::SetCPUFlag(bool flag) {
+	measure_cpu = flag;
+}
+
+
+void PerformanceCounter::SetUDPRecvBuffFlag(bool flag) {
+	measure_udp_recv_buffer = flag;
+}
+
+
+
+void PerformanceCounter::Start() {
+	keep_running = true;
+	pthread_create(&count_thread, NULL, &PerformanceCounter::StartCountThread, this);
+}
+
+
+void PerformanceCounter::Stop() {
+	keep_running = false;
+}
+
+
+void* PerformanceCounter::StartCountThread(void* ptr) {
+	((PerformanceCounter*)ptr)->RunCountThread();
+	return NULL;
+}
+
+
+void PerformanceCounter::RunCountThread() {
+	ofstream output("resource_usage.csv", ofstream::out | ofstream::trunc);
+	output << "Measure Time (sec),";
+	if (measure_cpu) {
+		output << "System Time (sec),User Time (sec),CPU Usage (%),";
+	}
+	if (measure_udp_recv_buffer) {
+		output << "Buffer Occupancy (Bytes)";
+	}
+	output << endl;
+
+	CpuCycleCounter cpu_counter;
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+
+	struct rusage old_usage, new_usage;
+	getrusage(RUSAGE_SELF, &old_usage);
+
+	double interval_sec = interval / 1000.0;
+	double measure_time = 0.0;
+	double elapsed_sec;
+	double cpu_time, user_time, sys_time;
+	double usage_ratio;
+	int usage_percent;
+	while (keep_running) {
+		while ((elapsed_sec = GetElapsedSeconds(cpu_counter)) < interval_sec)
+			;
+		measure_time += elapsed_sec;
+		output << measure_time << ",";
+
+		if (measure_cpu) {
+			getrusage(RUSAGE_SELF, &new_usage);
+			user_time = (new_usage.ru_utime.tv_sec - old_usage.ru_utime.tv_sec)
+						+ (new_usage.ru_utime.tv_usec - old_usage.ru_utime.tv_usec) * 0.000001;
+			sys_time = (new_usage.ru_stime.tv_sec - old_usage.ru_stime.tv_sec)
+						+ (new_usage.ru_stime.tv_usec - old_usage.ru_stime.tv_usec) * 0.000001;
+			cpu_time = user_time + sys_time;
+
+			usage_ratio = cpu_time / elapsed_sec;
+			usage_percent = usage_ratio * 100;
+			//if (usage_percent > 100)
+			//	usage_percent = 100;
+
+			output << sys_time << "," << user_time << "," << usage_percent << ",";
+
+			old_usage = new_usage;
+		}
+
+
+		if (measure_udp_recv_buffer) {
+			MeasureUDPRecvBufferInfo(output);
+		}
+
+		output << endl;
+		AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+	}
+
+	output.close();
+}
+
+
+
+void PerformanceCounter::MeasureCPUInfo(ofstream& output) {
+
+}
+
+
+void PerformanceCounter::MeasureUDPRecvBufferInfo(ofstream& output) {
+	FILE * fp = popen("cat /proc/net/udp", "r");
+	if (fp) {
+		char *p = NULL, *e;
+		size_t n;
+		while ((getline(&p, &n, fp) > 0) && p) {
+			if (p = strstr(p, ":2AF9")) {
+				p += 32;
+				if (e = strchr(p, ' ')) {
+					int buffer_size = HexToDecimal(p, e);
+					output << buffer_size;
+					return;
+				}
+			}
+		}
+	}
+	pclose(fp);
+}
+
+
+int	PerformanceCounter::HexToDecimal(char* start, char* end) {
+	int size = 0;
+	char* pos = start;
+	while (pos != end) {
+		if (*pos > '0' && *pos < '9') {
+			size = size * 16 + (*pos - '0');
+		}
+		else {
+			size = size * 16 + (*pos - 'a' + 10);
+		}
+
+		pos++;
+	}
+	return size;
+}
+
+
+
+
+
+
+
+
+
+
