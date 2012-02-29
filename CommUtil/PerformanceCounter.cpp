@@ -119,11 +119,12 @@ void PerformanceCounter::MeasureUDPRecvBufferInfo(ofstream& output) {
 		char *p = NULL, *e;
 		size_t n;
 		while ((getline(&p, &n, fp) > 0) && p) {
-			if (p = strstr(p, ":2AF9")) {
+			if ( (p = strstr(p, ":2AF9")) ) {
 				p += 32;
-				if (e = strchr(p, ' ')) {
+				if ( (e = strchr(p, ' ')) ) {
+					*e = '\0';
 					int buffer_size = HexToDecimal(p, e);
-					output << buffer_size;
+					output << p << "," << buffer_size;
 					return;
 				}
 			}
