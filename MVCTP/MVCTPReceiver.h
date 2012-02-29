@@ -11,6 +11,7 @@
 #include "mvctp.h"
 #include "MVCTPComm.h"
 #include "TcpClient.h"
+#include "../CommUtil/PerformanceCounter.h"
 #include "../CommUtil/StatusProxy.h"
 
 struct MvctpReceiverStats {

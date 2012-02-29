@@ -11,7 +11,7 @@
 #include "mvctp.h"
 #include "MVCTPComm.h"
 #include "TcpServer.h"
-#include "../CommUtil/CpuUsageCounter.h"
+#include "../CommUtil/PerformanceCounter.h"
 #include "../CommUtil/StatusProxy.h"
 #include "../CommUtil/RateShaper.h"
 

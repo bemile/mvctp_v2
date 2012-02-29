@@ -331,7 +331,8 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 
 
 void MVCTPSender::SendFile(const char* file_name) {
-	CpuUsageCounter cpu_info(50);
+	PerformanceCounter cpu_info(50);
+	cpu_info.SetCPUFlag(true);
 	cpu_info.Start();
 
 	ResetSessionStatistics();
