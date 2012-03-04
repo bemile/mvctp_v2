@@ -668,6 +668,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
 
+				udp_buffer_info.Stop();
+
 				// Transfer finished, so return directly
 				return;
 				break;
@@ -676,8 +678,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 			}
 		}
 	}
-
-	udp_buffer_info.Stop();
 }
 
 
