@@ -20,13 +20,11 @@ PerformanceCounter::~PerformanceCounter() {
 
 
 void PerformanceCounter::SetCPUFlag(bool flag) {
-	cout << "CPU Flag Set To: " << (flag ? "true" : "false") << endl;
 	measure_cpu = flag;
 }
 
 
 void PerformanceCounter::SetUDPRecvBuffFlag(bool flag) {
-	cout << "UDP Recv Buffer Flag Set To: " << (flag ? "true" : "false") << endl;
 	measure_udp_recv_buffer = flag;
 }
 
@@ -72,6 +70,7 @@ void PerformanceCounter::RunCountThread() {
 	double cpu_time, user_time, sys_time;
 	double usage_ratio;
 	int usage_percent;
+
 	while (keep_running) {
 		while ((elapsed_sec = GetElapsedSeconds(cpu_counter)) < interval_sec)
 			;
