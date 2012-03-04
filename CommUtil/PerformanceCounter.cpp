@@ -125,6 +125,7 @@ void PerformanceCounter::MeasureUDPRecvBufferInfo(ofstream& output) {
 					*e = '\0';
 					int buffer_size = HexToDecimal(p, e);
 					output << p << "," << buffer_size;
+					pclose(fp);
 					return;
 				}
 			}
@@ -141,9 +142,14 @@ int	PerformanceCounter::HexToDecimal(char* start, char* end) {
 		if (*pos > '0' && *pos < '9') {
 			size = size * 16 + (*pos - '0');
 		}
-		else {
+		else if (*pos >= 'a' && *pos <= 'f' ) {
 			size = size * 16 + (*pos - 'a' + 10);
 		}
+		else if (*pos >= 'A' && *pos <= 'F') {
+			size = size * 16 + (*pos - 'A' + 10);
+		}
+		else
+			size *= 16;
 
 		pos++;
 	}
