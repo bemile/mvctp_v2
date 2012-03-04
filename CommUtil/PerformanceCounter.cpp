@@ -20,11 +20,13 @@ PerformanceCounter::~PerformanceCounter() {
 
 
 void PerformanceCounter::SetCPUFlag(bool flag) {
+	cout << "CPU Flag Set To: " << (flag ? "true" : "false") << endl;
 	measure_cpu = flag;
 }
 
 
 void PerformanceCounter::SetUDPRecvBuffFlag(bool flag) {
+	cout << "UDP Recv Buffer Flag Set To: " << (flag ? "true" : "false") << endl;
 	measure_udp_recv_buffer = flag;
 }
 
@@ -103,6 +105,7 @@ void PerformanceCounter::RunCountThread() {
 		AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	}
 
+	cout << "Performance Counter has been stopped." << endl;
 	output.close();
 }
 
