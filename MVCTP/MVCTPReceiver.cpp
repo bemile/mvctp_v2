@@ -668,6 +668,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
 
+				cout << "Stopping udp buffer performance counter..." << endl;
 				udp_buffer_info.Stop();
 
 				// Transfer finished, so return directly
