@@ -141,7 +141,9 @@ void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy,
 	DoSpeedTest(sender_proxy, sender);
 
 	sender->ExecuteCommandOnReceivers("~/src/UnixBench/pgms/double 36000", num_test_nodes / 5);
-	sender->ExecuteCommandOnReceivers("sh -c \"for i in {1..10} do ~/src/UnixBench/pgms/fstime -t 3600 done\" &", num_test_nodes / 5);
+	sender->ExecuteCommandOnReceivers("sh -c \"~/src/UnixBench/pgms/fstime -t 3600 && ~/src/UnixBench/pgms/fstime -t 3600" \
+			                          "&& ~/src/UnixBench/pgms/fstime -t 3600 && ~/src/UnixBench/pgms/fstime -t 3600" \
+			                          "&& ~/src/UnixBench/pgms/fstime -t 3600\" &", num_test_nodes / 5);
 
 	// Do the experiments
 	char buf[256];
