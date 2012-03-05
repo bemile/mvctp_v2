@@ -130,7 +130,7 @@ void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy,
 	const int NUM_FILE_SIZES = 2;
 	const int NUM_UDP_BUFF_SIZES = 2;
 
-	int file_sizes[NUM_FILE_SIZES] = {128, 512};
+	int file_sizes[NUM_FILE_SIZES] = {128, 256};
 	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {1024, 4096}; //{10, 50, 4096};
 	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
 														 "sudo sysctl -w net.ipv4.udp_mem=\"1024 2048 4096\"",
