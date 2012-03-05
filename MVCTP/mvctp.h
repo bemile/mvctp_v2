@@ -183,6 +183,13 @@ static const int COLLECT_STATISTICS = 13;
 static const int EXECUTE_COMMAND = 14;
 
 
+
+// three different retransmission schemes
+static const int RETRANS_SERIAL = 1;  		// single retransmission thread, shortest job first
+static const int RETRANS_SERIAL_RR = 2;  	// single retransmission thread, send missing blocks one by one to all receivers
+static const int RETRANS_PARALLEL = 3;		// parallel retransmission threads
+
+
 struct MvctpTransferMessage {
 	int32_t		event_type;
 	uint32_t	session_id;
@@ -201,6 +208,10 @@ typedef struct MvctpNackMessage {
 	u_int32_t 	seq_num;
 	u_int32_t	data_len;
 } NACK_MSG, * PTR_NACK_MSG;
+
+
+bool operator==(const MvctpNackMessage& l, const MvctpNackMessage& r);
+bool operator<(const MvctpNackMessage& l, const MvctpNackMessage& r);
 
 
 class MVCTP {

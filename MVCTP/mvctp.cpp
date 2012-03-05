@@ -46,5 +46,15 @@ void SysError(string s) {
 }
 
 
+bool operator==(const MvctpNackMessage& l, const MvctpNackMessage& r) {
+	return (l.seq_num == r.seq_num && l.data_len == r.data_len);
+}
+
+bool operator<(const MvctpNackMessage& l, const MvctpNackMessage& r) {
+	return ( (l.seq_num < r.seq_num) ||
+			 (l.seq_num == r.seq_num && l.data_len < r.data_len));
+}
+
+
 
 

@@ -15,7 +15,8 @@ ExperimentManager::ExperimentManager() {
 	txqueue_len = 0;
 	buff_size = 0;
 	retrans_buff_size = 0;
-	is_high_speed_exp = true;
+
+	exp_type = HIGH_SPEED_EXP;
 }
 
 
@@ -43,6 +44,8 @@ void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender
 }
 
 void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	exp_type = HIGH_SPEED_EXP;
+
 	// Experiment parameters
 	const int NUM_RUNS_PER_SETUP = 10; //30;
 	const int NUM_FILE_SIZES = 2;
@@ -124,10 +127,72 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 }
 
 
+void ExperimentManager::StartExperimentRetrans(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	exp_type = HIGH_SPEED_RETRANS_EXP;
+	system("sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"");
+
+	// Experiment parameters
+	const int NUM_RUNS_PER_SETUP = 10; //30;
+	const int NUM_FILE_SIZES = 2;
+	const int NUM_SENDING_RATES = 2; //4;
+	const int NUM_RETRANS_TYPES = 5;
+
+	int file_sizes[NUM_FILE_SIZES] = {1024, 4095};
+	int send_rates[NUM_SENDING_RATES] = {600, 650}; //{500, 600, 700, 800};
+	int retrans_schemes[NUM_RETRANS_TYPES] = {RETRANS_SERIAL, RETRANS_SERIAL_RR, RETRANS_PARALLEL, RETRANS_PARALLEL, RETRANS_PARALLEL};
+	int num_retrans_threads[NUM_RETRANS_TYPES] = {1, 1, 2, 3, 4};
+
+	// First do the speed test to remove slow nodes
+	DoSpeedTest(sender_proxy, sender);
+
+	// Do the experiments
+	char buf[256];
+	sprintf(buf, "retrans_exp_results_%dnodes.csv", num_test_nodes);
+	result_file.open(buf, ofstream::out | ofstream::trunc);
+	result_file
+			<< "File Size (MB),Send Rate (Mbps),Retrans. Scheme,Num. Threads,SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
+			<< endl;
+
+	char msg[512];
+	for (int i = 0; i < NUM_FILE_SIZES; i++) {
+		// Generate the data file with the given size
+		file_size = file_sizes[i];
+		int bytes = file_size * 1024 * 1024;
+		sender_proxy->GenerateDataFile("/tmp/temp.dat", bytes);
+
+		for (int j = 0; j < NUM_SENDING_RATES; j++) {
+			send_rate = send_rates[j];
+			sender_proxy->SetSendRate(send_rate);
+
+			for (int l = 0; l < NUM_RETRANS_TYPES; l++) {
+				retrans_scheme = retrans_schemes[l];
+				num_retrans_thread = num_retrans_threads[l];
+
+				sender->SetRetransmissionScheme(retrans_schemes[l]);
+				sender->SetNumRetransmissionThreads(num_retrans_threads[l]);
+
+				for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
+					sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nSending Rate: %d Mbps\nRetrans. Scheme:%d\n# Retrans. Threads: %d\n",
+							n+1, file_size, send_rate, retrans_scheme, num_retrans_thread);
+					sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
+					finished_node_count = 0;
+					sender_proxy->TransferFile("/tmp/temp.dat");
+				}
+			}
+		}
+
+		// delete the data file
+		system("sudo rm /tmp/temp.dat");
+	}
+
+	result_file.close();
+}
+
 
 ////
 void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
-	is_high_speed_exp = false;
+	exp_type = HIGH_SPEED_EXP;
 
 	const int NUM_RUNS_PER_SETUP = 10; //30;
 	const int NUM_FILE_SIZES = 2;
@@ -189,9 +254,11 @@ void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy,
 
 void ExperimentManager::HandleExpResults(string msg) {
 	if (result_file.is_open() && finished_node_count < num_test_nodes) {
-		if (is_high_speed_exp)
+		if (exp_type == HIGH_SPEED_EXP)
 			result_file << file_size << "," << send_rate << "," << retrans_buff_size << "," << buff_size << "," << msg;
-		else
+		else if (exp_type == HIGH_SPEED_RETRANS_EXP)
+			result_file << file_size << "," << send_rate << "," << retrans_scheme << "," << num_retrans_thread << "," << msg;
+		else if (exp_type == LOW_SPEED_EXP)
 			result_file << file_size << "," << buff_size << "," << msg;
 
 		finished_node_count++;

@@ -17,15 +17,21 @@
 class SenderStatusProxy;
 class MVCTPSender;
 
+
+const int HIGH_SPEED_EXP = 1;
+const int HIGH_SPEED_RETRANS_EXP = 2;
+const int LOW_SPEED_EXP = 3;
+
 class ExperimentManager {
 public:
 	ExperimentManager();
 	~ExperimentManager();
 
 	void StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
-	void HandleExpResults(string msg);
-
+	void StartExperimentRetrans(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	void StartExperimentLowSpeed(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
+
+	void HandleExpResults(string msg);
 
 	ulong 	GetFileSize() {return file_size;}
 	int 	GetSendRate() {return send_rate;}
@@ -39,7 +45,9 @@ private:
 	int num_test_nodes;
 	int finished_node_count;
 	ofstream 			result_file;
-	bool is_high_speed_exp;
+	int retrans_scheme;
+	int num_retrans_thread;
+	int exp_type;
 
 	void DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 };

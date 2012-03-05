@@ -14,6 +14,7 @@
 #include "../CommUtil/PerformanceCounter.h"
 #include "../CommUtil/StatusProxy.h"
 #include "../CommUtil/RateShaper.h"
+#include <pthread.h>
 
 struct MvctpSenderStats {
 	uint 	total_sent_packets;
@@ -50,6 +51,8 @@ public:
 
 	void 	SetStatusProxy(StatusProxy* proxy);
 	void    SetRetransmissionBufferSize(int size_mb);
+	void	SetRetransmissionScheme(int scheme);
+	void	SetNumRetransmissionThreads(int num);
 	int 	JoinGroup(string addr, u_short port);
 	void	RemoveSlowNodes();
 	int		RestartTcpServer();
@@ -77,15 +80,30 @@ private:
 	StatusProxy*		status_proxy;
 	RateShaper			rate_shaper;
 	int					max_num_retrans_buffs;
+	int					retrans_scheme;
+	int					num_retrans_threads;
+
 
 	void DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
 	void DoMemoryDataRetransmission(void* data);
-	void DoFileRetransmission(int fd);
-	void ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map);
+
+	void DoFileRetransmissionSerial(int fd);
+	void ReceiveRetransRequestsSerial(map<int, list<NACK_MSG> >* missing_packet_map);
+
+	void DoFileRetransmissionSerialRR(int fd);
+	void ReceiveRetransRequestsSerialRR(map <NACK_MSG, list<int> >* missing_packet_map);
+
+	void DoFileRetransmissionParallel(const char* file_name);
+
+
 	void SortSocketsByShortestJobs(int* ptr_socks, const map<int, list<NACK_MSG> >* missing_packet_map);
 
 	void DoTcpMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);
 
+	static void* StartRetransmissionThread(void* ptr);
+	void	RunRetransmissionThread(const char* file_name, map<int, list<NACK_MSG> >* missing_packet_map);
+	pthread_mutex_t sock_list_mutex;
+	list<int>	retrans_sock_list;
 
 	int send_rate_in_mbps;
 };

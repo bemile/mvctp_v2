@@ -17,9 +17,14 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	max_num_retrans_buffs = 32;
 	// Initially set the send rate limit to 10Gpbs (effectively no limit)
 	rate_shaper.SetRate(10000 * 1000000.0);
+
+	// set default retransmission scheme
+	retrans_scheme = RETRANS_SERIAL;
+	num_retrans_threads = 1;
 }
 
 MVCTPSender::~MVCTPSender() {
+	pthread_mutex_destroy(&sock_list_mutex);
 	delete retrans_tcp_server;
 }
 
@@ -33,6 +38,15 @@ void MVCTPSender::SetRetransmissionBufferSize(int size_mb) {
 	max_num_retrans_buffs = size_mb / 8;
 	if (max_num_retrans_buffs == 0)
 		max_num_retrans_buffs = 1;
+}
+
+
+void MVCTPSender::SetRetransmissionScheme(int scheme) {
+	retrans_scheme = scheme;
+}
+
+void MVCTPSender::SetNumRetransmissionThreads(int num) {
+	num_retrans_threads = num;
 }
 
 void MVCTPSender::SetStatusProxy(StatusProxy* proxy) {
@@ -161,66 +175,6 @@ void MVCTPSender::RemoveSlowNodes() {
 }
 
 
-void MVCTPSender::ReceiveRetransRequests(map<int, list<NACK_MSG> >* missing_packet_map) {
-	int client_sock;
-	MvctpRetransMessage retrans_msg;
-	int msg_size = sizeof(retrans_msg);
-
-	list<int> sock_list = retrans_tcp_server->GetSocketList();
-	while (!sock_list.empty()) {
-		int bytes = retrans_tcp_server->SelectReceive(&client_sock, &retrans_msg, msg_size);
-		if (retrans_msg.num_requests == 0 || bytes <= 0) {
-			sock_list.remove(client_sock);
-			continue;
-		}
-
-		for (int i = 0; i < retrans_msg.num_requests; i++) {
-			NACK_MSG packet_info;
-			packet_info.seq_num = retrans_msg.seq_numbers[i];
-			packet_info.data_len = retrans_msg.data_lens[i];
-			if (missing_packet_map->find(client_sock) != missing_packet_map->end()) {
-				(*missing_packet_map)[client_sock].push_back(packet_info);
-			}
-			else {
-				list<NACK_MSG> new_list;
-				new_list.push_back(packet_info);
-				missing_packet_map->insert(pair<int, list<NACK_MSG> >(client_sock, new_list) );
-			}
-		}
-	}
-}
-
-
-
-// Use selection sort to reorder the sockets according to their retransmission request numbers
-// Should use better sorting algorithm is this becomes a bottleneck
-void MVCTPSender::SortSocketsByShortestJobs(int* ptr_socks,
-			const map<int, list<NACK_MSG> >* missing_packet_map) {
-	map<int, int> num_sockets;
-	map<int, list<NACK_MSG> >::const_iterator it;
-	for (it = missing_packet_map->begin(); it != missing_packet_map->end(); it++) {
-		num_sockets[it->first] = it->second.size();
-	}
-
-	map<int, int>::iterator num_it;
-	int min_sock;
-	int min_num;
-	int pos = 0;
-	while (!num_sockets.empty()) {
-		min_num = 0x7fffffff;
-		for (num_it = num_sockets.begin(); num_it != num_sockets.end(); num_it++) {
-			if (min_num > num_it->second) {
-				min_sock = num_it->first;
-				min_num = num_it->second;
-			}
-		}
-
-		ptr_socks[pos++] = min_sock;
-		num_sockets.erase(min_sock);
-	}
-
-}
-
 
 void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	ResetSessionStatistics();
@@ -268,7 +222,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 	// first: client socket; second: list of NACK_MSG info
 	map<int, list<NACK_MSG> >* missing_packet_map = new map<int, list<NACK_MSG> >();
-	ReceiveRetransRequests(missing_packet_map);
+	ReceiveRetransRequestsSerial(missing_packet_map);
 	cout << "Retransmission requests received." << endl;
 
 	int num_socks = missing_packet_map->size();
@@ -413,7 +367,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	msg.event_type = FILE_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
-	DoFileRetransmission(fd);
+	DoFileRetransmissionSerial(fd);
 
 	close(fd);
 
@@ -487,7 +441,14 @@ void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
 	cout << "File transfer finished. Start retransmission..." << endl;
-	DoFileRetransmission(fd);
+
+	if (retrans_scheme == RETRANS_SERIAL)
+		DoFileRetransmissionSerial(fd);
+	else if (retrans_scheme == RETRANS_SERIAL_RR)
+		DoFileRetransmissionSerialRR(fd);
+	else if (retrans_scheme == RETRANS_PARALLEL)
+		DoFileRetransmissionParallel(file_name);
+
 
 	close(fd);
 
@@ -508,10 +469,10 @@ void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 
 
 ///
-void MVCTPSender::DoFileRetransmission(int fd) {
+void MVCTPSender::DoFileRetransmissionSerial(int fd) {
 	// first: client socket; second: list of NACK_MSG info
 	map<int, list<NACK_MSG> >* missing_packet_map = new map<int, list<NACK_MSG> >();
-	ReceiveRetransRequests(missing_packet_map);
+	ReceiveRetransRequestsSerial(missing_packet_map);
 
 	int num_socks = missing_packet_map->size();
 	if (num_socks == 0)
@@ -605,6 +566,216 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 }
 
 
+void MVCTPSender::ReceiveRetransRequestsSerial(map<int, list<NACK_MSG> >* missing_packet_map) {
+	int client_sock;
+	MvctpRetransMessage retrans_msg;
+	int msg_size = sizeof(retrans_msg);
+
+	list<int> sock_list = retrans_tcp_server->GetSocketList();
+	while (!sock_list.empty()) {
+		int bytes = retrans_tcp_server->SelectReceive(&client_sock, &retrans_msg, msg_size);
+		if (retrans_msg.num_requests == 0 || bytes <= 0) {
+			sock_list.remove(client_sock);
+			continue;
+		}
+
+		for (int i = 0; i < retrans_msg.num_requests; i++) {
+			NACK_MSG packet_info;
+			packet_info.seq_num = retrans_msg.seq_numbers[i];
+			packet_info.data_len = retrans_msg.data_lens[i];
+			(*missing_packet_map)[client_sock].push_back(packet_info);
+		}
+	}
+}
+
+
+
+// Use selection sort to reorder the sockets according to their retransmission request numbers
+// Should use better sorting algorithm is this becomes a bottleneck
+void MVCTPSender::SortSocketsByShortestJobs(int* ptr_socks,
+			const map<int, list<NACK_MSG> >* missing_packet_map) {
+	map<int, int> num_sockets;
+	map<int, list<NACK_MSG> >::const_iterator it;
+	for (it = missing_packet_map->begin(); it != missing_packet_map->end(); it++) {
+		num_sockets[it->first] = it->second.size();
+	}
+
+	map<int, int>::iterator num_it;
+	int min_sock;
+	int min_num;
+	int pos = 0;
+	while (!num_sockets.empty()) {
+		min_num = 0x7fffffff;
+		for (num_it = num_sockets.begin(); num_it != num_sockets.end(); num_it++) {
+			if (min_num > num_it->second) {
+				min_sock = num_it->first;
+				min_num = num_it->second;
+			}
+		}
+
+		ptr_socks[pos++] = min_sock;
+		num_sockets.erase(min_sock);
+	}
+
+}
+
+
+//
+void MVCTPSender::DoFileRetransmissionSerialRR(int fd) {
+	// first: sequence number
+	// second: list of sockets
+	map<NACK_MSG, list<int> >* missing_packet_map = new map<NACK_MSG, list<int> >();
+	ReceiveRetransRequestsSerialRR(missing_packet_map);
+
+
+	char packet_buf[MVCTP_PACKET_LEN];
+	MvctpHeader* header = (MvctpHeader*)packet_buf;
+	char* packet_data = packet_buf + MVCTP_HLEN;
+
+	map<NACK_MSG, list<int> >::iterator it;
+	for (it = missing_packet_map->begin(); it != missing_packet_map->end(); it++) {
+		const NACK_MSG& nack_msg = it->first;
+		list<int>& sock_list = it->second;
+
+		list<int>::iterator sock_it;
+		for (sock_it = sock_list.begin(); sock_it != sock_list.end(); sock_it++) {
+			header->session_id = cur_session_id;
+			header->seq_number = nack_msg.seq_num;
+			header->data_len = nack_msg.data_len;
+
+			lseek(fd, header->seq_number, SEEK_SET);
+			read(fd, packet_data, header->data_len);
+			retrans_tcp_server->SelectSend(*sock_it, packet_buf, MVCTP_HLEN + header->data_len);
+
+			// Update statistics
+			send_stats.total_retrans_packets++;
+			send_stats.total_retrans_bytes += header->data_len;
+			send_stats.session_retrans_packets++;
+			send_stats.session_retrans_bytes += header->data_len;
+		}
+	}
+
+	delete missing_packet_map;
+}
+
+
+void MVCTPSender::ReceiveRetransRequestsSerialRR(map <NACK_MSG, list<int> >* missing_packet_map) {
+	int client_sock;
+	MvctpRetransMessage retrans_msg;
+	int msg_size = sizeof(retrans_msg);
+
+	list<int> sock_list = retrans_tcp_server->GetSocketList();
+	while (!sock_list.empty()) {
+		int bytes = retrans_tcp_server->SelectReceive(&client_sock, &retrans_msg, msg_size);
+		if (retrans_msg.num_requests == 0 || bytes <= 0) {
+			sock_list.remove(client_sock);
+			continue;
+		}
+
+		for (int i = 0; i < retrans_msg.num_requests; i++) {
+			NACK_MSG packet_info;
+			packet_info.seq_num = retrans_msg.seq_numbers[i];
+			packet_info.data_len = retrans_msg.data_lens[i];
+			(*missing_packet_map)[packet_info].push_back(client_sock);
+		}
+	}
+}
+
+
+struct RetransThreadStartInfo {
+	const char*	file_name;
+	MVCTPSender* sender_ptr;
+	map<int, list<NACK_MSG> >* missing_packet_map;
+
+	RetransThreadStartInfo(const char* fname): file_name(fname) {}
+};
+
+//
+void MVCTPSender::DoFileRetransmissionParallel(const char* file_name) {
+	// first: client socket; second: list of NACK_MSG info
+	map<int, list<NACK_MSG> >* missing_packet_map = new map<int, list<NACK_MSG> > ();
+	ReceiveRetransRequestsSerial(missing_packet_map);
+
+	int num_socks = missing_packet_map->size();
+	if (num_socks == 0)
+		return;
+
+	int* sorted_socks = new int[num_socks];
+	SortSocketsByShortestJobs(sorted_socks, missing_packet_map);
+
+	retrans_sock_list.clear();
+	for (int i = 0; i < num_socks; i++) {
+		retrans_sock_list.push_back(sorted_socks[i]);
+	}
+
+	pthread_mutex_init(&sock_list_mutex, NULL);
+
+	RetransThreadStartInfo start_info(file_name);
+	start_info.sender_ptr = this;
+	start_info.missing_packet_map = missing_packet_map;
+	//start_info.file_name = file_name;
+
+	pthread_t* retrans_threads = new pthread_t[num_retrans_threads];
+	for (int i = 0; i < num_retrans_threads; i++) {
+		pthread_create(&retrans_threads[i], NULL, &MVCTPSender::StartRetransmissionThread, &start_info);
+	}
+
+	for (int i = 0; i < num_retrans_threads; i++) {
+		pthread_join(retrans_threads[i], NULL);
+	}
+
+	delete missing_packet_map;
+}
+
+
+void* MVCTPSender::StartRetransmissionThread(void* ptr) {
+	RetransThreadStartInfo* start_info = (RetransThreadStartInfo*)ptr;
+	start_info->sender_ptr->RunRetransmissionThread(start_info->file_name, start_info->missing_packet_map);
+	return NULL;
+}
+
+
+void MVCTPSender::RunRetransmissionThread(const char* file_name, map<int, list<NACK_MSG> >* missing_packet_map) {
+	int fd = open(file_name, O_RDONLY);
+	if (fd < 0) {
+		SysError("MVCTPSender()::RunRetransmissionThread(): File open error!");
+	}
+
+	char packet_buf[MVCTP_PACKET_LEN];
+	MvctpHeader* header = (MvctpHeader*)packet_buf;
+	char* packet_data = packet_buf + MVCTP_HLEN;
+
+	while (true) {
+		int sock;
+		list<NACK_MSG>* msg_list;
+		pthread_mutex_lock(&sock_list_mutex);
+		if (retrans_sock_list.size() == 0)
+			return;
+		else {
+			sock = retrans_sock_list.front();
+			retrans_sock_list.pop_front();
+		}
+		pthread_mutex_unlock(&sock_list_mutex);
+
+		msg_list = &(*missing_packet_map)[sock];
+		list<NACK_MSG>::iterator it;
+		for (it = msg_list->begin(); it != msg_list->end(); it++) {
+			header->session_id = cur_session_id;
+			header->seq_number = it->seq_num;
+			header->data_len = it->data_len;
+
+			lseek(fd, header->seq_number, SEEK_SET);
+			read(fd, packet_data, header->data_len);
+			retrans_tcp_server->SelectSend(sock, packet_buf, MVCTP_HLEN + header->data_len);
+
+			// Update statistics
+			send_stats.total_retrans_packets++;
+			send_stats.total_retrans_bytes += header->data_len;
+			send_stats.session_retrans_packets++;
+			send_stats.session_retrans_bytes += header->data_len;
+		}
+	}
+}
 
 
 //=========== Functions related to data transfer using TCP ================
