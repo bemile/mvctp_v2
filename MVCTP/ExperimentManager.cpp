@@ -25,7 +25,7 @@ ExperimentManager::~ExperimentManager() {
 void ExperimentManager::DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	sender_proxy->SendMessageLocal(INFORMATIONAL, "Doing file transfer test to remove slow nodes...");
 	sender_proxy->SetSendRate(600);
-	sender_proxy->GenerateDataFile("/tmp/temp.dat", 256 * 1024 * 1024);
+	sender_proxy->GenerateDataFile("/tmp/temp.dat", 100 * 1024 * 1024);
 
 	sender_proxy->TransferFile("/tmp/temp.dat");
 	sender->RemoveSlowNodes();
