@@ -143,7 +143,7 @@ void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy,
 	// First do the speed test to remove slow nodes
 	DoSpeedTest(sender_proxy, sender);
 
-	sender->ExecuteCommandOnReceivers("/users/jieli/src/UnixBench/pgms/double 36000", num_test_nodes / 5);
+	sender->ExecuteCommandOnReceivers("/users/jieli/src/UnixBench/pgms/double 36000 &", num_test_nodes / 5);
 	sender->ExecuteCommandOnReceivers("sh -c \"/users/jieli/src/UnixBench/pgms/fstime -t 3600 && /users/jieli/src/UnixBench/pgms/fstime -t 3600" \
 			                          "&& /users/jieli/src/UnixBench/pgms/fstime -t 3600 && /users/jieli/src/UnixBench/pgms/fstime -t 3600" \
 			                          "&& /users/jieli/src/UnixBench/pgms/fstime -t 3600\" &", num_test_nodes / 5);
