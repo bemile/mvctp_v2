@@ -137,6 +137,9 @@ void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy,
 														 "sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"",
 														};
 
+	sender->ExecuteCommandOnReceivers("sudo killall double", num_test_nodes);
+	sender->ExecuteCommandOnReceivers("sudo killall fstime", num_test_nodes);
+
 	// First do the speed test to remove slow nodes
 	DoSpeedTest(sender_proxy, sender);
 
