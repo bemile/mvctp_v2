@@ -97,6 +97,27 @@ void MVCTPSender::CollectExpResults() {
 	}
 }
 
+
+void MVCTPSender::ExecuteCommandOnReceivers(string command, int num_receivers) {
+	struct MvctpTransferMessage msg;
+	msg.event_type = EXECUTE_COMMAND;
+	msg.session_id = cur_session_id;
+	msg.data_len = command.length();
+	memcpy(msg.text, command.c_str(), msg.data_len);
+	msg.text[msg.data_len] = '\0';
+
+	list<int> sock_list = retrans_tcp_server->GetSocketList();
+	list<int>::iterator it;
+	int left_num = num_receivers;
+	for (it = sock_list.begin(); it != sock_list.end(); it++) {
+		retrans_tcp_server->SelectSend(*it, &msg, sizeof(msg));
+		left_num--;
+		if (left_num == 0)
+			break;
+	}
+}
+
+
 // Clear session related statistics
 void MVCTPSender::ResetSessionStatistics() {
 	send_stats.session_sent_packets = 0;

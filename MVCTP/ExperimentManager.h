@@ -25,6 +25,8 @@ public:
 	void StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	void HandleExpResults(string msg);
 
+	void StartExperimentLowSpeed(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
+
 	ulong 	GetFileSize() {return file_size;}
 	int 	GetSendRate() {return send_rate;}
 

@@ -105,6 +105,11 @@ void MVCTPReceiver::SendStatisticsToSender() {
 }
 
 
+void MVCTPReceiver::ExecuteCommand(char* command) {
+	system(command);
+}
+
+
 int MVCTPReceiver::JoinGroup(string addr, ushort port) {
 	MVCTPComm::JoinGroup(addr, port);
 	ConnectSenderOnTCP();
@@ -190,6 +195,9 @@ void MVCTPReceiver::Start() {
 				break;
 			case COLLECT_STATISTICS:
 				SendStatisticsToSender();
+				break;
+			case EXECUTE_COMMAND:
+				ExecuteCommand(msg.text);
 				break;
 			default:
 				break;

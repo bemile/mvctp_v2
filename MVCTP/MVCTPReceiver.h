@@ -45,6 +45,7 @@ public:
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
 	void	SendStatisticsToSender();
+	void	ExecuteCommand(char* command);
 	void 	SetStatusProxy(StatusProxy* proxy);
 	const struct MvctpReceiverStats GetBufferStats();
 

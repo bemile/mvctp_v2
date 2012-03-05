@@ -180,6 +180,7 @@ static const int TCP_FILE_TRANSFER_START = 10;
 static const int TCP_FILE_TRANSFER_FINISH = 11;
 static const int SPEED_TEST = 12;
 static const int COLLECT_STATISTICS = 13;
+static const int EXECUTE_COMMAND = 14;
 
 
 struct MvctpTransferMessage {

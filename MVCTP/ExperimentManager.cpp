@@ -54,7 +54,7 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 	int send_rates[NUM_SENDING_RATES] = {600, 650}; //{500, 600, 700, 800};
 	//int txqueue_lengths[NUM_TXQUEUE_LENGTHS] = {10000, 1000};
 	int retrans_buff_sizes[NUM_RETRANS_BUFF_SIZES] = {128, 512};
-	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {4096, 16384, 65536}; //{10, 50, 4096};
+	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {1024, 4096, 16384}; //{10, 50, 4096};
 	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
 													     "sudo sysctl -w net.ipv4.udp_mem=\"1024 2048 4096\"",
 													     "sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"",
@@ -121,6 +121,62 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 	result_file.close();
 }
+
+
+
+////
+void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	const int NUM_RUNS_PER_SETUP = 10; //30;
+	const int NUM_FILE_SIZES = 2;
+	const int NUM_UDP_BUFF_SIZES = 2;
+
+	int file_sizes[NUM_FILE_SIZES] = {128, 512};
+	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {1024, 4096}; //{10, 50, 4096};
+	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
+														 "sudo sysctl -w net.ipv4.udp_mem=\"1024 2048 4096\"",
+														 "sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"",
+														};
+
+	// First do the speed test to remove slow nodes
+	DoSpeedTest(sender_proxy, sender);
+
+	sender->ExecuteCommandOnReceivers("~/src/UnixBench/pgms/double 36000", num_test_nodes / 5);
+	sender->ExecuteCommandOnReceivers("sh -c \"for i in {1..10} do ~/src/UnixBench/pgms/fstime -t 3600 done\" &", num_test_nodes / 5);
+
+	// Do the experiments
+	char buf[256];
+	sprintf(buf, "ls_exp_results_%dnodes.csv", num_test_nodes);
+	result_file.open(buf, ofstream::out | ofstream::trunc);
+	result_file
+			<< "File Size (MB),UDP Buffer Size (MB),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
+			<< endl;
+
+	char msg[512];
+	for (int i = 0; i < NUM_FILE_SIZES; i++) {
+		// Generate the data file with the given size
+		file_size = file_sizes[i];
+		int bytes = file_size * 1024 * 1024;
+		sender_proxy->GenerateDataFile("/tmp/temp.dat", bytes);
+
+		for (int s = 0; s < NUM_UDP_BUFF_SIZES; s++) {
+			buff_size = udp_buff_sizes[s] * 4 / 1024; //* 4096;
+			system(udp_buff_conf_commands[s].c_str());
+
+			for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
+				sprintf(
+						msg,
+						"********** Run %d **********\nFile Size: %d MB\nUDP Buffer Size: %d MB\n",
+						n + 1, file_size, buff_size);
+				sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
+
+				finished_node_count = 0;
+				sender_proxy->TransferFile("/tmp/temp.dat");
+			}
+		}
+	}
+}
+
 
 
 void ExperimentManager::HandleExpResults(string msg) {
