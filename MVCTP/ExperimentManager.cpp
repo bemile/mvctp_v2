@@ -132,7 +132,7 @@ void ExperimentManager::StartExperimentRetrans(SenderStatusProxy* sender_proxy, 
 	system("sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"");
 
 	// Experiment parameters
-	const int NUM_RUNS_PER_SETUP = 10; //30;
+	const int NUM_RUNS_PER_SETUP = 1; //30;
 	const int NUM_FILE_SIZES = 2;
 	const int NUM_SENDING_RATES = 2; //4;
 	const int NUM_RETRANS_TYPES = 5;
