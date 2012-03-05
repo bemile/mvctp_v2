@@ -133,6 +133,11 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 		exp_manager.StartExperiment(this, ptr_sender);
 		SendMessageLocal(INFORMATIONAL, "All experiments finished.");
 	}
+	else if (parts.front().compare("StartExperimentLS") == 0) {
+			SendMessageLocal(INFORMATIONAL, "Starting low-speed experiments...");
+			exp_manager.StartExperimentLowSpeed(this, ptr_sender);
+			SendMessageLocal(INFORMATIONAL, "All experiments finished.");
+	}
 	else {
 		StatusProxy::HandleCommand(command);
 	}
