@@ -24,7 +24,6 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 }
 
 MVCTPSender::~MVCTPSender() {
-	pthread_mutex_destroy(&sock_list_mutex);
 	delete retrans_tcp_server;
 }
 
@@ -708,13 +707,13 @@ void MVCTPSender::DoFileRetransmissionParallel(const char* file_name) {
 		retrans_sock_list.push_back(sorted_socks[i]);
 	}
 
-	pthread_mutex_init(&sock_list_mutex, NULL);
 
 	RetransThreadStartInfo start_info(file_name);
 	start_info.sender_ptr = this;
 	start_info.missing_packet_map = missing_packet_map;
 	//start_info.file_name = file_name;
 
+	pthread_mutex_init(&sock_list_mutex, NULL);
 	pthread_t* retrans_threads = new pthread_t[num_retrans_threads];
 	for (int i = 0; i < num_retrans_threads; i++) {
 		pthread_create(&retrans_threads[i], NULL, &MVCTPSender::StartRetransmissionThread, &start_info);
@@ -725,6 +724,8 @@ void MVCTPSender::DoFileRetransmissionParallel(const char* file_name) {
 	}
 
 	delete missing_packet_map;
+	delete[] retrans_threads;
+	pthread_mutex_destroy(&sock_list_mutex);
 }
 
 
