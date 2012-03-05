@@ -750,13 +750,15 @@ void MVCTPSender::RunRetransmissionThread(const char* file_name, map<int, list<N
 		int sock;
 		list<NACK_MSG>* msg_list;
 		pthread_mutex_lock(&sock_list_mutex);
-		if (retrans_sock_list.size() == 0)
+		if (retrans_sock_list.size() == 0) {
+			pthread_mutex_unlock(&sock_list_mutex);
 			return;
+		}
 		else {
 			sock = retrans_sock_list.front();
 			retrans_sock_list.pop_front();
+			pthread_mutex_unlock(&sock_list_mutex);
 		}
-		pthread_mutex_unlock(&sock_list_mutex);
 
 		msg_list = &(*missing_packet_map)[sock];
 		list<NACK_MSG>::iterator it;

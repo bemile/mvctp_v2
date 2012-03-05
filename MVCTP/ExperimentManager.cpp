@@ -169,8 +169,8 @@ void ExperimentManager::StartExperimentRetrans(SenderStatusProxy* sender_proxy, 
 				retrans_scheme = retrans_schemes[l];
 				num_retrans_thread = num_retrans_threads[l];
 
-				sender->SetRetransmissionScheme(retrans_schemes[l]);
-				sender->SetNumRetransmissionThreads(num_retrans_threads[l]);
+				sender->SetRetransmissionScheme(retrans_scheme);
+				sender->SetNumRetransmissionThreads(num_retrans_thread);
 
 				for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
 					sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nSending Rate: %d Mbps\nRetrans. Scheme:%d\n# Retrans. Threads: %d\n",
