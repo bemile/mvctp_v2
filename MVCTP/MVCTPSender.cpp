@@ -512,7 +512,6 @@ void MVCTPSender::DoFileRetransmission(int fd) {
 	// first: client socket; second: list of NACK_MSG info
 	map<int, list<NACK_MSG> >* missing_packet_map = new map<int, list<NACK_MSG> >();
 	ReceiveRetransRequests(missing_packet_map);
-	cout << "All retransmission requests received." << endl;
 
 	int num_socks = missing_packet_map->size();
 	if (num_socks == 0)
