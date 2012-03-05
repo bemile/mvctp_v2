@@ -435,6 +435,79 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 
 
+void MVCTPSender::SendFileBufferedIO(const char* file_name) {
+	PerformanceCounter cpu_info(50);
+	cpu_info.SetCPUFlag(true);
+	cpu_info.Start();
+
+	ResetSessionStatistics();
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+
+	struct stat file_status;
+	stat(file_name, &file_status);
+	ulong file_size = file_status.st_size;
+	ulong remained_size = file_size;
+
+	// Send a notification to all receivers before starting the memory transfer
+	struct MvctpTransferMessage msg;
+	msg.session_id = cur_session_id;
+	msg.event_type = FILE_TRANSFER_START;
+	msg.data_len = file_size;
+	strcpy(msg.text, file_name);
+	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+
+	cout << "Start file transferring..." << endl;
+	// Transfer the file using memory mapped I/O
+	int fd = open(file_name, O_RDWR);
+	if (fd < 0) {
+		SysError("MVCTPSender()::SendFile(): File open error!");
+	}
+	char* buffer = (char *)malloc(MAX_MAPPED_MEM_SIZE);
+	off_t offset = 0;
+	while (remained_size > 0) {
+		uint read_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size
+				: MAX_MAPPED_MEM_SIZE;
+		ssize_t res = read(fd, buffer, read_size);
+		if (res < 0) {
+			SysError("MVCTPSender::SendFileBufferedIO()::read() error");
+		}
+
+		DoMemoryTransfer(buffer, read_size, offset);
+		offset += read_size;
+		remained_size -= read_size;
+	}
+	free(buffer);
+
+	cout << "File transfer finished. Start retransmission..." << endl;
+	// Record memory data multicast time
+	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
+
+
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+	// Send a notification to all receivers to start retransmission
+	msg.event_type = FILE_TRANSFER_FINISH;
+	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+
+	DoFileRetransmission(fd);
+
+	close(fd);
+
+	// collect experiment results from receivers
+	CollectExpResults();
+
+	// Record total transfer and retransmission time
+	send_stats.session_retrans_time = GetElapsedSeconds(cpu_counter); //send_stats.session_total_time - send_stats.session_trans_time;
+	send_stats.session_total_time = send_stats.session_trans_time + send_stats.session_retrans_time; //GetElapsedSeconds(cpu_counter);
+	send_stats.session_retrans_percentage = send_stats.session_retrans_packets  * 1.0
+									/ (send_stats.session_sent_packets + send_stats.session_retrans_packets);
+	// Increase the session id for the next transfer
+	cur_session_id++;
+	SendSessionStatistics();
+
+	cpu_info.Stop();
+}
+
+
 ///
 void MVCTPSender::DoFileRetransmission(int fd) {
 	// first: client socket; second: list of NACK_MSG info
