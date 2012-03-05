@@ -15,6 +15,7 @@ ExperimentManager::ExperimentManager() {
 	txqueue_len = 0;
 	buff_size = 0;
 	retrans_buff_size = 0;
+	is_high_speed_exp = true;
 }
 
 
@@ -126,6 +127,8 @@ void ExperimentManager::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSe
 
 ////
 void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	is_high_speed_exp = false;
+
 	const int NUM_RUNS_PER_SETUP = 10; //30;
 	const int NUM_FILE_SIZES = 2;
 	const int NUM_UDP_BUFF_SIZES = 2;
@@ -186,7 +189,11 @@ void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy,
 
 void ExperimentManager::HandleExpResults(string msg) {
 	if (result_file.is_open() && finished_node_count < num_test_nodes) {
-		result_file << file_size << "," << send_rate << "," << retrans_buff_size << "," << buff_size << "," << msg;
+		if (is_high_speed_exp)
+			result_file << file_size << "," << send_rate << "," << retrans_buff_size << "," << buff_size << "," << msg;
+		else
+			result_file << file_size << "," << buff_size << "," << msg;
+
 		finished_node_count++;
 		if (finished_node_count == num_test_nodes)
 			result_file.flush();

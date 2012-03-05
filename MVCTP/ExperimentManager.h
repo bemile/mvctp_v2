@@ -39,6 +39,7 @@ private:
 	int num_test_nodes;
 	int finished_node_count;
 	ofstream 			result_file;
+	bool is_high_speed_exp;
 
 	void DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 };
