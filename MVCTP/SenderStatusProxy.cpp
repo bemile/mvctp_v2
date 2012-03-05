@@ -254,8 +254,8 @@ void SenderStatusProxy::TransferFile(string file_name) {
 	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
 	SendMessageLocal(INFORMATIONAL, "Transferring file...");
-	//ptr_sender->SendFile(file_name.c_str());
-	ptr_sender->SendFileBufferedIO(file_name.c_str());
+	ptr_sender->SendFile(file_name.c_str());
+	//ptr_sender->SendFileBufferedIO(file_name.c_str());
 	SendMessageLocal(COMMAND_RESPONSE, "File transfer completed.");
 }
 

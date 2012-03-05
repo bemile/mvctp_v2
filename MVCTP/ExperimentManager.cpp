@@ -132,15 +132,15 @@ void ExperimentManager::StartExperimentRetrans(SenderStatusProxy* sender_proxy, 
 	system("sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"");
 
 	// Experiment parameters
-	const int NUM_RUNS_PER_SETUP = 1; //30;
+	const int NUM_RUNS_PER_SETUP = 10; //30;
 	const int NUM_FILE_SIZES = 2;
 	const int NUM_SENDING_RATES = 2; //4;
-	const int NUM_RETRANS_TYPES = 5;
+	const int NUM_RETRANS_TYPES = 6;
 
 	int file_sizes[NUM_FILE_SIZES] = {1024, 4095};
-	int send_rates[NUM_SENDING_RATES] = {700, 650}; //{500, 600, 700, 800};
-	int retrans_schemes[NUM_RETRANS_TYPES] = {RETRANS_SERIAL, RETRANS_SERIAL_RR, RETRANS_PARALLEL, RETRANS_PARALLEL, RETRANS_PARALLEL};
-	int num_retrans_threads[NUM_RETRANS_TYPES] = {1, 1, 2, 3, 4};
+	int send_rates[NUM_SENDING_RATES] = {700, 675}; //{500, 600, 700, 800};
+	int retrans_schemes[NUM_RETRANS_TYPES] = {RETRANS_SERIAL, RETRANS_SERIAL_RR, RETRANS_PARALLEL, RETRANS_PARALLEL, RETRANS_PARALLEL, RETRANS_PARALLEL};
+	int num_retrans_threads[NUM_RETRANS_TYPES] = {1, 1, 2, 3, 4, 5};
 
 	// First do the speed test to remove slow nodes
 	DoSpeedTest(sender_proxy, sender);

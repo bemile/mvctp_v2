@@ -366,7 +366,12 @@ void MVCTPSender::SendFile(const char* file_name) {
 	msg.event_type = FILE_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
-	DoFileRetransmissionSerial(fd);
+	if (retrans_scheme == RETRANS_SERIAL)
+		DoFileRetransmissionSerial(fd);
+	else if (retrans_scheme == RETRANS_SERIAL_RR)
+		DoFileRetransmissionSerialRR(fd);
+	else if (retrans_scheme == RETRANS_PARALLEL)
+		DoFileRetransmissionParallel(file_name);
 
 	close(fd);
 
