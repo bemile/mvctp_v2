@@ -522,9 +522,9 @@ void MVCTPReceiver::ReceiveFileBufferedIO(const MvctpTransferMessage & transfer_
 void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & transfer_msg) {
 	retrans_info.open("retrans_info.txt", ofstream::out | ofstream::trunc);
 
-	PerformanceCounter udp_buffer_info(50);
-	udp_buffer_info.SetUDPRecvBuffFlag(true);
-	udp_buffer_info.Start();
+	//PerformanceCounter udp_buffer_info(50);
+	//udp_buffer_info.SetUDPRecvBuffFlag(true);
+	//udp_buffer_info.Start();
 
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
@@ -677,7 +677,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				SendSessionStatistics();
 
 				cout << "Stopping udp buffer performance counter..." << endl;
-				udp_buffer_info.Stop();
+				//udp_buffer_info.Stop();
 
 				// Transfer finished, so return directly
 				return;
