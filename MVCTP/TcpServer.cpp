@@ -13,6 +13,9 @@ TcpServer::TcpServer(int port) {
 		SysError("TcpServer::TcpServer()::socket() error");
 	}
 
+	int optval = 1;
+	setsockopt(server_sock, SOL_SOCKET, SO_REUSEADDR, &optval, sizeof(optval) );
+
 	bzero(&server_addr, sizeof(server_addr));
 	server_addr.sin_family = AF_INET;
 	server_addr.sin_addr.s_addr = htonl(INADDR_ANY);

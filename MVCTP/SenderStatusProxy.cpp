@@ -252,7 +252,6 @@ void SenderStatusProxy::TransferFile(string file_name) {
 	//ptr_sender->SendFile(file_name.c_str());
 	ptr_sender->SendFileBufferedIO(file_name.c_str());
 	SendMessageLocal(COMMAND_RESPONSE, "File transfer completed.");
-
 }
 
 
