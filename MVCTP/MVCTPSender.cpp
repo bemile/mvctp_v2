@@ -478,16 +478,15 @@ void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 	}
 	free(buffer);
 
-	cout << "File transfer finished. Start retransmission..." << endl;
 	// Record memory data multicast time
 	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
-
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers to start retransmission
 	msg.event_type = FILE_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
+	cout << "File transfer finished. Start retransmission..." << endl;
 	DoFileRetransmission(fd);
 
 	close(fd);
