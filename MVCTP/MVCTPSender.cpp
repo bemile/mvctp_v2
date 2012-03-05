@@ -462,11 +462,11 @@ void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 	if (fd < 0) {
 		SysError("MVCTPSender()::SendFile(): File open error!");
 	}
-	char* buffer = (char *)malloc(MAX_MAPPED_MEM_SIZE);
+	char* buffer = (char *)malloc(MVCTP_DATA_LEN);
 	off_t offset = 0;
 	while (remained_size > 0) {
-		uint read_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size
-				: MAX_MAPPED_MEM_SIZE;
+		uint read_size = remained_size < MVCTP_DATA_LEN ? remained_size
+				: MVCTP_DATA_LEN;
 		ssize_t res = read(fd, buffer, read_size);
 		if (res < 0) {
 			SysError("MVCTPSender::SendFileBufferedIO()::read() error");
