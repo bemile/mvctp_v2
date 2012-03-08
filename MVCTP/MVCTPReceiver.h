@@ -38,6 +38,7 @@ public:
 	int 	JoinGroup(string addr, u_short port);
 	int		ConnectSenderOnTCP();
 	void 	Start();
+	void	SetSchedRR(bool is_rr);
 
 	void 	SetPacketLossRate(int rate);
 	int 	GetPacketLossRate();
@@ -64,6 +65,8 @@ private:
 	MvctpReceiverStats 	recv_stats;
 	CpuCycleCounter		cpu_counter;
 	StatusProxy*		status_proxy;
+
+	PerformanceCounter 	cpu_info;
 
 	// Memory-to-memory data tranfer
 	void 	ReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);

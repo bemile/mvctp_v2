@@ -121,6 +121,12 @@ int ReceiverStatusProxy::HandleCommand(const char* command) {
 			}
 			SendMessageLocal(COMMAND_RESPONSE, "Log switch set.");
 		}
+	} else if (parts.front().compare("SetSchedRR") == 0) {
+		ptr_receiver->SetSchedRR(true);
+		SendMessageLocal(COMMAND_RESPONSE, "Receiver process has been set to SCHED_RR mode.");
+	} else if (parts.front().compare("SetNoSchedRR") == 0) {
+			ptr_receiver->SetSchedRR(false);
+			SendMessageLocal(COMMAND_RESPONSE, "Receiver process has been set to SCHED_OTHER (normal) mode.");
 	} else {
 		StatusProxy::HandleCommand(command);
 	}

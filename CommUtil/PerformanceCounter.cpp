@@ -7,6 +7,14 @@
 
 #include "PerformanceCounter.h"
 
+PerformanceCounter::PerformanceCounter() : interval(1000) {
+	keep_running = false;
+
+	measure_cpu = false;
+	measure_udp_recv_buffer = false;
+}
+
+
 PerformanceCounter::PerformanceCounter(int interval) : interval(interval) {
 	keep_running = false;
 
@@ -16,6 +24,11 @@ PerformanceCounter::PerformanceCounter(int interval) : interval(interval) {
 
 PerformanceCounter::~PerformanceCounter() {
 	// TODO Auto-generated destructor stub
+}
+
+
+void PerformanceCounter::SetInterval(int milliseconds) {
+	interval = milliseconds;
 }
 
 
@@ -32,6 +45,8 @@ void PerformanceCounter::SetUDPRecvBuffFlag(bool flag) {
 
 void PerformanceCounter::Start() {
 	keep_running = true;
+	cpu_values.clear();
+	udp_buffer_values.clear();
 	pthread_create(&count_thread, NULL, &PerformanceCounter::StartCountThread, this);
 }
 
@@ -90,6 +105,8 @@ void PerformanceCounter::RunCountThread() {
 			//if (usage_percent > 100)
 			//	usage_percent = 100;
 
+			cpu_values.push_back(usage_percent);
+
 			output << sys_time << "," << user_time << "," << usage_percent << ",";
 
 			old_usage = new_usage;
@@ -106,6 +123,17 @@ void PerformanceCounter::RunCountThread() {
 
 	cout << "Performance Counter has been stopped." << endl;
 	output.close();
+}
+
+
+string	PerformanceCounter::GetCPUMeasurements() {
+	string res = "";
+	char buf[10];
+	for (int i = 0; i < cpu_values.size(); i++) {
+		sprintf(buf, "%d", cpu_values[i]);
+		res = res + buf + " ";
+	}
+	return res;
 }
 
 

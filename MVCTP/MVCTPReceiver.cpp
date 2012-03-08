@@ -92,12 +92,13 @@ void MVCTPReceiver::SendStatisticsToSender() {
 							/ 1000.0 / 1000.0 * 8 / recv_stats.session_total_time * SEND_RATE_RATIO;
 	size_t total_bytes = recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes;
 
-	sprintf(buf, "%u,%s,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f\n", session_id,
+	sprintf(buf, "%u,%s,%.2f,%.2f,%.2f,%.2f,%d,%d,%.4f,%s\n", session_id,
 			status_proxy->GetNodeId().c_str(), recv_stats.session_total_time,
 			recv_stats.session_trans_time, recv_stats.session_retrans_time,
 			send_rate, recv_stats.session_recv_packets,
 			recv_stats.session_retrans_packets,
-			recv_stats.session_retrans_percentage);
+			recv_stats.session_retrans_percentage,
+			cpu_info.GetCPUMeasurements().c_str());
 
 	int len = strlen(buf);
 	retrans_tcp_client->Send(&len, sizeof(len));
@@ -106,8 +107,33 @@ void MVCTPReceiver::SendStatisticsToSender() {
 
 
 void MVCTPReceiver::ExecuteCommand(char* command) {
-	system(command);
+	string comm = command;
+	if (comm.compare("SetSchedRR") == 0) {
+		SetSchedRR(true);
+	}
+	else if  (comm.compare("SetNoSchedRR") == 0) {
+		SetSchedRR(false);
+	}
+	else
+		system(command);
 }
+
+
+// Set the process scheduling mode to SCHED_RR or SCHED_OTHER (the default process scheduling mode in linux)
+void MVCTPReceiver::SetSchedRR(bool is_rr) {
+	static int normal_priority = getpriority(PRIO_PROCESS, 0);
+
+	struct sched_param sp;
+	if (is_rr) {
+		sp.__sched_priority = sched_get_priority_max(SCHED_RR);
+		sched_setscheduler(0, SCHED_RR, &sp);
+	}
+	else {
+		sp.__sched_priority = normal_priority;
+		sched_setscheduler(0, SCHED_OTHER, &sp);
+	}
+}
+
 
 
 int MVCTPReceiver::JoinGroup(string addr, ushort port) {
@@ -134,13 +160,9 @@ int MVCTPReceiver::ConnectSenderOnTCP() {
 	return 1;
 }
 
+
+
 void MVCTPReceiver::Start() {
-	// First set the process to SCHED_RR mode
-	//struct sched_param sp;
-	//sp.__sched_priority = sched_get_priority_max(SCHED_RR);
-	//sched_setscheduler(0, SCHED_RR, &sp);
-
-
 	fd_set read_set;
 	while (true) {
 		read_set = read_sock_set;
@@ -526,6 +548,10 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 	//udp_buffer_info.SetUDPRecvBuffFlag(true);
 	//udp_buffer_info.Start();
 
+	cpu_info.SetInterval(500);
+    cpu_info.SetCPUFlag(true);
+	cpu_info.Start();
+
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
 
@@ -676,8 +702,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
 
-				cout << "Stopping udp buffer performance counter..." << endl;
-				//udp_buffer_info.Stop();
+				cpu_info.Stop();
 
 				// Transfer finished, so return directly
 				return;

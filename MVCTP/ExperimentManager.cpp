@@ -196,18 +196,7 @@ void ExperimentManager::StartExperimentRetrans(SenderStatusProxy* sender_proxy, 
 
 ////
 void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
-	exp_type = HIGH_SPEED_EXP;
-
-	const int NUM_RUNS_PER_SETUP = 10; //30;
-	const int NUM_FILE_SIZES = 2;
-	const int NUM_UDP_BUFF_SIZES = 2;
-
-	int file_sizes[NUM_FILE_SIZES] = {128, 256};
-	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {1024, 4096}; //{10, 50, 4096};
-	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
-														 "sudo sysctl -w net.ipv4.udp_mem=\"1024 2048 4096\"",
-														 "sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"",
-														};
+	exp_type = LOW_SPEED_EXP;
 
 	sender->ExecuteCommandOnReceivers("sudo killall double", num_test_nodes);
 	sender->ExecuteCommandOnReceivers("sudo killall fstime", num_test_nodes);
@@ -220,15 +209,51 @@ void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy,
 			                          "&& /users/jieli/src/UnixBench/pgms/fstime -t 3600 && /users/jieli/src/UnixBench/pgms/fstime -t 3600" \
 			                          "&& /users/jieli/src/UnixBench/pgms/fstime -t 3600\" &", num_test_nodes / 5);
 
-	// Do the experiments
+
+	// Do experiments under the normal scheduling mode
+	sender->ExecuteCommandOnReceivers("SetNoSchedRR", num_test_nodes / 5);
 	char buf[256];
-	sprintf(buf, "ls_exp_results_%dnodes.csv", num_test_nodes);
+	sprintf(buf, "ls_exp_results_%dnodes_norr.csv", num_test_nodes);
 	result_file.open(buf, ofstream::out | ofstream::trunc);
 	result_file
 			<< "File Size (MB),UDP Buffer Size (MB),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
-			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate"
+			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate,CPU Usage"
 			<< endl;
 
+	DoLowSpeedExperiment(sender_proxy, sender);
+	result_file.close();
+
+
+	// Do experiments under the SCHED_RR mode
+	sender->ExecuteCommandOnReceivers("SetSchedRR", num_test_nodes / 5);
+	sprintf(buf, "ls_exp_results_%dnodes_rr.csv", num_test_nodes);
+	result_file.open(buf, ofstream::out | ofstream::trunc);
+	result_file
+			<< "File Size (MB),UDP Buffer Size (MB),SessionID,NodeID,Total Transfer Time (Seconds),Multicast Time (Seconds),"
+			<< "Retrans. Time (Seconds),Throughput (Mbps),Transmitted Packets,Retransmitted Packets,Retransmission Rate,CPU Usage"
+			<< endl;
+
+	DoLowSpeedExperiment(sender_proxy, sender);
+	result_file.close();
+
+	sender->ExecuteCommandOnReceivers("SetNoSchedRR", num_test_nodes / 5);
+}
+
+
+
+void ExperimentManager::DoLowSpeedExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	const int NUM_RUNS_PER_SETUP = 10; //30;
+	const int NUM_FILE_SIZES = 2;
+	const int NUM_UDP_BUFF_SIZES = 2;
+
+	int file_sizes[NUM_FILE_SIZES] = {128, 256};
+	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {1024, 4096}; //{10, 50, 4096};
+	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
+														 "sudo sysctl -w net.ipv4.udp_mem=\"1024 2048 4096\"",
+														 "sudo sysctl -w net.ipv4.udp_mem=\"4096 8192 16384\"",
+														};
+
+	// Do the experiments
 	char msg[512];
 	for (int i = 0; i < NUM_FILE_SIZES; i++) {
 		// Generate the data file with the given size

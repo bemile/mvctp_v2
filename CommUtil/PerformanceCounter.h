@@ -12,6 +12,9 @@
 #include <cstring>
 #include <iostream>
 #include <fstream>
+#include <stdio.h>
+#include <stdlib.h>
+#include <vector>
 #include <pthread.h>
 #include <sys/time.h>
 #include <sys/resource.h>
@@ -21,14 +24,18 @@ using namespace std;
 
 class PerformanceCounter {
 public:
+	PerformanceCounter();
 	PerformanceCounter(int interval);
 	~PerformanceCounter();
 
 	void Start();
 	void Stop();
+	void SetInterval(int milliseconds);
 
 	void SetCPUFlag(bool flag);
 	void SetUDPRecvBuffFlag(bool flag);
+
+	string	GetCPUMeasurements();
 
 
 private:
@@ -38,6 +45,8 @@ private:
 	bool    measure_cpu;
 	bool    measure_udp_recv_buffer;
 
+	vector<int>		cpu_values;
+	vector<int>		udp_buffer_values;
 
 	void	MeasureCPUInfo(ofstream& output);
 	void 	MeasureUDPRecvBufferInfo(ofstream& output);
