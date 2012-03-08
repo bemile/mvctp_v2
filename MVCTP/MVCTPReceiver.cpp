@@ -548,9 +548,9 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 	//udp_buffer_info.SetUDPRecvBuffFlag(true);
 	//udp_buffer_info.Start();
 
-	//cpu_info.SetInterval(500);
-    //cpu_info.SetCPUFlag(true);
-	//cpu_info.Start();
+	cpu_info.SetInterval(500);
+    cpu_info.SetCPUFlag(true);
+	cpu_info.Start();
 
 	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
 	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
@@ -702,7 +702,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpTransferMessage & trans
 				status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 				SendSessionStatistics();
 
-				//cpu_info.Stop();
+				cpu_info.Stop();
 
 				// Transfer finished, so return directly
 				return;

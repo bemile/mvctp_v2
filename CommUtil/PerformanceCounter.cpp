@@ -87,8 +87,9 @@ void PerformanceCounter::RunCountThread() {
 	int usage_percent;
 
 	while (keep_running) {
-		while ((elapsed_sec = GetElapsedSeconds(cpu_counter)) < interval_sec)
-			;
+		while ((elapsed_sec = GetElapsedSeconds(cpu_counter)) < interval_sec) {
+			usleep( (interval_sec - elapsed_sec) * 1000000);
+		}
 		measure_time += elapsed_sec;
 		output << measure_time << ",";
 
