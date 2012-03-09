@@ -243,10 +243,10 @@ void ExperimentManager::StartExperimentLowSpeed(SenderStatusProxy* sender_proxy,
 
 void ExperimentManager::DoLowSpeedExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	const int NUM_RUNS_PER_SETUP = 10; //30;
-	const int NUM_FILE_SIZES = 2;
+	const int NUM_FILE_SIZES = 1;
 	const int NUM_UDP_BUFF_SIZES = 2;
 
-	int file_sizes[NUM_FILE_SIZES] = {128, 256};
+	int file_sizes[NUM_FILE_SIZES] = {128};
 	int udp_buff_sizes[NUM_UDP_BUFF_SIZES] = {1024, 4096}; //{10, 50, 4096};
 	string udp_buff_conf_commands[NUM_UDP_BUFF_SIZES] = {
 														 "sudo sysctl -w net.ipv4.udp_mem=\"1024 2048 4096\"",
@@ -266,9 +266,7 @@ void ExperimentManager::DoLowSpeedExperiment(SenderStatusProxy* sender_proxy, MV
 			system(udp_buff_conf_commands[s].c_str());
 
 			for (int n = 0; n < NUM_RUNS_PER_SETUP; n++) {
-				sprintf(
-						msg,
-						"********** Run %d **********\nFile Size: %d MB\nUDP Buffer Size: %d MB\n",
+				sprintf(msg, "********** Run %d **********\nFile Size: %d MB\nUDP Buffer Size: %d MB\n",
 						n + 1, file_size, buff_size);
 				sender_proxy->SendMessageLocal(INFORMATIONAL, msg);
 
