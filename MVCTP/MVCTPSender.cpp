@@ -111,7 +111,7 @@ void MVCTPSender::CollectExpResults() {
 }
 
 
-void MVCTPSender::ExecuteCommandOnReceivers(string command, int num_receivers) {
+void MVCTPSender::ExecuteCommandOnReceivers(string command, int receiver_start, int receiver_end) {
 	struct MvctpTransferMessage msg;
 	msg.event_type = EXECUTE_COMMAND;
 	msg.session_id = cur_session_id;
@@ -121,11 +121,12 @@ void MVCTPSender::ExecuteCommandOnReceivers(string command, int num_receivers) {
 
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
 	list<int>::iterator it;
-	int left_num = num_receivers;
+	int sock_id = 0;
 	for (it = sock_list.begin(); it != sock_list.end(); it++) {
-		retrans_tcp_server->SelectSend(*it, &msg, sizeof(msg));
-		left_num--;
-		if (left_num == 0)
+		sock_id++;
+		if (sock_id >= receiver_start && sock_id <= receiver_end)
+			retrans_tcp_server->SelectSend(*it, &msg, sizeof(msg));
+		else if (sock_id > receiver_end)
 			break;
 	}
 }

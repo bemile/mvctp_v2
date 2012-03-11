@@ -70,7 +70,7 @@ public:
 	void 	TcpSendMemoryData(void* data, size_t length);
 	void 	TcpSendFile(const char* file_name);
 	void 	CollectExpResults();
-	void	ExecuteCommandOnReceivers(string command, int num_receivers);
+	void	ExecuteCommandOnReceivers(string command, int receiver_start, int receiver_end);
 
 private:
 	TcpServer*			retrans_tcp_server;
