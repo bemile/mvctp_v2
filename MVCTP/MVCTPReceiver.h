@@ -68,12 +68,15 @@ private:
 
 	PerformanceCounter 	cpu_info;
 
+
+	void 	ReconnectSender();
+
 	// Memory-to-memory data tranfer
-	void 	ReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);
+	void 	ReceiveMemoryData(const MvctpSenderMessage & msg, char* mem_data);
 	void 	DoMemoryDataRetransmission(char* mem_data, const list<MvctpNackMessage>& nack_list);
 	// Disk-to-disk data transfer
-	void 	ReceiveFileBufferedIO(const MvctpTransferMessage & transfer_msg);
-	void 	ReceiveFileMemoryMappedIO(const MvctpTransferMessage & transfer_msg);
+	void 	ReceiveFileBufferedIO(const MvctpSenderMessage & transfer_msg);
+	void 	ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfer_msg);
 	void 	DoFileRetransmission(int fd, const list<MvctpNackMessage>& nack_list);
 
 	void 	DoAsynchronousWrite(int fd, size_t offset, char* data_buffer, size_t length);
@@ -83,8 +86,24 @@ private:
 	void 	HandleMissingPackets(list<MvctpNackMessage>& nack_list, uint current_offset, uint received_seq);
 
 	// Functions related to TCP data transfer
-	void 	TcpReceiveMemoryData(const MvctpTransferMessage & msg, char* mem_data);
-	void 	TcpReceiveFile(const MvctpTransferMessage & transfer_msg);
+	void 	TcpReceiveMemoryData(const MvctpSenderMessage & msg, char* mem_data);
+	void 	TcpReceiveFile(const MvctpSenderMessage & transfer_msg);
+
+
+	// Retransmission thread functions
+	int		recv_fd;
+	void 	StartRetransmissionThread();
+	static void* StartRetransmissionThread(void* ptr);
+	void	RunRetransmissionThread();
+	pthread_t	retrans_thread;
+	pthread_mutex_t retrans_list_mutex;
+	bool	keep_retrans_alive;
+	list<MvctpRetransRequest> retrans_list;
+	int		mvctp_seq_num;
+	size_t	total_missing_bytes;
+	size_t	received_retrans_bytes;
+	bool	is_multicast_finished;
+	bool	retrans_switch;		// a switch that allows/disallows on-the-fly retransmission
 };
 
 #endif /* MVCTPRECEIVER_H_ */

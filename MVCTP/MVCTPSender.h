@@ -32,6 +32,14 @@ struct MvctpSenderStats {
 };
 
 
+enum TransferType  {MEMORY_TO_MEMORY, DISK_TO_DISK};
+struct MvctpMulticastTaskInfo {
+	TransferType	type;
+	char*	ptr_memory_data;
+	char 	file_name[256];
+};
+
+
 #define	BUFFER_PACKET_SIZE	5480
 struct MvctpRetransBuffer {
 	char 	buffer[BUFFER_PACKET_SIZE * MVCTP_PACKET_LEN];  // 8MB buffer size
@@ -71,6 +79,7 @@ public:
 	void 	TcpSendFile(const char* file_name);
 	void 	CollectExpResults();
 	void	ExecuteCommandOnReceivers(string command, int receiver_start, int receiver_end);
+	void 	StartNewRetransThread(int sock_fd);
 
 private:
 	TcpServer*			retrans_tcp_server;
@@ -82,6 +91,15 @@ private:
 	int					max_num_retrans_buffs;
 	int					retrans_scheme;
 	int					num_retrans_threads;
+
+	MvctpMulticastTaskInfo multicast_task_info;
+
+
+	static void* StartRetransThread(void* ptr);
+	void RunRetransThread(int sock_fd);
+	map<int, pthread_t*> retrans_thread_map;	//first: socket id;  second: pthread_t pointer
+	map<int, bool>	retrans_switch_map; 		//first: socket_id;  second: swtich to allow/disallow retransmission on-the-fly
+	map<int, bool>	retrans_finish_map;			//first: socket_id;  second: whether the message retransmission has finished
 
 
 	void DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num);

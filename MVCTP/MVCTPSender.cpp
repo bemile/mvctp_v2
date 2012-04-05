@@ -9,7 +9,7 @@
 
 
 MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
-	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT);
+	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT, this);
 	cur_session_id = 0;
 	bzero(&send_stats, sizeof(send_stats));
 
@@ -25,6 +25,11 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 
 MVCTPSender::~MVCTPSender() {
 	delete retrans_tcp_server;
+
+	map<int, pthread_t*>::iterator it = retrans_thread_map.begin();
+	for (; it != retrans_thread_map.end(); it++) {
+		delete (it->second);
+	}
 }
 
 void MVCTPSender::SetSendRate(int num_mbps) {
@@ -81,8 +86,8 @@ void MVCTPSender::SendSessionStatistics() {
 // Collect experiment results for file transfer from all receivers
 void MVCTPSender::CollectExpResults() {
 	// Send requests to all receivers
-	struct MvctpTransferMessage msg;
-	msg.event_type = COLLECT_STATISTICS;
+	struct MvctpSenderMessage msg;
+	msg.msg_type = COLLECT_STATISTICS;
 	msg.session_id = cur_session_id;
 	msg.data_len = 0;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
@@ -112,8 +117,8 @@ void MVCTPSender::CollectExpResults() {
 
 
 void MVCTPSender::ExecuteCommandOnReceivers(string command, int receiver_start, int receiver_end) {
-	struct MvctpTransferMessage msg;
-	msg.event_type = EXECUTE_COMMAND;
+	struct MvctpSenderMessage msg;
+	msg.msg_type = EXECUTE_COMMAND;
 	msg.session_id = cur_session_id;
 	msg.data_len = command.length();
 	memcpy(msg.text, command.c_str(), msg.data_len);
@@ -155,7 +160,7 @@ int MVCTPSender::JoinGroup(string addr, u_short port) {
 
 int	MVCTPSender::RestartTcpServer() {
 	delete retrans_tcp_server;
-	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT);
+	retrans_tcp_server = new TcpServer(BUFFER_TCP_SEND_PORT, this);
 	retrans_tcp_server->Start();
 	return 1;
 }
@@ -167,8 +172,8 @@ int	MVCTPSender::GetNumReceivers() {
 
 
 void MVCTPSender::RemoveSlowNodes() {
-	struct MvctpTransferMessage msg;
-	msg.event_type = SPEED_TEST;
+	struct MvctpSenderMessage msg;
+	msg.msg_type = SPEED_TEST;
 	msg.session_id = cur_session_id;
 	msg.data_len = 0;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
@@ -180,8 +185,8 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers before starting the memory transfer
-	struct MvctpTransferMessage msg;
-	msg.event_type = MEMORY_TRANSFER_START;
+	struct MvctpSenderMessage msg;
+	msg.msg_type = MEMORY_TRANSFER_START;
 	msg.session_id = cur_session_id;
 	msg.data_len = length;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
@@ -196,7 +201,7 @@ void MVCTPSender::SendMemoryData(void* data, size_t length) {
 	//usleep(50000);
 
 	// Send a notification to all receivers to start retransmission
-	msg.event_type = MEMORY_TRANSFER_FINISH;
+	msg.msg_type = MEMORY_TRANSFER_FINISH;
 	cout << "Memory to memory transfer finished." << endl;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 	cout << "Start retransmission..." << endl;
@@ -310,6 +315,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	//cpu_info.SetCPUFlag(true);
 	//cpu_info.Start();
 
+
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
@@ -318,13 +324,29 @@ void MVCTPSender::SendFile(const char* file_name) {
 	ulong file_size = file_status.st_size;
 	ulong remained_size = file_size;
 
+	multicast_task_info.type = DISK_TO_DISK;
+	strcpy(multicast_task_info.file_name, file_name);
+
+	map<int, bool>::iterator it;
+		for (it = retrans_finish_map.begin(); it != retrans_finish_map.end(); it++) {
+			it->second = false;
+	}
+
+
 	// Send a notification to all receivers before starting the memory transfer
-	struct MvctpTransferMessage msg;
-	msg.session_id = cur_session_id;
-	msg.event_type = FILE_TRANSFER_START;
-	msg.data_len = file_size;
-	strcpy(msg.text, file_name);
-	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+	char msg_packet[500];
+	MvctpHeader* header = (MvctpHeader*)msg_packet;
+	header->session_id = cur_session_id;
+	header->seq_number = 0;
+	header->data_len = 0;
+	header->flags = MVCTP_SENDER_MSG;
+
+	MvctpSenderMessage* msg = (MvctpSenderMessage*)(msg_packet + MVCTP_HLEN);
+	msg->session_id = cur_session_id;
+	msg->msg_type = FILE_TRANSFER_START;
+	msg->data_len = file_size;
+	strcpy(msg->text, file_name);
+	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(msg));
 
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
@@ -364,15 +386,32 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers to start retransmission
-	msg.event_type = FILE_TRANSFER_FINISH;
-	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+	header->flags = MVCTP_EOF;
+	retrans_tcp_server->SendToAll(header, MVCTP_HLEN);
 
-	if (retrans_scheme == RETRANS_SERIAL)
-		DoFileRetransmissionSerial(fd);
-	else if (retrans_scheme == RETRANS_SERIAL_RR)
-		DoFileRetransmissionSerialRR(fd);
-	else if (retrans_scheme == RETRANS_PARALLEL)
-		DoFileRetransmissionParallel(file_name);
+	//msg.msg_type = FILE_TRANSFER_FINISH;
+	//retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+
+
+	// wait for all retransmission to finish
+	bool is_retrans_finished = false;
+	while (!is_retrans_finished) {
+		is_retrans_finished = true;
+		for (it = retrans_finish_map.begin(); it != retrans_finish_map.end(); it++) {
+			if (!it->second) {
+				is_retrans_finished = false;
+				usleep(10000);
+				break;
+			}
+		}
+	}
+
+//	if (retrans_scheme == RETRANS_SERIAL)
+//		DoFileRetransmissionSerial(fd);
+//	else if (retrans_scheme == RETRANS_SERIAL_RR)
+//		DoFileRetransmissionSerialRR(fd);
+//	else if (retrans_scheme == RETRANS_PARALLEL)
+//		DoFileRetransmissionParallel(file_name);
 
 	close(fd);
 
@@ -408,9 +447,9 @@ void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 	ulong remained_size = file_size;
 
 	// Send a notification to all receivers before starting the memory transfer
-	struct MvctpTransferMessage msg;
+	struct MvctpSenderMessage msg;
 	msg.session_id = cur_session_id;
-	msg.event_type = FILE_TRANSFER_START;
+	msg.msg_type = FILE_TRANSFER_START;
 	msg.data_len = file_size;
 	strcpy(msg.text, file_name);
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
@@ -442,7 +481,7 @@ void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers to start retransmission
-	msg.event_type = FILE_TRANSFER_FINISH;
+	msg.msg_type = FILE_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
 	cout << "File transfer finished. Start retransmission..." << endl;
@@ -787,12 +826,113 @@ void MVCTPSender::RunRetransmissionThread(const char* file_name, map<int, list<N
 }
 
 
+
+
+
+//==================== Parallel Retransmission Threads Management Functions ===================
+struct StartRetransThreadInfo {
+	MVCTPSender* sender_ptr;
+	int	sock_fd;
+};
+
+void MVCTPSender::StartNewRetransThread(int sock_fd) {
+	pthread_t * t = new pthread_t();
+
+	retrans_thread_map[sock_fd] = t;
+	retrans_switch_map[sock_fd] = true;
+	retrans_finish_map[sock_fd] = false;
+
+	StartRetransThreadInfo info;
+	info.sender_ptr = this;
+	info.sock_fd = sock_fd;
+	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, this);
+}
+
+void* MVCTPSender::StartRetransThread(void* ptr) {
+	StartRetransThreadInfo* info = (StartRetransThreadInfo*)ptr;
+	info->sender_ptr->RunRetransThread(info->sock_fd);
+}
+
+
+void MVCTPSender::RunRetransThread(int sock_fd) {
+	char buf[MVCTP_PACKET_LEN];
+	MvctpHeader* header = (MvctpHeader*)buf;
+	char* packet_data = buf + MVCTP_HLEN;
+	header->flags |= MVCTP_RETRANS_DATA;
+
+	MvctpRetransRequest request;
+
+	int current_session_id = -1;
+	int file_fd = 0;
+	while (true) {
+		if (!retrans_switch_map[sock_fd]) {
+			usleep(10000);
+			continue;
+		}
+
+		if (recv(sock_fd, header, sizeof(MvctpHeader), 0) <= 0) {
+			break;
+		}
+
+		if (!(header->flags & MVCTP_RETRANS_REQ))
+			break;
+
+		if (header->session_id != current_session_id) {
+			// update the new message transfer information
+			close(file_fd);
+			if ( (file_fd = open(multicast_task_info.file_name, O_RDONLY)) < 0) {
+				break;
+			}
+			current_session_id = header->session_id;
+		}
+
+		if (recv(sock_fd, &request, sizeof(MvctpRetransRequest), 0) <= 0) {
+			break;
+		}
+
+		if (request.data_len == 0) {
+			// mark the completion of one session
+			retrans_finish_map[sock_fd] = true;
+		}
+		else {
+			// send the missing blocks to the receiver
+			lseek(file_fd, request.seq_num, SEEK_SET);
+
+			size_t remained_size = request.seq_num;
+			size_t curr_pos = request.seq_num;
+			while (remained_size > 0) {
+				int data_length = remained_size > MVCTP_DATA_LEN ? MVCTP_DATA_LEN : remained_size;
+				header->session_id = current_session_id;
+				header->seq_number = curr_pos ;
+				header->data_len = data_length;
+
+				read(file_fd, packet_data, header->data_len);
+				retrans_tcp_server->SelectSend(sock_fd, buf, MVCTP_HLEN + header->data_len);
+
+				curr_pos += data_length;
+				remained_size -= data_length;
+
+				// Update statistics
+				send_stats.total_retrans_packets++;
+				send_stats.total_retrans_bytes += header->data_len;
+				send_stats.session_retrans_packets++;
+				send_stats.session_retrans_bytes += header->data_len;
+			}
+		}
+	}
+
+}
+
+
+
+
+
 //=========== Functions related to data transfer using TCP ================
 void MVCTPSender::TcpSendMemoryData(void* data, size_t length) {
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers before starting the memory transfer
-	struct MvctpTransferMessage msg;
-	msg.event_type = TCP_MEMORY_TRANSFER_START;
+	struct MvctpSenderMessage msg;
+	msg.msg_type = TCP_MEMORY_TRANSFER_START;
 	msg.session_id = cur_session_id;
 	msg.data_len = length;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
@@ -820,9 +960,9 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 	ulong remained_size = file_size;
 
 	// Send a notification to all receivers before starting the memory transfer
-	struct MvctpTransferMessage msg;
+	struct MvctpSenderMessage msg;
 	msg.session_id = cur_session_id;
-	msg.event_type = TCP_FILE_TRANSFER_START;
+	msg.msg_type = TCP_FILE_TRANSFER_START;
 	msg.data_len = file_size;
 	strcpy(msg.text, file_name);
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));

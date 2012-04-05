@@ -6,9 +6,12 @@
  */
 
 #include "TcpServer.h"
+#include "MVCTPSender.h"
 
-TcpServer::TcpServer(int port) {
+TcpServer::TcpServer(int port, MVCTPSender* sender) {
 	port_num = port;
+	ptr_sender = sender;
+
 	if ( (server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
 		SysError("TcpServer::TcpServer()::socket() error");
 	}
@@ -60,6 +63,9 @@ int TcpServer::Accept() {
 	if ( (conn_sock = accept(server_sock, (struct sockaddr*)NULL, NULL))< 0) {
 		SysError("TcpServer::Accept()::accept() error");
 	}
+
+	// start the retransmission thread in the MVCTPSender process
+	ptr_sender->StartNewRetransThread(conn_sock);
 
 	pthread_mutex_lock(&sock_list_mutex);
 	FD_SET(conn_sock, &master_read_fds);

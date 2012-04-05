@@ -71,18 +71,23 @@ typedef struct MvctpHeader {
 
 
 // MVCTP structs
-struct MVCTPHeader {
-	int32_t 		proto;
-	u_int32_t		group_id;
-	u_int16_t		src_port;
-	u_int16_t		dest_port;
-	int32_t			packet_id;
-	u_int32_t		data_len;
-	u_int32_t		flags;
-};
+//struct MVCTPHeader {
+//	int32_t 		proto;
+//	u_int32_t		group_id;
+//	u_int16_t		src_port;
+//	u_int16_t		dest_port;
+//	int32_t			packet_id;
+//	u_int32_t		data_len;
+//	u_int32_t		flags;
+//};
 
 // MVCTP Header Flags
-const u_int32_t MVCTP_EOF = 0x00000001;
+const u_int32_t MVCTP_BOF = 0x00000001;			// begin of file
+const u_int32_t MVCTP_EOF = 0x00000002;			// end of file
+const u_int32_t MVCTP_SENDER_MSG = 0x00000004;	// sender message
+const u_int32_t MVCTP_RETRANS_REQ = 0x00000008;	// retransmission request
+const u_int32_t MVCTP_RETRANS_DATA = 0x00000010; // retransmission data
+
 
 
 /*#if __BYTE_ORDER == __LITTLE_ENDIAN
@@ -190,12 +195,18 @@ static const int RETRANS_SERIAL_RR = 2;  	// single retransmission thread, send 
 static const int RETRANS_PARALLEL = 3;		// parallel retransmission threads
 
 
-struct MvctpTransferMessage {
-	int32_t		event_type;
+struct MvctpSenderMessage {
+	int32_t		msg_type;
 	uint32_t	session_id;
 	uint32_t 	data_len;
 	char       	text[256];
 };
+
+struct MvctpRetransRequest {
+	u_int32_t 	seq_num;
+	u_int32_t	data_len;
+};
+
 
 const int MAX_NUM_NACK_REQ = 50;
 struct MvctpRetransMessage {
