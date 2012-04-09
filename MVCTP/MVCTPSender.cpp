@@ -845,7 +845,7 @@ void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	StartRetransThreadInfo info;
 	info.sender_ptr = this;
 	info.sock_fd = sock_fd;
-	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, this);
+	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, &info);
 }
 
 void* MVCTPSender::StartRetransThread(void* ptr) {
@@ -858,11 +858,11 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 	char buf[MVCTP_PACKET_LEN];
 	MvctpHeader* header = (MvctpHeader*)buf;
 	char* packet_data = buf + MVCTP_HLEN;
-	header->flags |= MVCTP_RETRANS_DATA;
+	header->flags = MVCTP_RETRANS_DATA;
 
 	MvctpRetransRequest request;
 
-	int current_session_id = -1;
+	uint current_session_id = -1;
 	int file_fd = 0;
 	while (true) {
 		if (!retrans_switch_map[sock_fd]) {
@@ -870,7 +870,7 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 			continue;
 		}
 
-		if (recv(sock_fd, header, sizeof(MvctpHeader), 0) <= 0) {
+		if (retrans_tcp_server->Receive(sock_fd, header, sizeof(MvctpHeader)) <= 0) {
 			break;
 		}
 
@@ -886,7 +886,7 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 			current_session_id = header->session_id;
 		}
 
-		if (recv(sock_fd, &request, sizeof(MvctpRetransRequest), 0) <= 0) {
+		if (retrans_tcp_server->Receive(sock_fd, &request, sizeof(MvctpRetransRequest)) <= 0) {
 			break;
 		}
 
@@ -898,10 +898,10 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 			// send the missing blocks to the receiver
 			lseek(file_fd, request.seq_num, SEEK_SET);
 
-			size_t remained_size = request.seq_num;
+			size_t remained_size = request.data_len;
 			size_t curr_pos = request.seq_num;
 			while (remained_size > 0) {
-				int data_length = remained_size > MVCTP_DATA_LEN ? MVCTP_DATA_LEN : remained_size;
+				size_t data_length = remained_size > MVCTP_DATA_LEN ? MVCTP_DATA_LEN : remained_size;
 				header->session_id = current_session_id;
 				header->seq_number = curr_pos ;
 				header->data_len = data_length;

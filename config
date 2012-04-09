@@ -1,5 +1,5 @@
 # node0.windows-xp.mvc.emulab.net
-Monitor_Server=node0.windows-xp.mvc.emulab.net
+Monitor_Server=128.143.187.157
 Monitor_Server_Port=11003
 Send_Buffer_Size=65536
 Recv_Buffer_Size=65536

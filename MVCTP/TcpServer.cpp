@@ -47,7 +47,7 @@ TcpServer::~TcpServer() {
 }
 
 
-list<int> TcpServer::GetSocketList() {
+const list<int>& TcpServer::GetSocketList() {
 	return conn_sock_list;
 }
 
