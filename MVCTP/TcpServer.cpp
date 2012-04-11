@@ -65,7 +65,9 @@ int TcpServer::Accept() {
 	}
 
 	// start the retransmission thread in the MVCTPSender process
+	cout << "Creating new thread..." << endl;
 	ptr_sender->StartNewRetransThread(conn_sock);
+	cout << "Thread is created." << endl;
 
 	pthread_mutex_lock(&sock_list_mutex);
 	FD_SET(conn_sock, &master_read_fds);
