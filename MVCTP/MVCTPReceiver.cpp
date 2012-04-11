@@ -591,6 +591,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 	//udp_buffer_info.SetUDPRecvBuffFlag(true);
 	//udp_buffer_info.Start();
 
+	cout << "Start receiving file..." << endl;
+
 	cpu_info.SetInterval(500);
     cpu_info.SetCPUFlag(true);
 	cpu_info.Start();

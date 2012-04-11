@@ -64,11 +64,6 @@ int TcpServer::Accept() {
 		SysError("TcpServer::Accept()::accept() error");
 	}
 
-	// start the retransmission thread in the MVCTPSender process
-	cout << "Creating new thread..." << endl;
-	ptr_sender->StartNewRetransThread(conn_sock);
-	cout << "Thread is created." << endl;
-
 	pthread_mutex_lock(&sock_list_mutex);
 	FD_SET(conn_sock, &master_read_fds);
 	if (conn_sock > max_conn_sock) {
@@ -76,6 +71,9 @@ int TcpServer::Accept() {
 	}
 	conn_sock_list.push_back(conn_sock);
 	pthread_mutex_unlock(&sock_list_mutex);
+
+	// start the retransmission thread in the MVCTPSender process
+	ptr_sender->StartNewRetransThread(conn_sock);
 
 	return conn_sock;
 }
