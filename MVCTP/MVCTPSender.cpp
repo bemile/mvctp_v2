@@ -861,6 +861,7 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 	header->flags = MVCTP_RETRANS_DATA;
 
 	MvctpRetransRequest request;
+	cout << "Retransmission thread started for socket " << sock_fd << endl;
 
 	uint current_session_id = -1;
 	int file_fd = 0;
@@ -921,6 +922,8 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 			}
 		}
 	}
+
+	cout << "Retransmission thread exited for socket " << sock_fd  << endl;
 
 }
 
