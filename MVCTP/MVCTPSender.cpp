@@ -893,6 +893,7 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 		if (request.data_len == 0) {
 			// mark the completion of one session
 			retrans_finish_map[sock_fd] = true;
+			cout << "Receive finishing mark request from sock " << sock_fd << endl;
 		}
 		else {
 			// send the missing blocks to the receiver
