@@ -709,7 +709,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 
 			continue;
 		} else if (FD_ISSET(retrans_tcp_sock, &read_set)) {
-			if (recv(retrans_tcp_sock, header, sizeof(MvctpHeader), 0) < 0) {
+			if (recv(retrans_tcp_sock, header, sizeof(MvctpHeader), 0) <= 0) {
 				SysError("MVCTPReceiver::ReceiveFile()::recv() error");
 			}
 
@@ -736,8 +736,10 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 				recv_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
 
 				is_multicast_finished = true;
-				if (received_retrans_bytes == total_missing_bytes)
+				if (received_retrans_bytes == total_missing_bytes) {
+					received_retrans_bytes = total_missing_bytes = 0;
 					break;
+				}
 			}
 			else if (header->flags & MVCTP_RETRANS_DATA) {
 				retrans_tcp_client->Receive(packet_data, header->data_len);
@@ -756,8 +758,10 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 				recv_stats.session_retrans_bytes += header->data_len;
 
 				received_retrans_bytes += header->data_len;
-				if (is_multicast_finished && (received_retrans_bytes == total_missing_bytes) )
+				if (is_multicast_finished && (received_retrans_bytes == total_missing_bytes) ) {
+					received_retrans_bytes = total_missing_bytes = 0;
 					break;
+				}
 			}
 		}
 	}
