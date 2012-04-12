@@ -846,6 +846,8 @@ void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	info.sender_ptr = this;
 	info.sock_fd = sock_fd;
 	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, &info);
+
+	cout << "Retransmission thread started for socket " << sock_fd << endl;
 }
 
 void* MVCTPSender::StartRetransThread(void* ptr) {
@@ -861,7 +863,6 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 	header->flags = MVCTP_RETRANS_DATA;
 
 	MvctpRetransRequest request;
-	cout << "Retransmission thread started for socket " << sock_fd << endl;
 
 	uint current_session_id = -1;
 	int file_fd = 0;
