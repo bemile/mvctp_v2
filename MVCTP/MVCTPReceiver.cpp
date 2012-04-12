@@ -196,6 +196,7 @@ void MVCTPReceiver::Start() {
 	MvctpHeader* header = (MvctpHeader*)buf;
 	char* data = buf + MVCTP_HLEN;
 
+	struct MvctpSenderMessage sender_msg;
 	fd_set read_set;
 	while (true) {
 		read_set = read_sock_set;
@@ -216,32 +217,32 @@ void MVCTPReceiver::Start() {
 				continue;
 			}
 
-			struct MvctpSenderMessage msg;
-			if (recv(retrans_tcp_sock, &msg, sizeof(msg), 0) <= 0) {
+
+			if (recv(retrans_tcp_sock, &sender_msg, sizeof(sender_msg), 0) <= 0) {
 				ReconnectSender();
 				continue;
 			}
 
-			switch (msg.msg_type) {
+			switch (sender_msg.msg_type) {
 			case MEMORY_TRANSFER_START:
 			{
-				char* buf = (char*)malloc(msg.data_len);
-				ReceiveMemoryData(msg, buf);
+				char* buf = (char*)malloc(sender_msg.data_len);
+				ReceiveMemoryData(sender_msg, buf);
 				free(buf);
 				break;
 			}
 			case FILE_TRANSFER_START:
-				ReceiveFileMemoryMappedIO(msg);
+				ReceiveFileMemoryMappedIO(sender_msg);
 				//ReceiveFileBufferedIO(msg);
 				break;
 			case TCP_MEMORY_TRANSFER_START: {
-				char* buf = (char*) malloc(msg.data_len);
-				TcpReceiveMemoryData(msg, buf);
+				char* buf = (char*) malloc(sender_msg.data_len);
+				TcpReceiveMemoryData(sender_msg, buf);
 				free(buf);
 				break;
 			}
 			case TCP_FILE_TRANSFER_START:
-				TcpReceiveFile(msg);
+				TcpReceiveFile(sender_msg);
 				break;
 			case SPEED_TEST:
 				if (recv_stats.session_retrans_percentage > 0.3) {
@@ -253,7 +254,7 @@ void MVCTPReceiver::Start() {
 				SendStatisticsToSender();
 				break;
 			case EXECUTE_COMMAND:
-				ExecuteCommand(msg.text);
+				ExecuteCommand(sender_msg.text);
 				break;
 			default:
 				break;
@@ -585,6 +586,9 @@ void MVCTPReceiver::ReceiveFileBufferedIO(const MvctpSenderMessage & transfer_ms
 
 // Receive a file from the sender
 void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfer_msg) {
+	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
+	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
+
 	retrans_info.open("retrans_info.txt", ofstream::out | ofstream::trunc);
 
 	//PerformanceCounter udp_buffer_info(50);
@@ -599,8 +603,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 
 	is_multicast_finished = false;
 
-	// NOTE: the length of the memory mapped buffer should be a multiple of the page size
-	static const int MAPPED_BUFFER_SIZE = MVCTP_DATA_LEN * 4096;
+
 
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer. Size: %u",

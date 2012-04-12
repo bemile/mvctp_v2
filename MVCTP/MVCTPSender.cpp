@@ -338,7 +338,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	MvctpHeader* header = (MvctpHeader*)msg_packet;
 	header->session_id = cur_session_id;
 	header->seq_number = 0;
-	header->data_len = 0;
+	header->data_len = sizeof(MvctpSenderMessage);
 	header->flags = MVCTP_SENDER_MSG;
 
 	MvctpSenderMessage* msg = (MvctpSenderMessage*)(msg_packet + MVCTP_HLEN);
@@ -346,7 +346,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	msg->msg_type = FILE_TRANSFER_START;
 	msg->data_len = file_size;
 	strcpy(msg->text, file_name);
-	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(msg));
+	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
 
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
