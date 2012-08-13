@@ -848,9 +848,9 @@ void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	retrans_finish_map[sock_fd] = false;
 
 	StartRetransThreadInfo retx_thread_info;
-	info.sender_ptr = this;
-	info.sock_fd = sock_fd;
-	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, &info);
+	retx_thread_info.sender_ptr = this;
+	retx_thread_info.sock_fd = sock_fd;
+	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, &retx_thread_info);
 }
 
 void* MVCTPSender::StartRetransThread(void* ptr) {
