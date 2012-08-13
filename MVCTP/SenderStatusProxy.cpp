@@ -113,6 +113,9 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 			system(buf);
 			sprintf(buf, "sudo tc filter add dev %s parent 1: protocol ip prio 1 u32 match ip src 10.1.1.2 0xffff flowid 1:1", dev.c_str());
 			system(buf);
+
+			sprintf(buf, "TC rate has been set to %d Mbps.", rate);
+			SendMessageLocal(COMMAND_RESPONSE, buf);
 		}
 	}
 	else if (parts.front().compare("CreateLogFile") == 0) {
