@@ -117,7 +117,7 @@ int ReceiverStatusProxy::HandleCommand(const char* command) {
 			sprintf(buf, "sudo tc qdisc add dev %s handle ffff: ingress", dev.c_str());
 			ExecSysCommand(buf);
 			sprintf(buf, "sudo tc filter add dev %s parent ffff: protocol ip prio 50 u32 match ip src 10.1.1.2/32 "
-						 "police rate %dMbit burst %fm drop flowid :1", dev.c_str(), rate, rate / 5.0);
+						 "police rate %dMbit burst 10m drop flowid :1", dev.c_str(), rate);
 			ExecSysCommand(buf);
 
 			sprintf(buf, "Receive rate has been set to %d Mbps by TC.", rate);
