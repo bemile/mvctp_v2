@@ -839,6 +839,7 @@ struct StartRetransThreadInfo {
 	int	sock_fd;
 };
 
+
 void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	pthread_t * t = new pthread_t();
 
@@ -846,17 +847,17 @@ void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	retrans_switch_map[sock_fd] = true;
 	retrans_finish_map[sock_fd] = false;
 
-	StartRetransThreadInfo info;
+	StartRetransThreadInfo retx_thread_info;
 	info.sender_ptr = this;
 	info.sock_fd = sock_fd;
 	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, &info);
-
-	cout << "Retransmission thread started for socket " << sock_fd << endl;
 }
 
 void* MVCTPSender::StartRetransThread(void* ptr) {
 	StartRetransThreadInfo* info = (StartRetransThreadInfo*)ptr;
+	cout << "Retransmission thread started for socket " << info->sock_fd << endl;
 	info->sender_ptr->RunRetransThread(info->sock_fd);
+	return NULL;
 }
 
 
