@@ -251,6 +251,7 @@ void MVCTPReceiver::Start() {
 				}
 				break;
 			case COLLECT_STATISTICS:
+				cout << "Start sending statistics to the sender." << endl;
 				SendStatisticsToSender();
 				break;
 			case EXECUTE_COMMAND:
