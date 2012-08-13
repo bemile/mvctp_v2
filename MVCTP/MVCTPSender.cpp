@@ -967,6 +967,13 @@ void MVCTPSender::TcpSendMemoryData(void* data, size_t length) {
 }
 
 
+struct TcpThreadInfo {
+	MVCTPSender* ptr;
+	int	 sock_fd;
+	char file_name[256];
+};
+
+
 void MVCTPSender::TcpSendFile(const char* file_name) {
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
@@ -984,22 +991,34 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
 	cout << "Start file transferring..." << endl;
-	// Transfer the file using memory mapped I/O
-	int fd = open(file_name, O_RDWR);
-	char* buffer = (char* )malloc(MAX_MAPPED_MEM_SIZE);
-	off_t offset = 0;
-	while (remained_size > 0) {
-		int map_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size
-				: MAX_MAPPED_MEM_SIZE;
-		read(fd, buffer, map_size);
+	list<int> sock_list = retrans_tcp_server->GetSocketList();
+	list<TcpThreadInfo*> thread_info_list;
+	list<pthread_t*> thread_list;
+	int file_name_len = strlen(file_name);
+	for (list<int>::iterator it = sock_list.begin(); it != sock_list.end(); it++) {
+		TcpThreadInfo* info = new TcpThreadInfo();
+		info->ptr = this;
+		info->sock_fd = *it;
+		memcpy(info->file_name, file_name, file_name_len);
+		thread_info_list.push_back(info);
 
-		retrans_tcp_server->SendToAll(buffer, map_size);
-
-		offset += map_size;
-		remained_size -= map_size;
+		pthread_t * t = new pthread_t();
+		pthread_create(t, NULL, &MVCTPSender::StartTcpSendThread, info);
+		thread_list.push_back(t);
 	}
-	close(fd);
-	free(buffer);
+
+	for (list<pthread_t*>::iterator it = thread_list.begin(); it != thread_list.end(); it++) {
+		pthread_join(**it, NULL);
+	}
+
+	for (list<pthread_t*>::iterator it = thread_list.begin(); it != thread_list.end(); it++) {
+		delete (*it);
+	}
+
+	for (list<TcpThreadInfo*>::iterator it = thread_info_list.begin(); it != thread_info_list.end(); it++) {
+		delete (*it);
+	}
+
 
 	cout << "File transfer finished. Start retransmission..." << endl;
 	// Record memory data multicast time
@@ -1011,5 +1030,36 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 
 
 	cur_session_id++;
+}
+
+
+// Thread functions for TCP transfer
+void* MVCTPSender::StartTcpSendThread(void* ptr) {
+	TcpThreadInfo* info_ptr = (TcpThreadInfo*)ptr;
+	info_ptr->ptr->RunTcpSendThread(info_ptr->file_name, info_ptr->sock_fd);
+}
+
+void MVCTPSender::RunTcpSendThread(const char* file_name, int sock_fd) {
+	struct stat file_status;
+	stat(file_name, &file_status);
+	ulong file_size = file_status.st_size;
+	ulong remained_size = file_size;
+
+	// Transfer the file using memory mapped I/O
+	int fd = open(file_name, O_RDWR);
+	char* buffer = (char* )malloc(MAX_MAPPED_MEM_SIZE);
+	off_t offset = 0;
+	while (remained_size > 0) {
+		int map_size = remained_size < MAX_MAPPED_MEM_SIZE ? remained_size
+				: MAX_MAPPED_MEM_SIZE;
+		read(fd, buffer, map_size);
+
+		//retrans_tcp_server->SendToAll(buffer, map_size);
+		retrans_tcp_server->SelectSend(sock_fd, buffer, map_size);
+		offset += map_size;
+		remained_size -= map_size;
+	}
+	close(fd);
+	free(buffer);
 }
 

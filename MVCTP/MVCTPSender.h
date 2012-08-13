@@ -142,6 +142,10 @@ private:
 	list<int>	retrans_sock_list;
 
 	int send_rate_in_mbps;
+
+	// Thread functions for TCP transfer
+	static void* StartTcpSendThread(void* ptr);
+	void	RunTcpSendThread(const char* file_name, int sock_fd);
 };
 
 #endif /* MVCTPSENDER_H_ */
