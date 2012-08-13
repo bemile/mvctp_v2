@@ -81,9 +81,6 @@ int TcpServer::Accept() {
 
 
 void TcpServer::SendToAll(const void* data, size_t length) {
-	CpuCycleCounter counter;
-	AccessCPUCounter(&counter.hi, &counter.lo);
-
 	list<int> bad_sock_list;
 
 	list<int>::iterator it;
@@ -101,8 +98,6 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 		cout << "TcpServer::SendToAll()::One socket deleted: " << *it << endl;
 	}
 	pthread_mutex_unlock(&sock_list_mutex);
-
-	cout << "It takes " << GetElapsedSeconds(counter) << " seconds to send to all TCP sockets." << endl;
 }
 
 

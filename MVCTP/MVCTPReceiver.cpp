@@ -627,7 +627,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 	is_multicast_finished = false;
 
 
-
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer. Size: %u",
 			transfer_msg.data_len);
@@ -808,8 +807,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 	system(command);
 	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
-	status_proxy->SendMessageLocal(INFORMATIONAL,
-			"Memory data transfer finished.");
+	status_proxy->SendMessageLocal(INFORMATIONAL, "Memory data transfer finished.");
 	SendSessionStatistics();
 
 	cpu_info.Stop();
@@ -880,7 +878,7 @@ void MVCTPReceiver::RunRetransmissionThread() {
 	MvctpRetransRequest* request = (MvctpRetransRequest*)data;
 
 	header->data_len = sizeof(MvctpRetransRequest);
-	header->flags |= MVCTP_RETRANS_REQ;
+	header->flags = MVCTP_RETRANS_REQ;
 
 
 	while (keep_retrans_alive) {

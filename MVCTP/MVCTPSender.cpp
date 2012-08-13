@@ -417,13 +417,6 @@ void MVCTPSender::SendFile(const char* file_name) {
 		}
 	}
 
-//	if (retrans_scheme == RETRANS_SERIAL)
-//		DoFileRetransmissionSerial(fd);
-//	else if (retrans_scheme == RETRANS_SERIAL_RR)
-//		DoFileRetransmissionSerialRR(fd);
-//	else if (retrans_scheme == RETRANS_PARALLEL)
-//		DoFileRetransmissionParallel(file_name);
-
 	close(fd);
 
 	// collect experiment results from receivers
@@ -868,6 +861,8 @@ void* MVCTPSender::StartRetransThread(void* ptr) {
 
 
 void MVCTPSender::RunRetransThread(int sock_fd) {
+	cout << "Retx thread created for socket " << sock_fd << endl;
+
 	char buf[MVCTP_PACKET_LEN];
 	MvctpHeader* header = (MvctpHeader*)buf;
 	char* packet_data = buf + MVCTP_HLEN;
