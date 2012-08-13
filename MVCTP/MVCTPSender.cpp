@@ -429,7 +429,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	cout << "Retransmission to all receivers finished." << endl;
 
 	// collect experiment results from receivers
-	CollectExpResults();
+	//CollectExpResults();
 
 	// Record total transfer and retransmission time
 	send_stats.session_retrans_time = GetElapsedSeconds(cpu_counter); //send_stats.session_total_time - send_stats.session_trans_time;

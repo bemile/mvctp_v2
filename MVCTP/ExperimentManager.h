@@ -44,7 +44,7 @@ private:
 	int buff_size;
 	int num_test_nodes;
 	int finished_node_count;
-	ofstream 			result_file;
+	ofstream result_file;
 	int retrans_scheme;
 	int num_retrans_thread;
 	int exp_type;
