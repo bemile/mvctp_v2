@@ -267,6 +267,29 @@ void MVCTPReceiver::Start() {
 }
 
 
+// Receive a BOF message from the sender
+MvctpSenderMessage MVCTPReceiver::ReceiveBOF() {
+	list<MvctpNackMessage> nack_list;
+	char packet_buffer[MVCTP_PACKET_LEN];
+	MvctpHeader* header = (MvctpHeader*) packet_buffer;
+	char* packet_data = packet_buffer + MVCTP_HLEN;
+
+	int recv_bytes;
+	uint32_t offset = 0;
+	fd_set read_set;
+	while (true) {
+		read_set = read_sock_set;
+		if (select(max_sock_fd + 1, &read_set, NULL, NULL, NULL) == -1) {
+			SysError("TcpServer::SelectReceive::select() error");
+		}
+
+		if (FD_ISSET(multicast_sock, &read_set)) {
+
+		} else if (FD_ISSET(retrans_tcp_sock, &read_set)) {
+
+		}
+	}
+}
 
 // Receive memory data from the sender
 void MVCTPReceiver::ReceiveMemoryData(const MvctpSenderMessage & transfer_msg, char* mem_data) {

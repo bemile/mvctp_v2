@@ -11,6 +11,7 @@
 #include "mvctp.h"
 #include "MVCTPComm.h"
 #include "TcpServer.h"
+#include "MvctpEventQueueManager.h"
 #include "../CommUtil/PerformanceCounter.h"
 #include "../CommUtil/StatusProxy.h"
 #include "../CommUtil/RateShaper.h"
@@ -32,7 +33,15 @@ struct MvctpSenderStats {
 };
 
 
-enum TransferType  {MEMORY_TO_MEMORY, DISK_TO_DISK};
+struct MvctpSenderConfig {
+	string 	multicast_addr;
+	int 	send_rate;
+	int 	max_num_receivers;
+	int		tcp_port;
+};
+
+enum TransferType  {MEMORY_TO_MEMORY_TRANSFER = 1, DISK_TO_DISK_TRANSFER};
+
 struct MvctpMulticastTaskInfo {
 	TransferType	type;
 	char*	ptr_memory_data;
@@ -55,7 +64,7 @@ struct MvctpRetransBuffer {
 class MVCTPSender : public MVCTPComm {
 public:
 	MVCTPSender(int buf_size);
-	~MVCTPSender();
+	virtual ~MVCTPSender();
 
 	void 	SetStatusProxy(StatusProxy* proxy);
 	void    SetRetransmissionBufferSize(int size_mb);
@@ -66,6 +75,7 @@ public:
 	int		RestartTcpServer();
 	int		GetNumReceivers();
 	void 	SetSendRate(int num_mbps);
+
 	void 	SendAllStatistics();
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
@@ -92,8 +102,8 @@ private:
 	int					retrans_scheme;
 	int					num_retrans_threads;
 
-	MvctpMulticastTaskInfo multicast_task_info;
-
+	MvctpMulticastTaskInfo 		multicast_task_info;
+	MvctpEventQueueManager* 	event_queue_manager;
 
 	static void* StartRetransThread(void* ptr);
 	void RunRetransThread(int sock_fd);

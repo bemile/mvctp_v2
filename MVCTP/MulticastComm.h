@@ -19,7 +19,7 @@ typedef struct sockaddr SA;
 class MulticastComm : public InetComm {
 public:
 	MulticastComm();
-	~MulticastComm();
+	virtual ~MulticastComm();
 	int JoinGroup(const SA* sa, int sa_len, const char *if_name);
 	int JoinGroup(const SA* sa, int sa_len, u_int if_index);
 	int SetLoopBack(int onoff);

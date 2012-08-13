@@ -70,36 +70,32 @@ typedef struct MvctpHeader {
 } MVCTP_HEADER, *PTR_MVCTP_HEADER;
 
 
-// MVCTP structs
-//struct MVCTPHeader {
-//	int32_t 		proto;
-//	u_int32_t		group_id;
-//	u_int16_t		src_port;
-//	u_int16_t		dest_port;
-//	int32_t			packet_id;
-//	u_int32_t		data_len;
-//	u_int32_t		flags;
-//};
-
 // MVCTP Header Flags
-const u_int32_t MVCTP_BOF = 0x00000001;			// begin of file
-const u_int32_t MVCTP_EOF = 0x00000002;			// end of file
-const u_int32_t MVCTP_SENDER_MSG = 0x00000004;	// sender message
-const u_int32_t MVCTP_RETRANS_REQ = 0x00000008;	// retransmission request
-const u_int32_t MVCTP_RETRANS_DATA = 0x00000010; // retransmission data
+const u_int32_t MVCTP_DATA = 0x00000000;			// data packet
+const u_int32_t MVCTP_BOF = 0x00000001;				// begin of file
+const u_int32_t MVCTP_EOF = 0x00000002;				// end of file
+const u_int32_t MVCTP_SENDER_MSG = 0x00000004;		// sender message
+const u_int32_t MVCTP_RETRANS_REQ = 0x00000008;		// retransmission request
+const u_int32_t MVCTP_RETRANS_DATA = 0x00000010; 	// retransmission data
+const u_int32_t MVCTP_BOF_REQ = 0x00000020;     	// BOF request
 
 
+/************ The BOF/EOF message data types ****************/
+// maximum length of a file name
+#define MAX_FILE_NAME_LENGTH 	1024
 
-/*#if __BYTE_ORDER == __LITTLE_ENDIAN
-    unsigned int ihl:4;
-    unsigned int version:4;
-#elif __BYTE_ORDER == __BIG_ENDIAN
-    unsigned int version:4;
-    unsigned int ihl:4;
-#else
-# error "Please fix <bits/endian.h>"
-#endif
-*/
+// transfer types
+#define MEMORY_TO_MEMORY	1
+#define DISK_TO_DISK		2
+
+// message information
+struct MvctpMessageInfo {
+	u_int16_t 	transfer_type;
+	u_int32_t 	msg_id;
+	long long 	msg_length;
+	char		msg_name[MAX_FILE_NAME_LENGTH];
+};
+
 
 // buffer entry for a single packet
 typedef struct PacketBuffer {
@@ -189,11 +185,6 @@ static const int EXECUTE_COMMAND = 14;
 
 
 
-// three different retransmission schemes
-static const int RETRANS_SERIAL = 1;  		// single retransmission thread, shortest job first
-static const int RETRANS_SERIAL_RR = 2;  	// single retransmission thread, send missing blocks one by one to all receivers
-static const int RETRANS_PARALLEL = 3;		// parallel retransmission threads
-
 
 struct MvctpSenderMessage {
 	int32_t		msg_type;
@@ -219,6 +210,13 @@ typedef struct MvctpNackMessage {
 	u_int32_t 	seq_num;
 	u_int32_t	data_len;
 } NACK_MSG, * PTR_NACK_MSG;
+
+
+
+// three different retransmission schemes
+static const int RETRANS_SERIAL = 1;  		// single retransmission thread, shortest job first
+static const int RETRANS_SERIAL_RR = 2;  	// single retransmission thread, send missing blocks one by one to all receivers
+static const int RETRANS_PARALLEL = 3;		// parallel retransmission threads
 
 
 bool operator==(const MvctpNackMessage& l, const MvctpNackMessage& r);

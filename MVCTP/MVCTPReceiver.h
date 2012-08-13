@@ -14,6 +14,9 @@
 #include "../CommUtil/PerformanceCounter.h"
 #include "../CommUtil/StatusProxy.h"
 
+typedef	void (*VCMTP_BOF_Function)();
+typedef void (*VCMTP_Recv_Complete_Function)();
+
 struct MvctpReceiverStats {
 	uint 	total_recv_packets;
 	uint	total_recv_bytes;
@@ -27,6 +30,16 @@ struct MvctpReceiverStats {
 	double	session_total_time;
 	double	session_trans_time;
 	double 	session_retrans_time;
+};
+
+
+struct MvctpReceiverConfig {
+	string 	multicast_addr;
+	string  sender_ip_addr;
+	int		sender_tcp_port;
+	int		receive_mode;
+	VCMTP_BOF_Function    			bof_function;
+	VCMTP_Recv_Complete_Function	complete_function;
 };
 
 
@@ -88,6 +101,8 @@ private:
 	// Functions related to TCP data transfer
 	void 	TcpReceiveMemoryData(const MvctpSenderMessage & msg, char* mem_data);
 	void 	TcpReceiveFile(const MvctpSenderMessage & transfer_msg);
+
+	MvctpSenderMessage ReceiveBOF();
 
 
 	// Retransmission thread functions

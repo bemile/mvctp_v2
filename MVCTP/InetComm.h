@@ -13,7 +13,7 @@
 class InetComm {
 public:
 	InetComm();
-	~InetComm();
+	virtual ~InetComm();
 
 	virtual void SetBufferSize(size_t buf_size);
 	virtual ssize_t SendData(const void* buff, size_t len, int flags, void* dst_addr) = 0;

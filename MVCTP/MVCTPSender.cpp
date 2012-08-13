@@ -21,10 +21,13 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	// set default retransmission scheme
 	retrans_scheme = RETRANS_SERIAL;
 	num_retrans_threads = 1;
+
+	event_queue_manager = new MvctpEventQueueManager();
 }
 
 MVCTPSender::~MVCTPSender() {
 	delete retrans_tcp_server;
+	delete event_queue_manager;
 
 	map<int, pthread_t*>::iterator it = retrans_thread_map.begin();
 	for (; it != retrans_thread_map.end(); it++) {
@@ -324,7 +327,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	ulong file_size = file_status.st_size;
 	ulong remained_size = file_size;
 
-	multicast_task_info.type = DISK_TO_DISK;
+	multicast_task_info.type = DISK_TO_DISK_TRANSFER;
 	strcpy(multicast_task_info.file_name, file_name);
 
 	map<int, bool>::iterator it;
@@ -346,7 +349,12 @@ void MVCTPSender::SendFile(const char* file_name) {
 	msg->msg_type = FILE_TRANSFER_START;
 	msg->data_len = file_size;
 	strcpy(msg->text, file_name);
+
 	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
+	/*if (ptr_multicast_comm->SendData(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage), 0, NULL) < 0) {
+		SysError("MVCTPSender::SendFile()::SendData() error");
+	}*/
+
 
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
@@ -388,6 +396,9 @@ void MVCTPSender::SendFile(const char* file_name) {
 	// Send a notification to all receivers to start retransmission
 	header->flags = MVCTP_EOF;
 	retrans_tcp_server->SendToAll(header, MVCTP_HLEN);
+	/*if (ptr_multicast_comm->SendData(header, MVCTP_HLEN, 0, NULL) < 0) {
+		SysError("MVCTPSender::DoMemoryTransfer()::SendPacket() error");
+	}*/
 
 	//msg.msg_type = FILE_TRANSFER_FINISH;
 	//retrans_tcp_server->SendToAll(&msg, sizeof(msg));
