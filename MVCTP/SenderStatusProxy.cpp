@@ -107,7 +107,7 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 			char buf[256];
 			sprintf(buf, "sudo tc qdisc del dev %s root", dev.c_str());
 			ExecSysCommand(buf);
-			sprintf("sudo tc qdisc add dev %s handle 1: root htb", dev.c_str());
+			sprintf(buf, "sudo tc qdisc add dev %s handle 1: root htb", dev.c_str());
 			ExecSysCommand(buf);
 			sprintf(buf, "sudo tc class add dev %s parent 1: classid 1:1 htb rate %dMbps", dev.c_str(), rate);
 			ExecSysCommand(buf);
