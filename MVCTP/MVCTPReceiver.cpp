@@ -736,6 +736,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 			}
 
 			if (header->flags & MVCTP_EOF) {
+				cout << "EOF received." << endl;
 				//memcpy(file_buffer, data_buffer, mapped_size);
 				//free(data_buffer);
 				munmap(file_buffer, mapped_size);
