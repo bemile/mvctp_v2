@@ -100,6 +100,21 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 			SetSendRate(rate); //ptr_sender->SetSendRate(rate);
 		}
 	}
+	else if (parts.front().compare("SetTCRate") == 0) {
+		if (parts.size() == 2) {
+			int rate = atoi(parts.back().c_str());
+			string dev = ptr_sender->GetInterfaceName();
+			char buf[256];
+			sprintf(buf, "sudo tc qdisc del dev %s root", dev.c_str());
+			system(buf);
+			sprintf("sudo tc qdisc add dev %s handle 1: root htb", dev.c_str());
+			system(buf);
+			sprintf(buf, "sudo tc class add dev %s parent 1: classid 1:1 htb rate %dMbps", dev.c_str(), rate);
+			system(buf);
+			sprintf(buf, "sudo tc filter add dev %s parent 1: protocol ip prio 1 u32 match ip src 10.1.1.2 0xffff flowid 1:1", dev.c_str());
+			system(buf);
+		}
+	}
 	else if (parts.front().compare("CreateLogFile") == 0) {
 		if (parts.size() == 2) {
 			CreateNewLogFile(parts.back().c_str());
