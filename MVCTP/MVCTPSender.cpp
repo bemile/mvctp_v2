@@ -947,11 +947,18 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 void MVCTPSender::TcpSendMemoryData(void* data, size_t length) {
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers before starting the memory transfer
-	struct MvctpSenderMessage msg;
-	msg.msg_type = TCP_MEMORY_TRANSFER_START;
-	msg.session_id = cur_session_id;
-	msg.data_len = length;
-	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+	char msg_packet[500];
+	MvctpHeader* header = (MvctpHeader*)msg_packet;
+	header->session_id = cur_session_id;
+	header->seq_number = 0;
+	header->data_len = sizeof(MvctpSenderMessage);
+	header->flags = MVCTP_SENDER_MSG;
+
+	MvctpSenderMessage* msg = (MvctpSenderMessage*)(msg_packet + MVCTP_HLEN);
+	msg->msg_type = TCP_MEMORY_TRANSFER_START;
+	msg->session_id = cur_session_id;
+	msg->data_len = length;
+	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
 
 	retrans_tcp_server->SendToAll(data, length);
 
@@ -983,14 +990,22 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 	ulong remained_size = file_size;
 
 	// Send a notification to all receivers before starting the memory transfer
-	struct MvctpSenderMessage msg;
-	msg.session_id = cur_session_id;
-	msg.msg_type = TCP_FILE_TRANSFER_START;
-	msg.data_len = file_size;
-	strcpy(msg.text, file_name);
-	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+	char msg_packet[500];
+	MvctpHeader* header = (MvctpHeader*)msg_packet;
+	header->session_id = cur_session_id;
+	header->seq_number = 0;
+	header->data_len = sizeof(MvctpSenderMessage);
+	header->flags = MVCTP_SENDER_MSG;
 
-	cout << "Start file transferring..." << endl;
+	MvctpSenderMessage* msg = (MvctpSenderMessage*)(msg_packet + MVCTP_HLEN);
+	msg->msg_type = TCP_FILE_TRANSFER_START;
+	msg->session_id = cur_session_id;
+	msg->data_len = file_size;
+	strcpy(msg->text, file_name);
+	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
+
+
+	cout << "Start TCP file transferring..." << endl;
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
 	list<TcpThreadInfo*> thread_info_list;
 	list<pthread_t*> thread_list;
@@ -1025,7 +1040,7 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 	double trans_time = GetElapsedSeconds(cpu_counter);
 	double send_rate = file_size / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 	char str[256];
-	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f\nThroughput: %.2f\n", trans_time, send_rate);
+	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f\nThroughput: %.2f Mbps\n", trans_time, send_rate);
 	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 
@@ -1040,6 +1055,7 @@ void* MVCTPSender::StartTcpSendThread(void* ptr) {
 }
 
 void MVCTPSender::RunTcpSendThread(const char* file_name, int sock_fd) {
+	cout << "Start sending file " << file_name << " to socket " << sock_fd << endl;
 	struct stat file_status;
 	stat(file_name, &file_status);
 	ulong file_size = file_status.st_size;
