@@ -36,6 +36,7 @@ public:
 	void SetUDPRecvBuffFlag(bool flag);
 
 	string	GetCPUMeasurements();
+	int		GetAverageCpuUsage();
 
 
 private:

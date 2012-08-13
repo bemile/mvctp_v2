@@ -138,6 +138,18 @@ string	PerformanceCounter::GetCPUMeasurements() {
 }
 
 
+int	PerformanceCounter::GetAverageCpuUsage() {
+	if (cpu_values.size() <= 2)
+		return 0;
+
+	int sum = 0;
+	for (int i = 1; i < cpu_values.size() - 1; i++) {
+		sum += cpu_values[i];
+	}
+
+	return (sum / (cpu_values.size() - 2));
+}
+
 
 void PerformanceCounter::MeasureCPUInfo(ofstream& output) {
 

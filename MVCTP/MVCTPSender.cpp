@@ -1005,6 +1005,11 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
 
 
+	PerformanceCounter cpu_info(100);
+	cpu_info.SetCPUFlag(true);
+	cpu_info.Start();
+
+
 	cout << "Start TCP file transferring..." << endl;
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
 	list<TcpThreadInfo*> thread_info_list;
@@ -1034,13 +1039,15 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 		delete (*it);
 	}
 
+	cpu_info.Stop();
+	int cpu_usage = cpu_info.GetAverageCpuUsage();
 
-	cout << "File transfer finished. Start retransmission..." << endl;
 	// Record memory data multicast time
 	double trans_time = GetElapsedSeconds(cpu_counter);
 	double send_rate = file_size / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 	char str[256];
-	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f\nThroughput: %.2f Mbps\n", trans_time, send_rate);
+	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f seconds\nThroughput: %.2f Mbps\nAvg. CPU Usage: %d%",
+					trans_time, send_rate, cpu_usage);
 	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 
