@@ -103,7 +103,6 @@ void MVCTPSender::CollectExpResults() {
 	msg->data_len = 0;
 	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
 
-
 	char buf[512];
 	int client_sock;
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
