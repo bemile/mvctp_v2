@@ -109,12 +109,12 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 			ExecSysCommand(buf);
 			sprintf(buf, "sudo tc qdisc add dev %s handle 1: root htb", dev.c_str());
 			ExecSysCommand(buf);
-			sprintf(buf, "sudo tc class add dev %s parent 1: classid 1:1 htb rate %dMbps", dev.c_str(), rate);
+			sprintf(buf, "sudo tc class add dev %s parent 1: classid 1:1 htb rate %fMbps", dev.c_str(), rate);
 			ExecSysCommand(buf);
 			sprintf(buf, "sudo tc filter add dev %s parent 1: protocol ip prio 1 u32 match ip src 10.1.1.2/32 flowid 1:1", dev.c_str());
 			ExecSysCommand(buf);
 
-			sprintf(buf, "TC rate has been set to %d Mbps.", rate);
+			sprintf(buf, "TC rate has been set to %d Mbps.", atoi(parts.back().c_str()));
 			SendMessageLocal(COMMAND_RESPONSE, buf);
 		}
 	}
