@@ -18,6 +18,7 @@
 #include <pthread.h>
 
 struct MvctpSenderStats {
+	uint	cpu_usage;		// in percentage
 	uint 	total_sent_packets;
 	uint	total_sent_bytes;
 	uint 	total_retrans_packets;

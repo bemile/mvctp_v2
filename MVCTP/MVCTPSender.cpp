@@ -78,10 +78,10 @@ void MVCTPSender::SendSessionStatistics() {
 	double send_rate = send_stats.session_sent_bytes / 1000.0 / 1000.0 * 8 / send_stats.session_total_time * SEND_RATE_RATIO;
 	sprintf(buf, "***** Session Statistics *****\nTotal Sent Bytes: %u\nTotal Sent Packets: %d\nTotal Retrans. Packets: %d\n"
 			"Retrans. Percentage: %.4f\nTotal Trans. Time: %.2f sec\nMulticast Trans. Time: %.2f sec\n"
-			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\n\n", send_stats.session_sent_bytes + send_stats.session_retrans_bytes,
+			"Retrans. Time: %.2f sec\nOverall Throughput: %.2f Mbps\nAvg. CPU Usage: %d\%\n\n", send_stats.session_sent_bytes + send_stats.session_retrans_bytes,
 			send_stats.session_sent_packets, send_stats.session_retrans_packets,
 			send_stats.session_retrans_percentage, send_stats.session_total_time, send_stats.session_trans_time,
-			send_stats.session_retrans_time, send_rate);
+			send_stats.session_retrans_time, send_rate, send_stats.cpu_usage);
 	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 }
 
@@ -321,11 +321,6 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 
 
 void MVCTPSender::SendFile(const char* file_name) {
-	//PerformanceCounter cpu_info(50);
-	//cpu_info.SetCPUFlag(true);
-	//cpu_info.Start();
-
-
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
@@ -362,6 +357,10 @@ void MVCTPSender::SendFile(const char* file_name) {
 		SysError("MVCTPSender::SendFile()::SendData() error");
 	}*/
 
+
+	PerformanceCounter cpu_info(100);
+	cpu_info.SetCPUFlag(true);
+	cpu_info.Start();
 
 	cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
@@ -425,6 +424,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	}
 
 	close(fd);
+	cpu_info.Stop();
 
 	cout << "Retransmission to all receivers finished." << endl;
 
@@ -432,6 +432,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	//CollectExpResults();
 
 	// Record total transfer and retransmission time
+	send_stats.cpu_usage = cpu_info.GetAverageCpuUsage();
 	send_stats.session_retrans_time = GetElapsedSeconds(cpu_counter); //send_stats.session_total_time - send_stats.session_trans_time;
 	send_stats.session_total_time = send_stats.session_trans_time + send_stats.session_retrans_time; //GetElapsedSeconds(cpu_counter);
 	send_stats.session_retrans_percentage = send_stats.session_retrans_packets  * 1.0
@@ -441,7 +442,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	SendSessionStatistics();
 
-	//cpu_info.Stop();
+
 }
 
 
@@ -1046,7 +1047,7 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 	double trans_time = GetElapsedSeconds(cpu_counter);
 	double send_rate = file_size / 1024.0 / 1024.0 * 8.0 * 1514.0 / 1460.0 / trans_time;
 	char str[256];
-	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f seconds\nThroughput: %.2f Mbps\nAvg. CPU Usage: %d%",
+	sprintf(str, "***** TCP Send Info *****\nTotal transfer time: %.2f seconds\nThroughput: %.2f Mbps\nAvg. CPU Usage: %d\%",
 					trans_time, send_rate, cpu_usage);
 	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
