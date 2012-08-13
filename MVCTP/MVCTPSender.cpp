@@ -22,12 +22,12 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	retrans_scheme = RETRANS_SERIAL;
 	num_retrans_threads = 1;
 
-	event_queue_manager = new MvctpEventQueueManager();
+	//event_queue_manager = new MvctpEventQueueManager();
 }
 
 MVCTPSender::~MVCTPSender() {
 	delete retrans_tcp_server;
-	delete event_queue_manager;
+	//delete event_queue_manager;
 
 	map<int, pthread_t*>::iterator it = retrans_thread_map.begin();
 	for (; it != retrans_thread_map.end(); it++) {

@@ -1,0 +1,8 @@
+# node0.windows-xp.mvc.emulab.net
+# mvstu1.ee.virginia.edu
+Monitor_Server=node0.windows-xp.mvc.emulab.net
+Monitor_Server_Port=11003
+Send_Buffer_Size=65536
+Recv_Buffer_Size=65536
+Debug=false
+

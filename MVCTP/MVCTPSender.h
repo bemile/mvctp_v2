@@ -103,7 +103,7 @@ private:
 	int					num_retrans_threads;
 
 	MvctpMulticastTaskInfo 		multicast_task_info;
-	MvctpEventQueueManager* 	event_queue_manager;
+	//MvctpEventQueueManager* 	event_queue_manager;
 
 	static void* StartRetransThread(void* ptr);
 	void RunRetransThread(int sock_fd);
