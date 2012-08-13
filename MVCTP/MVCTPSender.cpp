@@ -419,6 +419,8 @@ void MVCTPSender::SendFile(const char* file_name) {
 
 	close(fd);
 
+	cout << "Retransmission to all receivers finished." << endl;
+
 	// collect experiment results from receivers
 	CollectExpResults();
 
