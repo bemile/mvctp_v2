@@ -834,12 +834,6 @@ void MVCTPSender::RunRetransmissionThread(const char* file_name, map<int, list<N
 
 
 //==================== Parallel Retransmission Threads Management Functions ===================
-struct StartRetransThreadInfo {
-	MVCTPSender* sender_ptr;
-	int	sock_fd;
-};
-
-
 void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	pthread_t * t = new pthread_t();
 
@@ -847,10 +841,11 @@ void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	retrans_switch_map[sock_fd] = true;
 	retrans_finish_map[sock_fd] = false;
 
-	StartRetransThreadInfo retx_thread_info;
-	retx_thread_info.sender_ptr = this;
-	retx_thread_info.sock_fd = sock_fd;
-	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, &retx_thread_info);
+	StartRetransThreadInfo* retx_thread_info = new StartRetransThreadInfo();
+	retx_thread_info->sender_ptr = this;
+	retx_thread_info->sock_fd = sock_fd;
+	thread_info_map[sock_fd] = retx_thread_info;
+	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, retx_thread_info);
 }
 
 void* MVCTPSender::StartRetransThread(void* ptr) {

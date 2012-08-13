@@ -61,6 +61,13 @@ struct MvctpRetransBuffer {
 	}
 };
 
+
+struct StartRetransThreadInfo {
+	MVCTPSender* sender_ptr;
+	int	sock_fd;
+};
+
+
 class MVCTPSender : public MVCTPComm {
 public:
 	MVCTPSender(int buf_size);
@@ -103,6 +110,7 @@ private:
 	int					num_retrans_threads;
 
 	MvctpMulticastTaskInfo 		multicast_task_info;
+	map<int, StartRetransThreadInfo*> thread_info_map;
 	//MvctpEventQueueManager* 	event_queue_manager;
 
 	static void* StartRetransThread(void* ptr);
