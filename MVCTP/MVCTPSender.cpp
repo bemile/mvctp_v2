@@ -118,7 +118,7 @@ void MVCTPSender::CollectExpResults() {
 			int bytes = retrans_tcp_server->Receive(client_sock, buf, str_len);
 			if (bytes >= 0) {
 				buf[bytes] = '\0';
-				//cout << "I received exp report from socket " << client_sock << endl;
+				cout << "I received exp report from socket " << client_sock << endl;
 				status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 			}
 			sock_list.remove(client_sock);
