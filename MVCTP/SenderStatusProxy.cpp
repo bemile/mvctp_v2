@@ -114,7 +114,7 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 			sprintf(buf, "sudo tc filter add dev %s parent 1: protocol ip prio 1 u32 match ip src 10.1.1.2/32 flowid 1:1", dev.c_str());
 			ExecSysCommand(buf);
 
-			sprintf(buf, "TC rate has been set to %d Mbps.", atoi(parts.back().c_str()));
+			sprintf(buf, "Send rate has been set to %d Mbps by TC.", atoi(parts.back().c_str()));
 			SendMessageLocal(COMMAND_RESPONSE, buf);
 		}
 	}
