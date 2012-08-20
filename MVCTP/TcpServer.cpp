@@ -36,6 +36,8 @@ TcpServer::TcpServer(int port, MVCTPSender* sender) {
 
 	// Used in the select() system call
 	max_conn_sock = -1;
+
+	pthread_mutex_init(&sock_list_mutex, NULL);
 }
 
 TcpServer::~TcpServer() {
@@ -44,6 +46,8 @@ TcpServer::~TcpServer() {
 		close(*it);
 	}
 	close(server_sock);
+
+	pthread_mutex_destroy(&sock_list_mutex);
 }
 
 
@@ -102,15 +106,15 @@ void TcpServer::SendToAll(const void* data, size_t length) {
 
 
 int TcpServer::SelectSend(int conn_sock, const void* data, size_t length) {
+	pthread_mutex_lock(&sock_list_mutex);
 	int res = send(conn_sock, data, length, 0);
 	if (res <= 0 && length > 0) {
-		pthread_mutex_lock(&sock_list_mutex);
 		close(conn_sock);
 		conn_sock_list.remove(conn_sock);
 		FD_CLR(conn_sock, &master_read_fds);
 		cout << "TcpServer::SelectSend()::One socket deleted: " << conn_sock << endl;
-		pthread_mutex_unlock(&sock_list_mutex);
 	}
+	pthread_mutex_unlock(&sock_list_mutex);
 	return res;
 }
 
