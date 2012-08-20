@@ -592,7 +592,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 			if (request->data_len == 0) {
 				if (it != retrans_fd_map.end()) {
 					close(it->second);
-					retrans_fd_map.erase(it->second);
+					retrans_fd_map.erase(it);
 				}
 
 				// mark the completion of one session
