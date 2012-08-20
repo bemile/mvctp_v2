@@ -4,7 +4,7 @@ VPATH=starter:CommUtil:MVCTP
 OBJ=EmulabStarter.o ConfigInfo.o mvctp.o Tester.o MVCTPComm.o \
 MVCTPSender.o MVCTPReceiver.o MulticastComm.o RawSocketComm.o InetComm.o \
 UdpComm.o NetInterfaceManager.o \
-ReceiverStatusProxy.o SenderStatusProxy.o StatusProxy.o ExperimentManager.o TcpServer.o TcpClient.o Timer.o PerformanceCounter.o RateShaper.o
+ReceiverStatusProxy.o SenderStatusProxy.o StatusProxy.o ExperimentManager.o TcpServer.o TcpClient.o Timer.o PerformanceCounter.o RateShaper.o MvctpMetadata.o
 
 
 
@@ -17,13 +17,15 @@ EmulabStarter.o: ConfigInfo.o Tester.o
 
 ConfigInfo.o: 
 
-Tester.o: mvctp.o MulticastComm.o RawSocketComm.o InetComm.o MVCTPComm.o MVCTPSender.o MVCTPReceiver.o UdpComm.o ReceiverStatusProxy.o SenderStatusProxy.o StatusProxy.o NetInterfaceManager.o TcpServer.o TcpClient.o ExperimentManager.o Timer.o PerformanceCounter.o
+Tester.o: mvctp.o MulticastComm.o RawSocketComm.o InetComm.o MVCTPComm.o MVCTPSender.o MVCTPReceiver.o UdpComm.o ReceiverStatusProxy.o SenderStatusProxy.o StatusProxy.o NetInterfaceManager.o TcpServer.o TcpClient.o ExperimentManager.o Timer.o PerformanceCounter.o MvctpMetadata.o
 
 SenderStatusProxy.o : StatusProxy.o MVCTPSender.o MVCTPComm.o ExperimentManager.o
 
 ReceiverStatusProxy.o : StatusProxy.o MVCTPReceiver.o MVCTPComm.o
 
-MVCTPSender.o: mvctp.o MVCTPComm.o PerformanceCounter.o RateShaper.o
+MVCTPSender.o: mvctp.o MVCTPComm.o PerformanceCounter.o RateShaper.o MvctpMetadata.o
+
+MvctpMetadata.o : mvctp.o
 
 MVCTPReceiver.o: mvctp.o MVCTPComm.o PerformanceCounter.o
 

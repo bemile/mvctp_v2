@@ -11,6 +11,7 @@
 #include "mvctp.h"
 #include "MVCTPComm.h"
 #include "TcpServer.h"
+#include "MvctpMetadata.h"
 #include "MvctpEventQueueManager.h"
 #include "../CommUtil/PerformanceCounter.h"
 #include "../CommUtil/StatusProxy.h"
@@ -110,6 +111,8 @@ private:
 	int					retrans_scheme;
 	int					num_retrans_threads;
 
+	map<uint, MessageMetadata*> metadata_map;
+	MvctpMetadata				metadata;
 	MvctpMulticastTaskInfo 		multicast_task_info;
 	map<int, StartRetransThreadInfo*> thread_info_map;
 	//MvctpEventQueueManager* 	event_queue_manager;
