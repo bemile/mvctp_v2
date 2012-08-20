@@ -769,7 +769,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 				}
 				if (write(recv_fd, packet_data, header->data_len) < 0) {
 					//SysError("MVCTPReceiver::ReceiveFile()::write() error");
-					//cout << "MVCTPReceiver::ReceiveFile()::write() error" << endl;
+					cout << "MVCTPReceiver::ReceiveFile()::write() error" << endl;
 				}
 
 				// Update statistics
@@ -779,8 +779,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 				recv_stats.session_retrans_bytes += header->data_len;
 
 				received_retrans_bytes += header->data_len;
-				cout << "Received one retransmission pakcet.  Remained bytes:" <<
-											(total_missing_bytes - received_retrans_bytes) << endl;
+				//cout << "Received one retransmission pakcet.  Remained bytes:" <<
+				//							(total_missing_bytes - received_retrans_bytes) << endl;
 				if (is_multicast_finished && (received_retrans_bytes == total_missing_bytes) )
 					break;
 			}
