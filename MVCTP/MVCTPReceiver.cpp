@@ -631,7 +631,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 	cpu_info.Start();
 
 	is_multicast_finished = false;
-
+	received_retrans_bytes = 0;
+	total_missing_bytes = 0;
 
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer. Size: %u",
@@ -740,13 +741,13 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 			}
 
 			if (header->flags & MVCTP_EOF) {
-				cout << "EOF received." << endl;
 				munmap(file_buffer, mapped_size);
 
+				cout << "EOF received." << endl;
 				if (transfer_msg.data_len > offset) {
 					cout << "Missing packets in the end of transfer. Final offset: "
 						<< offset << "    Transfer Size:" << transfer_msg.data_len << endl;
-					HandleMissingPackets(nack_list, offset, transfer_msg.data_len + 1);
+					HandleMissingPackets(nack_list, offset, transfer_msg.data_len);
 				}
 
 				// Add one dummy request to indicate the end of requests to the sender
