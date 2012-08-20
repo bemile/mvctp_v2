@@ -750,12 +750,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 				}
 
 				// Add one dummy request to indicate the end of requests to the sender
-				MvctpRetransRequest req;
-				req.seq_num = transfer_msg.data_len;
-				req.data_len = 0;
-				pthread_mutex_lock(&retrans_list_mutex);
-				retrans_list.push_back(req);
-				pthread_mutex_unlock(&retrans_list_mutex);
+				HandleMissingPackets(nack_list, transfer_msg.data_len, transfer_msg.data_len);
 
 				// Record data multicast time
 				recv_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
@@ -776,7 +771,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 					SysError("MVCTPReceiver::ReceiveFile()::write() error");
 				}
 
-				//cout << "Received one retransmission pakcet." << endl;
+				cout << "Received one retransmission pakcet." << endl;
 
 				// Update statistics
 				recv_stats.total_retrans_packets++;
