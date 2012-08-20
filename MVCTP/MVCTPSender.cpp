@@ -599,7 +599,8 @@ void MVCTPSender::RunRetransThread(int sock) {
 				metadata.RemoveFinishedReceiver(header->session_id, sock_fd);
 				if (metadata.IsTransferFinished(header->session_id)) {
 					char buf[200];
-					sprintf(buf, "File transfer for message %d finished.", header->session_id);
+					sprintf(buf, "File transfer for message %d finished. Total transfer time: %f seconds",
+							header->session_id, GetElapsedSeconds(meta->start_time_count));
 					status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 				}
 				cout << "Receive finishing mark request from sock " << sock_fd << endl;
