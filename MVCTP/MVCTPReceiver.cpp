@@ -626,8 +626,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 	status.received_bytes = 0;
 	recv_status_map[status.msg_id] = status;
 
-	cout << "Start receiving file..." << endl;
-
 	cpu_info.SetInterval(500);
     cpu_info.SetCPUFlag(true);
 	cpu_info.Start();
@@ -672,7 +670,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 	MvctpHeader* header = (MvctpHeader*) packet_buffer;
 	char* packet_data = packet_buffer + MVCTP_HLEN;
 
-
+	cout << "Start receiving file..." << endl;
 	int recv_bytes;
 	uint32_t offset = 0;
 	fd_set read_set;
@@ -743,8 +741,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 
 			if (header->flags & MVCTP_EOF) {
 				cout << "EOF received." << endl;
-				//memcpy(file_buffer, data_buffer, mapped_size);
-				//free(data_buffer);
 				munmap(file_buffer, mapped_size);
 
 				if (transfer_msg.data_len > offset) {
