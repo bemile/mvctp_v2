@@ -585,22 +585,38 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 
 		MessageMetadata* meta = metadata.GetMetadata(header->session_id);
 		if (meta->is_disk_file) {	// is disk file transfer
-			FileMessageMetadata* file_meta = (FileMessageMetadata*)meta;
-			int fd = metadata.GetFileDescriptor(header->session_id);
-			if (fd < 0) {
-				break;
-			}
+			map<uint, int>::iterator it = retrans_fd_map.find(header->session_id);
 
 			// retranmit the requested packets
 			if (request->data_len == 0) {
+				map<uint, int>::iterator it;
+				if (it != retrans_fd_map.end()) {
+					close(it->second);
+					retrans_fd_map.erase(it->second);
+				}
+
 				// mark the completion of one session
 				metadata.RemoveFinishedReceiver(header->session_id, sock_fd);
 				if (metadata.IsTransferFinished(header->session_id)) {
-
+					char buf[200];
+					sprintf(buf, "File transfer for message %d finished.", header->session_id);
+					status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 				}
-				cout << "Receive finishing mark request from sock " << sock_fd
-						<< endl;
+				cout << "Receive finishing mark request from sock " << sock_fd << endl;
 			} else {
+				FileMessageMetadata* file_meta = (FileMessageMetadata*)meta;
+				int fd;
+				if (it != retrans_fd_map.end()) {
+					fd = it->second;
+				}
+				else {
+					fd = open(file_meta->file_name.c_str(), O_RDONLY);
+					if (fd < 0)
+						break;
+					else
+						retrans_fd_map[header->session_id] = fd;
+				}
+
 				header->flags = MVCTP_RETRANS_DATA;
 
 				// send the missing blocks to the receiver
@@ -611,7 +627,6 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 					size_t data_length =
 							remained_size > MVCTP_DATA_LEN ? MVCTP_DATA_LEN
 									: remained_size;
-					header->session_id = header->session_id;
 					header->seq_number = curr_pos;
 					header->data_len = data_length;
 

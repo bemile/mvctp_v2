@@ -90,7 +90,7 @@ public:
 	void RemoveFinishedReceiver(uint msg_id, int sock_fd);
 
 private:
-	map<int, MessageMetadata*> metadata_map;	// the map from message id to the pointer to the message metadata
+	map<uint, MessageMetadata*> metadata_map;	// the map from message id to the pointer to the message metadata
 	pthread_rwlock_t 	map_lock;
 	pthread_rwlock_t 	metadata_lock;
 };
