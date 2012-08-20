@@ -112,7 +112,7 @@ private:
 	int					num_retrans_threads;
 
 
-	MvctpMetadata				metadata;
+	MvctpSenderMetadata				metadata;
 	map<uint, int> 				retrans_fd_map;		// Format: <msg_id, file_descriptor>
 	MvctpMulticastTaskInfo 		multicast_task_info;
 	map<int, StartRetransThreadInfo*> thread_info_map;

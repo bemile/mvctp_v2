@@ -620,6 +620,12 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 	//udp_buffer_info.SetUDPRecvBuffFlag(true);
 	//udp_buffer_info.Start();
 
+	MessageReceiveStatus status;
+	status.msg_id = transfer_msg.session_id;
+	status.msg_length = transfer_msg.data_len;
+	status.received_bytes = 0;
+	recv_status_map[status.msg_id] = status;
+
 	cout << "Start receiving file..." << endl;
 
 	cpu_info.SetInterval(500);
@@ -681,8 +687,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 			if (recv_bytes < 0) {
 				SysError("MVCTPReceiver::ReceiveMemoryData()::RecvData() error");
 			}
-
-			// retrans_info << GetElapsedSeconds(cpu_counter) << "    Received a new packet. Seq. #: " << header->seq_number << endl;
 
 			if (header->session_id != session_id || header->seq_number < offset) {
 				if (header->seq_number < offset) {
@@ -746,7 +750,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 				if (transfer_msg.data_len > offset) {
 					cout << "Missing packets in the end of transfer. Final offset: "
 						<< offset << "    Transfer Size:" << transfer_msg.data_len << endl;
-					HandleMissingPackets(nack_list, offset, transfer_msg.data_len);
+					HandleMissingPackets(nack_list, offset, transfer_msg.data_len + 1);
 				}
 
 				// Add one dummy request to indicate the end of requests to the sender

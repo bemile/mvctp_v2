@@ -33,6 +33,13 @@ struct MvctpReceiverStats {
 };
 
 
+struct MessageReceiveStatus {
+	uint 		msg_id;
+	long long 	msg_length;
+	long long	received_bytes;
+};
+
+
 struct MvctpReceiverConfig {
 	string 	multicast_addr;
 	string  sender_ip_addr;
@@ -80,7 +87,7 @@ private:
 	StatusProxy*		status_proxy;
 
 	PerformanceCounter 	cpu_info;
-
+	map<uint, MessageReceiveStatus> recv_status_map;
 
 	void 	ReconnectSender();
 
