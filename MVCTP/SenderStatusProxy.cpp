@@ -202,7 +202,7 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 	bool send_out_packets = true;
 
 	int 	mem_transfer_size = 0;
-	string	file_name;
+	string	file_name, dir_name;
 
 	string arg = "";
 	list<string>::iterator it;
@@ -222,6 +222,7 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 			case 'd':
 				directory_transfer = true;
 				it++;
+				dir_name = *it;
 				break;
 			case 'n':
 				send_out_packets = false;
