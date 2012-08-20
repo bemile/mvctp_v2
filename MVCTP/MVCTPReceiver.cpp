@@ -772,7 +772,7 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 				if (lseek(recv_fd, header->seq_number, SEEK_SET) == -1) {
 					SysError("MVCTPReceiver::ReceiveFile()::lseek() error");
 				}
-				if (write(recv_fd, packet_data, header->data_len) != 1) {
+				if (write(recv_fd, packet_data, header->data_len) < 0) {
 					SysError("MVCTPReceiver::ReceiveFile()::write() error");
 				}
 
