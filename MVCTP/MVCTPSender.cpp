@@ -402,7 +402,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 		offset += map_size;
 		remained_size -= map_size;
 	}
-	cout << "File multicast finished." << endl;
+
 	// Record memory data multicast time
 	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
 	meta->stats.session_trans_time = send_stats.session_trans_time;
@@ -431,6 +431,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 //	}
 
 	close(fd);
+	cout << "File multicast finished." << endl;
 
 	//cpu_info.Stop();
 	//cout << "Retransmission to all receivers finished." << endl;
@@ -551,14 +552,14 @@ void MVCTPSender::StartNewRetransThread(int sock_fd) {
 
 void* MVCTPSender::StartRetransThread(void* ptr) {
 	StartRetransThreadInfo* info = (StartRetransThreadInfo*)ptr;
-	cout << "Retransmission thread started for socket " << info->sock_fd << endl;
 	info->sender_ptr->RunRetransThread(info->sock_fd);
 	return NULL;
 }
 
 
 // The execution function for the retransmission thread
-void MVCTPSender::RunRetransThread(int sock_fd) {
+void MVCTPSender::RunRetransThread(int sock) {
+	int sock_fd = sock;
 	cout << "Retx thread created for socket " << sock_fd << endl;
 
 	char buf[MVCTP_PACKET_LEN];
@@ -589,7 +590,6 @@ void MVCTPSender::RunRetransThread(int sock_fd) {
 
 			// retranmit the requested packets
 			if (request->data_len == 0) {
-				map<uint, int>::iterator it;
 				if (it != retrans_fd_map.end()) {
 					close(it->second);
 					retrans_fd_map.erase(it->second);
