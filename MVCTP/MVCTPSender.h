@@ -11,7 +11,7 @@
 #include "mvctp.h"
 #include "MVCTPComm.h"
 #include "TcpServer.h"
-#include "MvctpMetadata.h"
+#include "MvctpSenderMetadata.h"
 #include "MvctpEventQueueManager.h"
 #include "../CommUtil/PerformanceCounter.h"
 #include "../CommUtil/StatusProxy.h"
