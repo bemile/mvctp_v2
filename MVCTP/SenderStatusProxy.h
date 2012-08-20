@@ -43,6 +43,7 @@ public:
 	// public functions for experiments
 	int 	GenerateDataFile(string file_name, ulong bytes);
 	void 	TransferFile(string file_name);
+	void 	TransferDirectory(string dir_name);
 	void 	SetSendRate(int rate_mbps);
 	void	SetTxQueueLength(int length);
 	void    SetRetransmissionBufferSize(int size_mb);

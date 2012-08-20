@@ -198,6 +198,7 @@ void SenderStatusProxy::SetRetransmissionBufferSize(int size_mb) {
 int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 	bool memory_transfer = false;
 	bool file_transfer = false;
+	bool directory_transfer = false;
 	bool send_out_packets = true;
 
 	int 	mem_transfer_size = 0;
@@ -218,6 +219,10 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 				it++;
 				file_name = *it;
 				break;
+			case 'd':
+				directory_transfer = true;
+				it++;
+				break;
 			case 'n':
 				send_out_packets = false;
 				break;
@@ -237,6 +242,9 @@ int SenderStatusProxy::HandleSendCommand(list<string>& slist) {
 	}
 	else if (file_transfer) {
 		TransferFile(file_name);
+	}
+	else if (directory_transfer) {
+		TransferDirectory(dir_name);
 	}
 	else {
 		TransferString(arg, send_out_packets);
@@ -277,6 +285,12 @@ void SenderStatusProxy::TransferFile(string file_name) {
 	SendMessageLocal(COMMAND_RESPONSE, "File transfer completed.");
 }
 
+
+// Transfer all the disk files under a directory
+void SenderStatusProxy::TransferDirectory(string dir_name) {
+	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+
+}
 
 
 // Multicast a string message to receivers

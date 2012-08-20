@@ -599,7 +599,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 				metadata.RemoveFinishedReceiver(header->session_id, sock_fd);
 				if (metadata.IsTransferFinished(header->session_id)) {
 					char buf[200];
-					sprintf(buf, "File transfer for message %d finished. Total transfer time: %f seconds",
+					sprintf(buf, "File transfer for message %d finished. Total transfer time: %.2f seconds",
 							header->session_id, GetElapsedSeconds(meta->start_time_count));
 					status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 				}
@@ -618,12 +618,12 @@ void MVCTPSender::RunRetransThread(int sock) {
 						retrans_fd_map[header->session_id] = fd;
 				}
 
-				header->flags = MVCTP_RETRANS_DATA;
 
 				// send the missing blocks to the receiver
 				lseek(fd, request->seq_num, SEEK_SET);
 				size_t remained_size = request->data_len;
 				size_t curr_pos = request->seq_num;
+				header->flags = MVCTP_RETRANS_DATA;
 				while (remained_size > 0) {
 					size_t data_length =
 							remained_size > MVCTP_DATA_LEN ? MVCTP_DATA_LEN
