@@ -742,8 +742,6 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 
 			if (header->flags & MVCTP_EOF) {
 				munmap(file_buffer, mapped_size);
-
-				cout << "EOF received." << endl;
 				if (transfer_msg.data_len > offset) {
 					cout << "Missing packets in the end of transfer. Final offset: "
 						<< offset << "    Transfer Size:" << transfer_msg.data_len << endl;
@@ -756,11 +754,12 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 				// Record data multicast time
 				recv_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
 
+				cout << "EOF received." << endl;
 				is_multicast_finished = true;
-				if (received_retrans_bytes == total_missing_bytes) {
-					received_retrans_bytes = total_missing_bytes = 0;
+				if (received_retrans_bytes == total_missing_bytes)
 					break;
-				}
+				else
+					cout << "There are more retransmission packets to come." << endl;
 			}
 			else if (header->flags & MVCTP_RETRANS_DATA) {
 				retrans_tcp_client->Receive(packet_data, header->data_len);
