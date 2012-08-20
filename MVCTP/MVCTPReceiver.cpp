@@ -771,7 +771,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 					SysError("MVCTPReceiver::ReceiveFile()::write() error");
 				}
 
-				cout << "Received one retransmission pakcet." << endl;
+				if (!is_multicast_finished)
+					cout << "Received one retransmission pakcet." << endl;
 
 				// Update statistics
 				recv_stats.total_retrans_packets++;
