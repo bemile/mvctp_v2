@@ -768,7 +768,8 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 					SysError("MVCTPReceiver::ReceiveFile()::lseek() error");
 				}
 				if (write(recv_fd, packet_data, header->data_len) < 0) {
-					SysError("MVCTPReceiver::ReceiveFile()::write() error");
+					//SysError("MVCTPReceiver::ReceiveFile()::write() error");
+					cout << "MVCTPReceiver::ReceiveFile()::write() error" << endl;
 				}
 
 				// Update statistics
