@@ -402,7 +402,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 		offset += map_size;
 		remained_size -= map_size;
 	}
-	cout << "File transfer finished. Start retransmission..." << endl;
+	cout << "File multicast finished." << endl;
 	// Record memory data multicast time
 	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
 	meta->stats.session_trans_time = send_stats.session_trans_time;
