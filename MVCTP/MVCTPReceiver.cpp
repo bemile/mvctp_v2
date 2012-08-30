@@ -337,7 +337,6 @@ void MVCTPReceiver::RunReceivingThread() {
 			}
 
 			if (header->flags & MVCTP_BOF) {
-				status_proxy->SendMessageLocal(INFORMATIONAL, "Received a BOF message.");
 				if (recv(retrans_tcp_sock, &sender_msg, sizeof(sender_msg), 0) <= 0) {
 					ReconnectSender();
 					continue;
@@ -345,6 +344,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleBofMessage(sender_msg);
 			}
 			else if (header->flags & MVCTP_EOF) {
+				status_proxy->SendMessageLocal(INFORMATIONAL, "Received a EOF message.");
 				if (recv(retrans_tcp_sock, &sender_msg, sizeof(sender_msg), 0) <= 0) {
 					ReconnectSender();
 					continue;
@@ -463,7 +463,8 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 
 
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
-
+	MessageReceiveStatus& status = recv_status_map[msg_id];
+	AddRetxRequest(msg_id, status.msg_length, status.msg_length);
 }
 
 
@@ -496,12 +497,10 @@ void* MVCTPReceiver::StartRetransmissionThread(void* ptr) {
 void MVCTPReceiver::RunRetransmissionThread() {
 	char buf[MVCTP_PACKET_LEN];
 	MvctpHeader* header = (MvctpHeader*)buf;
+	header->data_len = sizeof(MvctpRetransRequest);
+
 	char* data = (buf + MVCTP_HLEN);
 	MvctpRetransRequest* request = (MvctpRetransRequest*)data;
-
-	header->data_len = sizeof(MvctpRetransRequest);
-	header->flags = MVCTP_RETRANS_REQ;
-
 	while (keep_retrans_alive) {
 		if (!retrans_switch) {
 			usleep(10000);
@@ -514,6 +513,10 @@ void MVCTPReceiver::RunRetransmissionThread() {
 				request->msg_id = req.msg_id;
 				request->seq_num = req.seq_num;
 				request->data_len = req.data_len;
+				if (request->data_len == 0)
+					header->flags = MVCTP_RETRANS_END;
+				else
+					header->flags = MVCTP_RETRANS_REQ;
 
 				header->session_id = req.msg_id;
 				header->seq_number = 0;

@@ -565,33 +565,38 @@ void MVCTPSender::RunRetransThread(int sock) {
 	// Opened file descriptor map for the retransmission.  Format: <msg_id, file_descriptor>
 	map<uint, int> retrans_fd_map;
 
-	char buf[MVCTP_PACKET_LEN];
-	MvctpHeader* header = (MvctpHeader*)buf;
-	char* packet_data = buf + MVCTP_HLEN;
-	MvctpRetransRequest* request = (MvctpRetransRequest*)packet_data;
+	char recv_buf[MVCTP_PACKET_LEN];
+	MvctpHeader* recv_header = (MvctpHeader*)recv_buf;
+	char* recv_packet_data = recv_buf + MVCTP_HLEN;
+	MvctpRetransRequest* retx_request = (MvctpRetransRequest*)recv_packet_data;
+
+	char send_buf[MVCTP_PACKET_LEN];
+	MvctpHeader* send_header = (MvctpHeader*)send_buf;
+	char* send_packet_data = send_buf + MVCTP_HLEN;
+
 	while (true) {
 		if (!retrans_switch_map[sock_fd]) {
 			usleep(10000);
 			continue;
 		}
 
-		if (retrans_tcp_server->Receive(sock_fd, header, sizeof(MvctpHeader)) <= 0) {
+		if (retrans_tcp_server->Receive(sock_fd, recv_header, sizeof(MvctpHeader)) <= 0) {
 			break;
 		}
 
 		// Handle a retransmission request
-		if (header->flags & MVCTP_RETRANS_REQ) {
-			if (retrans_tcp_server->Receive(sock_fd, request, sizeof(MvctpRetransRequest)) <= 0) {
+		if (recv_header->flags & MVCTP_RETRANS_REQ) {
+			if (retrans_tcp_server->Receive(sock_fd, retx_request, sizeof(MvctpRetransRequest)) <= 0) {
 				break;
 			}
 
-			MessageMetadata* meta = metadata.GetMetadata(header->session_id);
+			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
 			if (meta->is_disk_file) {	// is disk file transfer
 				FileMessageMetadata* file_meta = (FileMessageMetadata*)meta;
 
 				// get the file descriptor to read data from the file
 				int fd;
-				map<uint, int>::iterator it = retrans_fd_map.find(header->session_id);
+				map<uint, int>::iterator it = retrans_fd_map.find(recv_header->session_id);
 				if (it != retrans_fd_map.end()) {
 					fd = it->second;
 				}
@@ -600,32 +605,33 @@ void MVCTPSender::RunRetransThread(int sock) {
 					if (fd < 0)
 						SysError("MVCTPSender::RunRetransThread() file open error");
 					else
-						retrans_fd_map[header->session_id] = fd;
+						retrans_fd_map[recv_header->session_id] = fd;
 				}
 
 
 				// send the missing blocks to the receiver
-				lseek(fd, request->seq_num, SEEK_SET);
-				size_t remained_size = request->data_len;
-				size_t curr_pos = request->seq_num;
-				header->flags = MVCTP_RETRANS_DATA;
+				lseek(fd, retx_request->seq_num, SEEK_SET);
+				size_t remained_size = retx_request->data_len;
+				size_t curr_pos = retx_request->seq_num;
+				send_header->session_id = recv_header->session_id;
+				send_header->flags = MVCTP_RETRANS_DATA;
 				while (remained_size > 0) {
 					size_t data_length =
 							remained_size > MVCTP_DATA_LEN ? MVCTP_DATA_LEN
 									: remained_size;
-					header->seq_number = curr_pos;
-					header->data_len = data_length;
+					send_header->seq_number = curr_pos;
+					send_header->data_len = data_length;
 
-					read(fd, packet_data, header->data_len);
-					retrans_tcp_server->SelectSend(sock_fd, buf,
-							MVCTP_HLEN + header->data_len);
+					read(fd, send_packet_data, send_header->data_len);
+					retrans_tcp_server->SelectSend(sock_fd, send_buf,
+							MVCTP_HLEN + send_header->data_len);
 
 					curr_pos += data_length;
 					remained_size -= data_length;
 
 					// Update statistics
 					send_stats.total_retrans_packets++;
-					send_stats.total_retrans_bytes += header->data_len;
+					send_stats.total_retrans_bytes += send_header->data_len;
 					//file_meta->stats.session_retrans_packets++;
 					//file_meta->stats.session_retrans_bytes += header->data_len;
 				}
@@ -634,23 +640,27 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 			}
 		}
-		else if (header->flags & MVCTP_RETRANS_END) {
-			MessageMetadata* meta = metadata.GetMetadata(header->session_id);
-			map<uint, int>::iterator it = retrans_fd_map.find(header->session_id);
+		else if (recv_header->flags & MVCTP_RETRANS_END) {
+			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
+			map<uint, int>::iterator it = retrans_fd_map.find(recv_header->session_id);
 			if (it != retrans_fd_map.end()) {
 				close(it->second);
 				retrans_fd_map.erase(it);
 			}
 
 			// send back the retransmission end message to the receiver
-			retrans_tcp_server->SelectSend(sock_fd, header, MVCTP_HLEN);
+			send_header->session_id = recv_header->session_id;
+			send_header->seq_number = 0;
+			send_header->data_len = 0;
+			send_header->flags = MVCTP_RETRANS_END;
+			retrans_tcp_server->SelectSend(sock_fd, send_header, MVCTP_HLEN);
 
 			// mark the completion of retransmission to one receiver
-			metadata.RemoveFinishedReceiver(header->session_id, sock_fd);
-			if (metadata.IsTransferFinished(header->session_id)) {
+			metadata.RemoveFinishedReceiver(recv_header->session_id, sock_fd);
+			if (metadata.IsTransferFinished(recv_header->session_id)) {
 				char buf[200];
 				sprintf(buf, "File transfer for message %d finished. Total transfer time: %.2f seconds",
-								header->session_id, GetElapsedSeconds(meta->start_time_count));
+								recv_header->session_id, GetElapsedSeconds(meta->start_time_count));
 				status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 			}
 			cout << "Receive finishing mark request from sock " << sock_fd << endl;
