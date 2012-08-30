@@ -344,10 +344,10 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleBofMessage(sender_msg);
 			}
 			else if (header->flags & MVCTP_EOF) {
-				if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
+				/*if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
 					ReconnectSender();
 					continue;
-				}
+				}*/
 				HandleEofMessage(header->session_id);
 			}
 			else if (header->flags & MVCTP_SENDER_MSG_EXP) {
