@@ -191,7 +191,8 @@ void MVCTPReceiver::ReconnectSender() {
 
 
 void MVCTPReceiver::Start() {
-	char buf[MVCTP_PACKET_LEN];
+	StartReceivingThread();
+	/*char buf[MVCTP_PACKET_LEN];
 	MvctpHeader* header = (MvctpHeader*)buf;
 	char* data = buf + MVCTP_HLEN;
 
@@ -264,7 +265,7 @@ void MVCTPReceiver::Start() {
 		} else if (FD_ISSET(multicast_sock, &read_set)) {
 
 		}
-	}
+	}*/
 }
 
 
