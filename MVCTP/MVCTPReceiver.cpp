@@ -282,8 +282,6 @@ void* MVCTPReceiver::StartReceivingThread(void* ptr) {
 
 // Main file receiving function
 void MVCTPReceiver::RunReceivingThread() {
-	status_proxy->SendMessageLocal(INFORMATIONAL, "The main receiving thread has been started.");
-
 	char packet_buffer[MVCTP_PACKET_LEN];
 	MvctpHeader* header = (MvctpHeader*) packet_buffer;
 	char* packet_data = packet_buffer + MVCTP_HLEN;
@@ -344,9 +342,6 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleBofMessage(sender_msg);
 			}
 			else if (header->flags & MVCTP_EOF) {
-				char buf[500];
-				sprintf(buf, "Received an EOF message. Data Length: %d bytes", header->data_len);
-				status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 				/*if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
 					ReconnectSender();
 					continue;
@@ -383,8 +378,8 @@ void MVCTPReceiver::RunReceivingThread() {
 				recv_status_map.erase(header->session_id);
 
 				char str[256];
-				sprintf(str, "File transfer finished. Size: %lld bytes     Used Time: %.2f seconds",
-							recv_status.msg_length, GetElapsedSeconds(recv_status.start_time_counter));
+				sprintf(str, "File transfer finished. Transfer Time: %.2f seconds",
+								GetElapsedSeconds(recv_status.start_time_counter));
 				status_proxy->SendMessageLocal(INFORMATIONAL, str);
 			}
 		}
@@ -423,6 +418,10 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
+	char str[500];
+	sprintf(str, "Start receiving a new file. File length: %d bytes", sender_msg.data_len);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
+
 	MessageReceiveStatus status;
 	status.msg_id = sender_msg.session_id;
 	status.msg_name = sender_msg.text;
