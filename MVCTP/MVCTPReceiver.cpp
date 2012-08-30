@@ -344,6 +344,9 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleBofMessage(sender_msg);
 			}
 			else if (header->flags & MVCTP_EOF) {
+				char buf[500];
+				sprintf(buf, "Received an EOF message. Data Length: %d bytes", header->data_len);
+				status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 				/*if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
 					ReconnectSender();
 					continue;
@@ -380,7 +383,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				recv_status_map.erase(header->session_id);
 
 				char str[256];
-				sprintf(str, "File transfer finisthed. Size: %u bytes     Used Time: %.2f seconds",
+				sprintf(str, "File transfer finished. Size: %lld bytes     Used Time: %.2f seconds",
 							recv_status.msg_length, GetElapsedSeconds(recv_status.start_time_counter));
 				status_proxy->SendMessageLocal(INFORMATIONAL, str);
 			}
@@ -462,8 +465,6 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 
 
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
-	status_proxy->SendMessageLocal(INFORMATIONAL, "Received an EOF message.");
-
 	MessageReceiveStatus& status = recv_status_map[msg_id];
 	AddRetxRequest(msg_id, status.msg_length, status.msg_length);
 }
