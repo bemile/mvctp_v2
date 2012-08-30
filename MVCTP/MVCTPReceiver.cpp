@@ -344,8 +344,8 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleBofMessage(sender_msg);
 			}
 			else if (header->flags & MVCTP_EOF) {
-				status_proxy->SendMessageLocal(INFORMATIONAL, "Received a EOF message.");
-				if (recv(retrans_tcp_sock, &sender_msg, sizeof(sender_msg), 0) <= 0) {
+				status_proxy->SendMessageLocal(INFORMATIONAL, "Received an EOF message.");
+				if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
 					ReconnectSender();
 					continue;
 				}
