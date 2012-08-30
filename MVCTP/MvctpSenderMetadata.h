@@ -56,6 +56,10 @@ struct MessageMetadata {
 
     MessageMetadata(): msg_id(0), ignore_file(false),
     		is_disk_file(true), msg_length(0), info(NULL) {}
+
+    virtual ~MessageMetadata() {
+
+    }
 };
 
 
@@ -65,6 +69,11 @@ struct FileMessageMetadata : public MessageMetadata {
 
 	FileMessageMetadata() : MessageMetadata(),
 			file_name(""), file_descriptor(-1) {}
+
+	~FileMessageMetadata() {
+		if (file_descriptor > 0)
+			close(file_descriptor);
+	}
 };
 
 

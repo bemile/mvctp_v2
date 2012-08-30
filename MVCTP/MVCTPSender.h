@@ -112,8 +112,8 @@ private:
 	int					num_retrans_threads;
 
 
-	MvctpSenderMetadata				metadata;
-	map<uint, int> 				retrans_fd_map;		// Format: <msg_id, file_descriptor>
+	MvctpSenderMetadata			metadata;
+	//map<uint, int> 				retrans_fd_map;		// Format: <msg_id, file_descriptor>
 	MvctpMulticastTaskInfo 		multicast_task_info;
 	map<int, StartRetransThreadInfo*> thread_info_map;
 	//MvctpEventQueueManager* 	event_queue_manager;

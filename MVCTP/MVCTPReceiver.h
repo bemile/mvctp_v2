@@ -11,6 +11,7 @@
 #include "mvctp.h"
 #include "MVCTPComm.h"
 #include "TcpClient.h"
+#include "MvctpSenderMetadata.h"
 #include "../CommUtil/PerformanceCounter.h"
 #include "../CommUtil/StatusProxy.h"
 
@@ -35,8 +36,19 @@ struct MvctpReceiverStats {
 
 struct MessageReceiveStatus {
 	uint 		msg_id;
+	string		msg_name;
+	union {
+			void* 	mem_buffer;
+			int		file_descriptor;
+		};
+	bool		is_multicast_done;
 	long long 	msg_length;
-	long long	received_bytes;
+	uint		current_offset;
+	long long	multicast_packets;
+	long long	multicast_bytes;
+	long long 	retx_packets;
+	long long 	retx_bytes;
+	CpuCycleCounter 	start_time_counter;
 };
 
 
@@ -74,11 +86,11 @@ public:
 private:
 	TcpClient*		retrans_tcp_client;
 	// used in the select() system call
-	int		max_sock_fd;
-	int 	multicast_sock;
-	int		retrans_tcp_sock;
-	fd_set	read_sock_set;
-	ofstream retrans_info;
+	int			max_sock_fd;
+	int 		multicast_sock;
+	int			retrans_tcp_sock;
+	fd_set		read_sock_set;
+	ofstream 	retrans_info;
 
 	int 				packet_loss_rate;
 	uint				session_id;
@@ -87,7 +99,7 @@ private:
 	StatusProxy*		status_proxy;
 
 	PerformanceCounter 	cpu_info;
-	map<uint, MessageReceiveStatus> recv_status_map;
+
 
 	void 	ReconnectSender();
 
@@ -109,23 +121,39 @@ private:
 	void 	TcpReceiveMemoryData(const MvctpSenderMessage & msg, char* mem_data);
 	void 	TcpReceiveFile(const MvctpSenderMessage & transfer_msg);
 
-	MvctpSenderMessage ReceiveBOF();
 
+	// Receive status map for all active files
+	map<uint, MessageReceiveStatus> recv_status_map;
 
-	// Retransmission thread functions
-	int		recv_fd;
+	// File descriptor map for the main RECEIVING thread. Format: <msg_id, file_descriptor>
+	map<uint, int> 	recv_file_map;
+
+	//*********************** Main receiving thread functions ***********************
+	pthread_t	recv_thread;
+	void 	StartReceivingThread();
+	static void* StartReceivingThread(void* ptr);
+	void	RunReceivingThread();
+	void	HandleBofMessage(MvctpSenderMessage& sender_msg);
+	void  	HandleEofMessage(uint msg_id);
+	void	PrepareForFileTransfer(MvctpSenderMessage& sender_msg);
+	void	HandleSenderMessage(MvctpSenderMessage& sender_msg);
+	void	AddRetxRequest(uint msg_id, uint current_offset, uint received_seq);
+
+	//*********************** Retransmission thread functions ***********************
 	void 	StartRetransmissionThread();
 	static void* StartRetransmissionThread(void* ptr);
 	void	RunRetransmissionThread();
-	pthread_t	retrans_thread;
-	pthread_mutex_t retrans_list_mutex;
-	bool	keep_retrans_alive;
-	list<MvctpRetransRequest> retrans_list;
+	pthread_t			retrans_thread;
+	pthread_mutex_t 	retrans_list_mutex;
+	bool				keep_retrans_alive;
+	list<MvctpRetransRequest> 	retrans_list;
+
 	int		mvctp_seq_num;
 	size_t	total_missing_bytes;
 	size_t	received_retrans_bytes;
 	bool	is_multicast_finished;
 	bool	retrans_switch;		// a switch that allows/disallows on-the-fly retransmission
+
 };
 
 #endif /* MVCTPRECEIVER_H_ */

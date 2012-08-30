@@ -74,10 +74,11 @@ typedef struct MvctpHeader {
 const u_int32_t MVCTP_DATA = 0x00000000;			// data packet
 const u_int32_t MVCTP_BOF = 0x00000001;				// begin of file
 const u_int32_t MVCTP_EOF = 0x00000002;				// end of file
-const u_int32_t MVCTP_SENDER_MSG = 0x00000004;		// sender message
+const u_int32_t MVCTP_SENDER_MSG_EXP = 0x00000004;	// sender messages used for experiment
 const u_int32_t MVCTP_RETRANS_REQ = 0x00000008;		// retransmission request
 const u_int32_t MVCTP_RETRANS_DATA = 0x00000010; 	// retransmission data
-const u_int32_t MVCTP_BOF_REQ = 0x00000020;     	// BOF request
+const u_int32_t MVCTP_RETRANS_END = 0x00000020;
+const u_int32_t MVCTP_BOF_REQ = 0x00000040;     	// BOF request
 
 
 /************ The BOF/EOF message data types ****************/
@@ -133,7 +134,7 @@ struct NackMsgInfo {
 
 const static bool is_debug = true;
 
-// Constant values
+// Constant values used for the protocol
 const static string group_id = "224.1.2.3";
 const static unsigned char group_mac_addr[6] = {0x01, 0x00, 0x5e, 0x01, 0x02, 0x03};
 const static ushort mvctp_port = 123;
@@ -174,6 +175,7 @@ static const int MEMORY_TRANSFER_FINISH = 4;
 static const int FILE_TRANSFER_START = 5;
 static const int FILE_TRANSFER_FINISH = 6;
 static const int DO_RETRANSMISSION = 7;
+
 // message types related to TCP transfer (for performance comparison)
 static const int TCP_MEMORY_TRANSFER_START = 8;
 static const int TCP_MEMORY_TRANSFER_FINISH = 9;
@@ -184,8 +186,6 @@ static const int COLLECT_STATISTICS = 13;
 static const int EXECUTE_COMMAND = 14;
 
 
-
-
 struct MvctpSenderMessage {
 	int32_t		msg_type;
 	uint32_t	session_id;
@@ -194,6 +194,7 @@ struct MvctpSenderMessage {
 };
 
 struct MvctpRetransRequest {
+	u_int32_t	msg_id;
 	u_int32_t 	seq_num;
 	u_int32_t	data_len;
 };
