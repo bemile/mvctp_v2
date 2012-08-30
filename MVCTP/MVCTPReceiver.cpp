@@ -282,6 +282,8 @@ void* MVCTPReceiver::StartReceivingThread(void* ptr) {
 
 // Main file receiving function
 void MVCTPReceiver::RunReceivingThread() {
+	status_proxy->SendMessageLocal(INFORMATIONAL, "The main receiving thread has been started.");
+
 	char packet_buffer[MVCTP_PACKET_LEN];
 	MvctpHeader* header = (MvctpHeader*) packet_buffer;
 	char* packet_data = packet_buffer + MVCTP_HLEN;
