@@ -337,14 +337,13 @@ void MVCTPReceiver::RunReceivingThread() {
 			}
 
 			if (header->flags & MVCTP_BOF) {
-				if (recv(retrans_tcp_sock, &sender_msg, sizeof(sender_msg), 0) <= 0) {
+				if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
 					ReconnectSender();
 					continue;
 				}
 				HandleBofMessage(sender_msg);
 			}
 			else if (header->flags & MVCTP_EOF) {
-				status_proxy->SendMessageLocal(INFORMATIONAL, "Received an EOF message.");
 				if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
 					ReconnectSender();
 					continue;
@@ -352,7 +351,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleEofMessage(header->session_id);
 			}
 			else if (header->flags & MVCTP_SENDER_MSG_EXP) {
-				if (recv(retrans_tcp_sock, &sender_msg, sizeof(sender_msg), 0) <= 0) {
+				if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
 					ReconnectSender();
 					continue;
 				}
@@ -463,6 +462,8 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 
 
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
+	status_proxy->SendMessageLocal(INFORMATIONAL, "Received an EOF message.");
+
 	MessageReceiveStatus& status = recv_status_map[msg_id];
 	AddRetxRequest(msg_id, status.msg_length, status.msg_length);
 }

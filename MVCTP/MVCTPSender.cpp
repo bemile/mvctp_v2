@@ -414,6 +414,7 @@ void MVCTPSender::SendFile(const char* file_name) {
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	// Send a notification to all receivers to start retransmission
 	header->flags = MVCTP_EOF;
+	header->data_len = 0;
 	retrans_tcp_server->SendToAll(header, MVCTP_HLEN);
 
 
