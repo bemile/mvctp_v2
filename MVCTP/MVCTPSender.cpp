@@ -641,6 +641,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 			}
 		}
 		else if (recv_header->flags & MVCTP_RETRANS_END) {
+			status_proxy->SendMessageLocal(INFORMATIONAL, "Received a MVCTP_RETRANS_END message from the receiver.");
 			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
 			map<uint, int>::iterator it = retrans_fd_map.find(recv_header->session_id);
 			if (it != retrans_fd_map.end()) {
