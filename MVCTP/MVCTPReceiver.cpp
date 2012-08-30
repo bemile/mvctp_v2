@@ -337,6 +337,7 @@ void MVCTPReceiver::RunReceivingThread() {
 			}
 
 			if (header->flags & MVCTP_BOF) {
+				status_proxy->SendMessageLocal(INFORMATIONAL, "Received a BOF message.");
 				if (recv(retrans_tcp_sock, &sender_msg, sizeof(sender_msg), 0) <= 0) {
 					ReconnectSender();
 					continue;
