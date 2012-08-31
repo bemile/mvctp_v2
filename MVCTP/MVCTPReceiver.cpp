@@ -433,7 +433,8 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	char str[500];
-	sprintf(str, "Start receiving a new file. File length: %d bytes", sender_msg.data_len);
+	sprintf(str, "***** Receiving a new file *****\nFile ID: %d    File length: %d bytes",
+						sender_msg.session_id, sender_msg.data_len);
 	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 	MessageReceiveStatus status;
@@ -490,7 +491,6 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 
 	// Add a RETX_END message to the end of the request list
 	AddRetxRequest(msg_id, status.msg_length, status.msg_length);
-	status_proxy->SendMessageLocal(INFORMATIONAL, "RETX_END message added to the request list.");
 }
 
 
