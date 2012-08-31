@@ -486,7 +486,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
 	if (status.current_offset < status.msg_length) {
 		char str[500];
-		sprintf(str, "%d bytes have been lost at the end of multicast.",
+		sprintf(str, "%lld bytes have been lost at the end of multicast.",
 					status.msg_length - status.current_offset);
 		status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
