@@ -576,18 +576,13 @@ void MVCTPSender::RunRetransThread(int sock) {
 	char* send_packet_data = send_buf + MVCTP_HLEN;
 
 	while (true) {
-		if (!retrans_switch_map[sock_fd]) {
-			usleep(10000);
-			continue;
-		}
-
 		if (retrans_tcp_server->Receive(sock_fd, recv_header, sizeof(MvctpHeader)) <= 0) {
 			break;
 		}
 
 		// Handle a retransmission request
 		if (recv_header->flags & MVCTP_RETRANS_REQ) {
-			if (retrans_tcp_server->Receive(sock_fd, retx_request, sizeof(MvctpRetransRequest)) <= 0) {
+			if (retrans_tcp_server->Receive(sock_fd, retx_request, sizeof(MvctpRetransRequest)) < 0) {
 				break;
 			}
 
@@ -642,6 +637,10 @@ void MVCTPSender::RunRetransThread(int sock) {
 			}
 		}
 		else if (recv_header->flags & MVCTP_RETRANS_END) {
+			if (retrans_tcp_server->Receive(sock_fd, retx_request, recv_header->data_len) < 0) {
+				break;
+			}
+
 			status_proxy->SendMessageLocal(INFORMATIONAL, "Received a MVCTP_RETRANS_END message from the receiver.");
 			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
 			map<uint, int>::iterator it = retrans_fd_map.find(recv_header->session_id);
