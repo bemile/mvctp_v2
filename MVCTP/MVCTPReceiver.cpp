@@ -519,8 +519,10 @@ void MVCTPReceiver::RunRetransmissionThread() {
 				request->msg_id = req.msg_id;
 				request->seq_num = req.seq_num;
 				request->data_len = req.data_len;
-				if (request->data_len == 0)
+				if (request->data_len == 0) {
 					header->flags = MVCTP_RETRANS_END;
+					status_proxy->SendMessageLocal(INFORMATIONAL, "RETX_END message sent to the sender.");
+				}
 				else
 					header->flags = MVCTP_RETRANS_REQ;
 
