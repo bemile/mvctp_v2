@@ -362,7 +362,11 @@ void MVCTPReceiver::RunReceivingThread() {
 				if (retrans_tcp_client->Receive(packet_data, header->data_len) < 0)
 					SysError("MVCTPReceiver::RunningReceivingThread() recv error");
 
-				MessageReceiveStatus& recv_status = recv_status_map[header->session_id];
+				map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
+				if (it == recv_status_map.end())
+					continue;
+
+				MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
 				if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) == -1) {
 					SysError("MVCTPReceiver::ReceiveFile()::lseek() error");
 				}
@@ -376,16 +380,21 @@ void MVCTPReceiver::RunReceivingThread() {
 				recv_status.retx_bytes += header->data_len;
 			}
 			else if (header->flags & MVCTP_RETRANS_END) {
-				status_proxy->SendMessageLocal(INFORMATIONAL, "I received a RETX_END message");
-				MessageReceiveStatus& recv_status = recv_status_map[header->session_id];
-				close(recv_status.file_descriptor);
-				recv_status_map.erase(header->session_id);
+				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received a RETX_END message");
 
-				char str[256];
-				sprintf(str, "File transfer finished.\n***** Statistics *****\nTransfer Time: %.2f seconds\nRetx. Packets: %lld\n"
-						"Retx. Rate: %.2f", GetElapsedSeconds(recv_status.start_time_counter), recv_status.retx_packets,
-							recv_status.retx_packets * 1.0 / (recv_status.multicast_packets + recv_status.retx_packets) );
-				status_proxy->SendMessageLocal(INFORMATIONAL, str);
+				map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
+				if (it != recv_status_map.end()) {
+					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
+					close(recv_status.file_descriptor);
+					recv_status_map.erase(header->session_id);
+
+					char str[256];
+					sprintf(str, "File transfer finished.\n***** Statistics *****\nTransfer Time: %.2f seconds\nRetx. Packets: %lld\n"
+							"Retx. Rate: %.2f", GetElapsedSeconds(recv_status.start_time_counter), recv_status.retx_packets,
+								recv_status.retx_packets * 1.0 / (recv_status.multicast_packets + recv_status.retx_packets) );
+					status_proxy->SendMessageLocal(INFORMATIONAL, str);
+				}
+
 			}
 		}
 	}
