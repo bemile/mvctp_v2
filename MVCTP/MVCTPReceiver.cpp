@@ -330,26 +330,29 @@ void MVCTPReceiver::RunReceivingThread() {
 
 		// check received data on the TCP connection
 		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
-			if (recv(retrans_tcp_sock, header, sizeof(MvctpHeader), 0) <= 0) {
+			if (retrans_tcp_client->Receive(header, sizeof(MvctpHeader)) < 0) {
 				SysError("MVCTPReceiver::ReceiveFile()::recv() error");
 			}
 
 			if (header->flags & MVCTP_BOF) {
-				if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
+				status_proxy->SendMessageLocal(INFORMATIONAL, "I received an BOF message");
+				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
 				}
 				HandleBofMessage(sender_msg);
 			}
 			else if (header->flags & MVCTP_EOF) {
-				/*if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
+				status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
+				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
-				}*/
+				}
 				HandleEofMessage(header->session_id);
 			}
 			else if (header->flags & MVCTP_SENDER_MSG_EXP) {
-				if (recv(retrans_tcp_sock, &sender_msg, header->data_len, 0) <= 0) {
+				status_proxy->SendMessageLocal(INFORMATIONAL, "I received a SENDER_MSG_EXP message");
+				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
 				}
@@ -373,6 +376,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				recv_status.retx_bytes += header->data_len;
 			}
 			else if (header->flags & MVCTP_RETRANS_END) {
+				status_proxy->SendMessageLocal(INFORMATIONAL, "I received a RETX_END message");
 				MessageReceiveStatus& recv_status = recv_status_map[header->session_id];
 				close(recv_status.file_descriptor);
 				recv_status_map.erase(header->session_id);

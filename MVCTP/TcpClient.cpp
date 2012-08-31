@@ -62,9 +62,13 @@ int TcpClient::Send(const void* data, size_t length) {
 	return send(sock_fd, data, length, 0);
 }
 
-
+// This receive function explicitly handles the zero length case
+// to avoid the undefined hang problem of the Linux system call
 int TcpClient::Receive(void* buffer, size_t length) {
-	return recv(sock_fd, buffer, length, MSG_WAITALL);
+	if (length == 0)
+		return 0;
+	else
+		return recv(sock_fd, buffer, length, MSG_WAITALL);
 
 //	size_t remained_size = length;
 //	int recv_bytes;
