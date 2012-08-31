@@ -335,7 +335,7 @@ void MVCTPReceiver::RunReceivingThread() {
 			}
 
 			if (header->flags & MVCTP_BOF) {
-				status_proxy->SendMessageLocal(INFORMATIONAL, "I received an BOF message");
+				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an BOF message");
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
@@ -343,7 +343,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleBofMessage(sender_msg);
 			}
 			else if (header->flags & MVCTP_EOF) {
-				status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
+				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
@@ -351,7 +351,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleEofMessage(header->session_id);
 			}
 			else if (header->flags & MVCTP_SENDER_MSG_EXP) {
-				status_proxy->SendMessageLocal(INFORMATIONAL, "I received a SENDER_MSG_EXP message");
+				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received a SENDER_MSG_EXP message");
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
@@ -382,8 +382,9 @@ void MVCTPReceiver::RunReceivingThread() {
 				recv_status_map.erase(header->session_id);
 
 				char str[256];
-				sprintf(str, "File transfer finished. Transfer Time: %.2f seconds",
-								GetElapsedSeconds(recv_status.start_time_counter));
+				sprintf(str, "File transfer finished.\n***** Statistics *****\nTransfer Time: %.2f seconds\nRetx. Packets: %lld\n"
+						"Retx. Rate: %.2f", GetElapsedSeconds(recv_status.start_time_counter), recv_status.retx_packets,
+							recv_status.retx_packets * 1.0 / (recv_status.multicast_packets + recv_status.retx_packets) );
 				status_proxy->SendMessageLocal(INFORMATIONAL, str);
 			}
 		}
