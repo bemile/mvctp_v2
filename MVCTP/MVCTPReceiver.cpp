@@ -478,7 +478,17 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 
 
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
-	MessageReceiveStatus& status = recv_status_map[msg_id];
+	map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(msg_id);
+	if (it == recv_status_map.end())
+		return;
+
+	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
+	if (status.current_offset < status.msg_length) {
+		AddRetxRequest(msg_id, status.current_offset, status.msg_length);
+		status.current_offset = status.msg_length;
+	}
+
+	// Add a RETX_END message to the end of the request list
 	AddRetxRequest(msg_id, status.msg_length, status.msg_length);
 	status_proxy->SendMessageLocal(INFORMATIONAL, "RETX_END message added to the request list.");
 }
