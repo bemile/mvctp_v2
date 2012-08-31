@@ -182,11 +182,17 @@ int	MVCTPSender::GetNumReceivers() {
 
 
 void MVCTPSender::RemoveSlowNodes() {
-	struct MvctpSenderMessage msg;
-	msg.msg_type = SPEED_TEST;
-	msg.session_id = cur_session_id;
-	msg.data_len = 0;
-	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+	char buf[MVCTP_PACKET_LEN];
+	MvctpHeader* header = (MvctpHeader*)buf;
+	header->session_id = cur_session_id;
+	header->data_len = sizeof(MvctpSenderMessage);
+	header->flags = MVCTP_SENDER_MSG_EXP;
+
+	MvctpSenderMessage* sender_msg = (MvctpSenderMessage*)(buf + MVCTP_HLEN);
+	sender_msg->msg_type = SPEED_TEST;
+	sender_msg->session_id = cur_session_id;
+	sender_msg->data_len = 0;
+	retrans_tcp_server->SendToAll(buf, MVCTP_HLEN + sizeof(MvctpSenderMessage));
 }
 
 
@@ -641,7 +647,6 @@ void MVCTPSender::RunRetransThread(int sock) {
 				break;
 			}
 
-			status_proxy->SendMessageLocal(INFORMATIONAL, "Received a MVCTP_RETRANS_END message from the receiver.");
 			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
 			map<uint, int>::iterator it = retrans_fd_map.find(recv_header->session_id);
 			if (it != retrans_fd_map.end()) {

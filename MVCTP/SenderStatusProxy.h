@@ -11,6 +11,7 @@
 #include "../CommUtil/StatusProxy.h"
 #include "MVCTPSender.h"
 #include "ExperimentManager.h"
+#include "ExperimentManager2.h"
 #include <sys/time.h>
 
 
@@ -67,7 +68,7 @@ private:
 	int			buffer_size;
 
 	ExperimentManager  	exp_manager;
-
+	ExperimentManager2	exp_manager2;
 
 	void	ConfigureEnvironment();
 };

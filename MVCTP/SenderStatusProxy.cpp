@@ -148,7 +148,8 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 	}
 	else if (parts.front().compare("StartExperiment") == 0) {
 		SendMessageLocal(INFORMATIONAL, "Starting experiments...");
-		exp_manager.StartExperiment(this, ptr_sender);
+		//exp_manager.StartExperiment(this, ptr_sender);
+		exp_manager2.StartExperiment(this, ptr_sender);
 		SendMessageLocal(INFORMATIONAL, "All experiments finished.");
 	}
 	else if (parts.front().compare("StartExperimentRetrans") == 0) {
