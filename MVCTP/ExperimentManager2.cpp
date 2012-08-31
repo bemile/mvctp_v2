@@ -19,7 +19,7 @@ ExperimentManager2::~ExperimentManager2() {
 
 
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
-	const int NUM_FILES = 100;
+	const int NUM_FILES = 10;
 
 	char file_name[256];
 	for (int i = 0; i < NUM_FILES; i++) {
