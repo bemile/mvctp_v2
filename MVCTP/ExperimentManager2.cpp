@@ -20,11 +20,12 @@ ExperimentManager2::~ExperimentManager2() {
 
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	system("mkdir /tmp/temp");
-	system("cp ~/src/file_sizes.txt /tmp/temp");
-	system("cp ~/src/inter_arrival_times.txt /tmp/temp");
+	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
+	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
 
 	cout << "Genearating files..." << endl;
 	GenerateFiles();
+
 
 	const int NUM_FILES = 10;
 
