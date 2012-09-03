@@ -17,7 +17,7 @@ ExperimentManager2::~ExperimentManager2() {
 
 }
 
-static const int FILE_COUNT = 100;
+static const int FILE_COUNT = 50;
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
@@ -72,7 +72,7 @@ void ExperimentManager2::GenerateFiles() {
 	char buf[BUF_SIZE];
 	int count = 0;
 	while (infile >> size) {
-		int remained_size = size;
+		int remained_size = size * 100;
 		sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
 		ofstream outfile (file_name, ofstream::binary | ofstream::trunc);
 		while (remained_size > 0) {
