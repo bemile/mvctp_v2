@@ -33,6 +33,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	for (int i = 0; i < FILE_COUNT; i++) {
 		infile >> time;
 		inter_arrival_times.push_back(time);
+		cout << "Interarrival time: " << time << endl;
 	}
 	infile.close();
 
