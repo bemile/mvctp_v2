@@ -46,7 +46,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	double last_time_mark = 0.0;
 
-	//system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 	char file_name[256];
 	for (int i = 0; i < FILE_COUNT; i++) {
 		double curr_time = GetElapsedSeconds(cpu_counter);
