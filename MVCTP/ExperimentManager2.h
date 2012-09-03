@@ -33,6 +33,7 @@ private:
 	int retrans_scheme;
 	int num_retrans_thread;
 
+	void GenerateFiles();
 	//void DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	//void DoLowSpeedExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 };

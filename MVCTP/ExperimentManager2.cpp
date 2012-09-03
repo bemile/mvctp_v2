@@ -19,6 +19,12 @@ ExperimentManager2::~ExperimentManager2() {
 
 
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	system("mkdir /tmp/temp");
+	system("cp ~/src/file_sizes.txt /tmp/temp");
+	system("cp ~/src/inter_arrival_times.txt /tmp/temp");
+
+	GenerateFiles();
+
 	const int NUM_FILES = 10;
 
 	char file_name[256];
@@ -28,6 +34,33 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	}
 }
 
+
+void ExperimentManager2::GenerateFiles() {
+	static const int FILE_COUNT = 1000;
+	static const int BUF_SIZE = 4096;
+
+	ifstream infile ("/tmp/temp/file_sizes.txt");
+	int size = 0;
+	char file_name[50];
+	int file_index = 1;
+	char buf[BUF_SIZE];
+	int count = 0;
+	while (infile >> size) {
+		int remained_size = size;
+		sprintf(file_name, "temp%d.dat", file_index++);
+		ofstream outfile (file_name, ofstream::binary);
+		while (remained_size > 0) {
+			int data_len = (remained_size > BUF_SIZE) ? BUF_SIZE : remained_size;
+			outfile.write(buf, data_len);
+			remained_size -= data_len;
+		}
+		outfile.close();
+
+		count++;
+		if (count >= FILE_COUNT)
+			break;
+	}
+}
 
 
 void ExperimentManager2::HandleExpResults(string msg) {
