@@ -498,6 +498,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
 
 	int res;
+	int byte_count = 0;
 	while (true) {
 		res = ptr_multicast_comm->RecvData(read_ahead_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL);
 		if (res == EAGAIN)
@@ -524,8 +525,13 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 			// Update statistics
 			status.multicast_packets++;
 			status.multicast_bytes += read_ahead_header->data_len;
+			byte_count += read_ahead_header->data_len;
 		}
 	}
+	char str[500];
+	sprintf(str, "%d bytes have been read after receiving EOF for file %d.",
+				byte_count, status.msg_id);
+	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
 
 
