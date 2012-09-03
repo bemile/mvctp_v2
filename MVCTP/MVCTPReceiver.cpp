@@ -20,6 +20,10 @@ MVCTPReceiver::MVCTPReceiver(int buf_size) {
 	keep_retrans_alive = false;
 	mvctp_seq_num = 0;
 	retrans_switch = true;
+
+	read_ahead_header = (MvctpHeader*) read_ahead_buffer;
+	read_ahead_data = read_ahead_buffer + MVCTP_HLEN;
+	read_ahead_header->session_id = -1;
 }
 
 MVCTPReceiver::~MVCTPReceiver() {
@@ -309,10 +313,8 @@ void MVCTPReceiver::RunReceivingThread() {
 			MessageReceiveStatus& recv_status = it->second;
 			if (rand() % 1000 >= packet_loss_rate) {
 				if (header->seq_number > recv_status.current_offset) {
-					//cout << "Loss packets detected. Supposed Seq. #: " << offset << "    Received Seq. #: "
-					//		<< header->seq_number << "    Lost bytes: " << (header->seq_number - offset) << endl;
 					AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
-					if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) == -1) {
+					if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0) {
 						SysError("MVCTPReceiver::ReceiveFileBufferedIO()::lseek() error");
 					}
 				}
@@ -321,7 +323,6 @@ void MVCTPReceiver::RunReceivingThread() {
 					SysError("MVCTPReceiver::ReceiveFileBufferedIO() write multicast data error");
 				recv_status.current_offset = header->seq_number + header->data_len;
 
-				// Update statistics
 				// Update statistics
 				recv_status.multicast_packets++;
 				recv_status.multicast_bytes += header->data_len;
@@ -454,8 +455,18 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 		SysError("MVCTPReceiver::PrepareForFileTransfer open file error");
 
 	AccessCPUCounter(&status.start_time_counter.hi, &status.start_time_counter.lo);
+	if (read_ahead_header->session_id == sender_msg.session_id)
+	{
+		if (write(status.file_descriptor, read_ahead_data, read_ahead_header->data_len) < 0)
+			SysError("MVCTPReceiver::ReceiveFileBufferedIO() write multicast data error");
+
+		status.current_offset = read_ahead_header->seq_number + read_ahead_header->data_len;
+		status.multicast_packets++;
+		status.multicast_bytes += read_ahead_header->data_len;
+		read_ahead_header->session_id = -1;
+	}
 	recv_status_map[status.msg_id] = status;
-}
+ }
 
 
 void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
@@ -485,6 +496,40 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 		return;
 
 	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
+
+	int res;
+	while (true) {
+		res = ptr_multicast_comm->RecvData(read_ahead_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL);
+		if (res == EAGAIN)
+			break;
+		else if (res < 0)
+			SysError("MVCTPReceiver::HandleEofMessage() multicast recv error");
+		else if (read_ahead_header->session_id != msg_id) {
+			break;
+		}
+
+		// Check on the UDP socket for the remaining packets of the message
+		if (rand() % 1000 >= packet_loss_rate) {
+			if (read_ahead_header->seq_number > status.current_offset) {
+				AddRetxRequest(read_ahead_header->session_id, status.current_offset, read_ahead_header->seq_number);
+					if (lseek(status.file_descriptor, read_ahead_header->seq_number, SEEK_SET) < 0) {
+						SysError("MVCTPReceiver::ReceiveFileBufferedIO()::lseek() error");
+					}
+				}
+
+			if (write(status.file_descriptor, read_ahead_data, read_ahead_header->data_len) < 0)
+				SysError("MVCTPReceiver::ReceiveFileBufferedIO() write multicast data error");
+			status.current_offset = read_ahead_header->seq_number + read_ahead_header->data_len;
+
+			// Update statistics
+			status.multicast_packets++;
+			status.multicast_bytes += read_ahead_header->data_len;
+		}
+	}
+
+
+
+	// Send a RETX_END message back to the sender
 	if (status.current_offset < status.msg_length) {
 		char str[500];
 		sprintf(str, "%lld bytes have been lost at the end of multicast for message %d.",

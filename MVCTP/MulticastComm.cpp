@@ -11,7 +11,12 @@ MulticastComm::MulticastComm() {
 	if ( (sock_fd = socket(PF_INET, SOCK_DGRAM, 0)) < 0) {
 		SysError("Cannot create new socket.");
 	}
+
+	int x=fcntl(sock_fd,F_GETFL,0);
+	if (fcntl(sock_fd,F_SETFL,x | O_NONBLOCK) < 0)
+		SysError("MulticastComm()::Cannot set socket to non-blocking mode.");
 }
+
 
 MulticastComm::~MulticastComm() {
 	close(sock_fd);

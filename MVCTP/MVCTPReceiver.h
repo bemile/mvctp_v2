@@ -128,6 +128,12 @@ private:
 	// File descriptor map for the main RECEIVING thread. Format: <msg_id, file_descriptor>
 	map<uint, int> 	recv_file_map;
 
+	char read_ahead_buffer[MVCTP_PACKET_LEN];
+	MvctpHeader* read_ahead_header;
+	char* read_ahead_data;
+
+
+
 	//*********************** Main receiving thread functions ***********************
 	pthread_t	recv_thread;
 	void 	StartReceivingThread();
