@@ -669,7 +669,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 								recv_header->session_id, GetElapsedSeconds(meta->start_time_count));
 				status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 			}
-			cout << "Receive finishing mark request from sock " << sock_fd << endl;
+			//cout << "Receive finishing mark request from sock " << sock_fd << endl;
 		}
 	}
 
