@@ -26,7 +26,6 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	cout << "Genearating files..." << endl;
 	GenerateFiles();
 
-
 	const int NUM_FILES = 10;
 
 	char file_name[256];
@@ -50,7 +49,7 @@ void ExperimentManager2::GenerateFiles() {
 	while (infile >> size) {
 		int remained_size = size;
 		sprintf(file_name, "temp%d.dat", file_index++);
-		ofstream outfile (file_name, ofstream::binary);
+		ofstream outfile (file_name, ofstream::binary | ofstream::trunc);
 		while (remained_size > 0) {
 			int data_len = (remained_size > BUF_SIZE) ? BUF_SIZE : remained_size;
 			outfile.write(buf, data_len);
@@ -58,8 +57,7 @@ void ExperimentManager2::GenerateFiles() {
 		}
 		outfile.close();
 
-		count++;
-		if (count >= FILE_COUNT)
+		if (file_index > FILE_COUNT)
 			break;
 	}
 }
