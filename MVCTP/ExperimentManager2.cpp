@@ -29,14 +29,16 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	vector<double> inter_arrival_times;
 	ifstream infile;
 	double time;
+	double total_time = 0.0;
 	infile.open("/tmp/temp/inter_arrival_times.txt");
 	for (int i = 0; i < FILE_COUNT; i++) {
 		infile >> time;
 		inter_arrival_times.push_back(time);
+		total_time += time;
 		cout << "Interarrival time: " << time << endl;
 	}
 	infile.close();
-
+	cout << "Average inter-arrival time: " << (total_time / FILE_COUNT) << " second" << endl;
 
 	struct timespec time_spec;
 	time_spec.tv_sec = 0;
@@ -66,11 +68,11 @@ void ExperimentManager2::GenerateFiles() {
 	static const int BUF_SIZE = 4096;
 
 	ifstream infile ("/tmp/temp/file_sizes.txt");
+	int total_size = 0;
 	int size = 0;
 	char file_name[50];
 	int file_index = 1;
 	char buf[BUF_SIZE];
-	int count = 0;
 	while (infile >> size) {
 		int remained_size = size * 100;
 		sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
@@ -82,9 +84,12 @@ void ExperimentManager2::GenerateFiles() {
 		}
 		outfile.close();
 
+		total_size += size;
 		if (file_index > FILE_COUNT)
 			break;
 	}
+
+	cout << "Average file size: " << (total_size / file_index) << " bytes" << endl;
 }
 
 
