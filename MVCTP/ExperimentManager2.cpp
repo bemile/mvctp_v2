@@ -47,6 +47,7 @@ void ExperimentManager2::GenerateFiles() {
 	char buf[BUF_SIZE];
 	int count = 0;
 	while (infile >> size) {
+		cout << "Generating file of size " << size << endl;
 		int remained_size = size;
 		sprintf(file_name, "temp%d.dat", file_index++);
 		ofstream outfile (file_name, ofstream::binary | ofstream::trunc);
