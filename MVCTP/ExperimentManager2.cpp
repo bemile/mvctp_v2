@@ -23,6 +23,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	system("cp ~/src/file_sizes.txt /tmp/temp");
 	system("cp ~/src/inter_arrival_times.txt /tmp/temp");
 
+	cout << "Genearating files..." << endl;
 	GenerateFiles();
 
 	const int NUM_FILES = 10;
