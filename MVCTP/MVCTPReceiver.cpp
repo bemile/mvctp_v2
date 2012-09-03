@@ -499,15 +499,15 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 
 	int res;
 	int byte_count = 0;
-	while (true) {
+	while (status.current_offset < status.msg_length) {
 		res = ptr_multicast_comm->RecvData(read_ahead_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL);
-		if (res == EAGAIN)
+		if (res == EAGAIN || res < 0 || (read_ahead_header->session_id != msg_id))
 			break;
-		else if (res < 0)
-			SysError("MVCTPReceiver::HandleEofMessage() multicast recv error");
-		else if (read_ahead_header->session_id != msg_id) {
-			break;
-		}
+		//else if (res < 0)
+		//	SysError("MVCTPReceiver::HandleEofMessage() multicast recv error");
+		//else if (read_ahead_header->session_id != msg_id) {
+		//	break;
+		//}
 
 		// Check on the UDP socket for the remaining packets of the message
 		if (rand() % 1000 >= packet_loss_rate) {
