@@ -74,7 +74,8 @@ void ExperimentManager2::GenerateFiles() {
 	int file_index = 1;
 	char buf[BUF_SIZE];
 	while (infile >> size) {
-		int remained_size = size * 100;
+		int remained_size = size; //* 100;
+		total_size += remained_size;
 		sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
 		ofstream outfile (file_name, ofstream::binary | ofstream::trunc);
 		while (remained_size > 0) {
@@ -84,7 +85,7 @@ void ExperimentManager2::GenerateFiles() {
 		}
 		outfile.close();
 
-		total_size += size;
+
 		if (file_index > FILE_COUNT)
 			break;
 	}
