@@ -26,9 +26,9 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	cout << "Genearating files..." << endl;
 	GenerateFiles();
 
-	vector<int> inter_arrival_times;
+	vector<double> inter_arrival_times;
 	ifstream infile;
-	int time;
+	double time;
 	infile.open("/tmp/temp/inter_arrival_times.txt");
 	for (int i = 0; i < FILE_COUNT; i++) {
 		infile >> time;
