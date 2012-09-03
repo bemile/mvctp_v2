@@ -17,7 +17,7 @@ ExperimentManager2::~ExperimentManager2() {
 
 }
 
-
+static const int FILE_COUNT = 1000;
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
@@ -26,18 +26,40 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	cout << "Genearating files..." << endl;
 	GenerateFiles();
 
-	const int NUM_FILES = 10;
+	vector<int> inter_arrival_times;
+	ifstream infile;
+	int time;
+	infile.open("/tmp/temp/inter_arrival_times.txt");
+	for (int i = 0; i < FILE_COUNT; i++) {
+		infile >> time;
+		inter_arrival_times.push_back(time);
+	}
+	infile.close();
+
+
+	struct timespec time_spec;
+	time_spec.tv_sec = 0;
+	time_spec.tv_nsec = 0;
+
+	CpuCycleCounter cpu_counter;
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+	double last_time_mark = 0.0;
 
 	char file_name[256];
-	for (int i = 0; i < NUM_FILES; i++) {
+	for (int i = 0; i < FILE_COUNT; i++) {
+		double curr_time = GetElapsedSeconds(cpu_counter);
+		if (curr_time - last_time_mark < inter_arrival_times[i]) {
+			time_spec.tv_nsec = (curr_time - last_time_mark) * 1000000000;
+			nanosleep(&time_spec, NULL);
+			last_time_mark = GetElapsedSeconds(cpu_counter);
+		}
+
 		sprintf(file_name, "/tmp/temp/temp%d.dat", i + 1);
 		sender->SendFile(file_name);
 	}
 }
 
-
 void ExperimentManager2::GenerateFiles() {
-	static const int FILE_COUNT = 1000;
 	static const int BUF_SIZE = 4096;
 
 	ifstream infile ("/tmp/temp/file_sizes.txt");
