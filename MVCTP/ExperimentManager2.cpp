@@ -49,7 +49,7 @@ void ExperimentManager2::GenerateFiles() {
 	while (infile >> size) {
 		cout << "Generating file of size " << size << endl;
 		int remained_size = size;
-		sprintf(file_name, "temp%d.dat", file_index++);
+		sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
 		ofstream outfile (file_name, ofstream::binary | ofstream::trunc);
 		while (remained_size > 0) {
 			int data_len = (remained_size > BUF_SIZE) ? BUF_SIZE : remained_size;
