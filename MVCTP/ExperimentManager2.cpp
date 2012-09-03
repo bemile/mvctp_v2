@@ -17,7 +17,7 @@ ExperimentManager2::~ExperimentManager2() {
 
 }
 
-static const int FILE_COUNT = 1000;
+static const int FILE_COUNT = 100;
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
@@ -50,6 +50,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 		double curr_time = GetElapsedSeconds(cpu_counter);
 		if (curr_time - last_time_mark < inter_arrival_times[i]) {
 			time_spec.tv_nsec = (curr_time - last_time_mark) * 1000000000;
+			cout << "Wait for " << time_spec.tv_nsec << " nanoseconds" << endl;
 			nanosleep(&time_spec, NULL);
 			last_time_mark = GetElapsedSeconds(cpu_counter);
 		}
