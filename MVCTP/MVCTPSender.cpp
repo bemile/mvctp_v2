@@ -326,7 +326,7 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 
 
 
-void MVCTPSender::SendFile(const char* file_name) {
+uint MVCTPSender::SendFile(const char* file_name) {
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
@@ -460,8 +460,13 @@ void MVCTPSender::SendFile(const char* file_name) {
 	cur_session_id++;
 
 	//SendSessionStatistics();
+	return meta->msg_id;
 }
 
+
+bool MVCTPSender::IsTransferFinished(uint msg_id) {
+	return metadata.IsTransferFinished(msg_id);
+}
 
 
 void MVCTPSender::SendFileBufferedIO(const char* file_name) {
@@ -485,7 +490,7 @@ void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 	strcpy(msg.text, file_name);
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
-	cout << "Start file transferring..." << endl;
+	//cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
 	int fd = open(file_name, O_RDWR);
 	if (fd < 0) {
@@ -515,7 +520,7 @@ void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 	msg.msg_type = FILE_TRANSFER_FINISH;
 	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
 
-	cout << "File transfer finished. Start retransmission..." << endl;
+	//cout << "File transfer finished. Start retransmission..." << endl;
 
 	if (retrans_scheme == RETRANS_SERIAL)
 		DoFileRetransmissionSerial(fd);
@@ -665,12 +670,12 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 			// mark the completion of retransmission to one receiver
 			metadata.RemoveFinishedReceiver(recv_header->session_id, sock_fd);
-			if (metadata.IsTransferFinished(recv_header->session_id)) {
+			/*if (metadata.IsTransferFinished(recv_header->session_id)) {
 				char buf[200];
 				sprintf(buf, "File transfer for message %d finished. Total transfer time: %.2f seconds",
 								recv_header->session_id, GetElapsedSeconds(meta->start_time_count));
 				status_proxy->SendMessageLocal(INFORMATIONAL, buf);
-			}
+			}*/
 			//cout << "Receive finishing mark request from sock " << sock_fd << endl;
 		}
 	}

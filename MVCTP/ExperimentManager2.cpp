@@ -19,13 +19,19 @@ ExperimentManager2::~ExperimentManager2() {
 
 static const int FILE_COUNT = 50;
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	sender_proxy->SendMessageLocal(INFORMATIONAL, "Starting experiment...\n");
+
+
+	// Randomly generate FILE_COUNT files for the sample
+	sender_proxy->SendMessageLocal(INFORMATIONAL, "Generating files...\n");
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
 	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
-
-	// Randomly generate FILE_COUNT files for the sample
 	vector<double> inter_arrival_times = GenerateFiles();
+	sender_proxy->SendMessageLocal(INFORMATIONAL, "Files generated.\n");
 
+
+	sender_proxy->SendMessageLocal(INFORMATIONAL, "Sending files...\n");
 	struct timespec time_spec;
 	time_spec.tv_sec = 0;
 	time_spec.tv_nsec = 0;
@@ -36,7 +42,14 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 
 	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 	char file_name[256];
+	int file_id = 0;
+	char str[500];
 	for (int i = 0; i < FILE_COUNT; i++) {
+		if (i % 100 == 0) {
+			sprintf(str, "Sending file %d", i);
+			sender_proxy->SendMessageLocal(INFORMATIONAL, str);
+		}
+
 		double curr_time = GetElapsedSeconds(cpu_counter);
 		if (curr_time - last_time_mark < inter_arrival_times[i]) {
 			time_spec.tv_nsec = (curr_time - last_time_mark) * 1000000000;
@@ -46,8 +59,15 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 		}
 
 		sprintf(file_name, "/tmp/temp/temp%d.dat", i + 1);
-		sender->SendFile(file_name);
+		file_id = sender->SendFile(file_name);
 	}
+
+	while (!sender->IsTransferFinished(file_id)) {
+		usleep(2000);
+	}
+	sprintf(str, "Experiment Finished.\n\n***** Statistics *****\nTotal No. Files: %d\n"
+			"Total Transfer Time: %.2f seconds\n*****End of Statistics *****\n\n", FILE_COUNT, GetElapsedSeconds(cpu_counter));
+	sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 }
 
 
