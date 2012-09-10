@@ -40,6 +40,10 @@ void MVCTPSender::SetSendRate(int num_mbps) {
 	rate_shaper.SetRate(num_mbps * 1000000.0);
 }
 
+int	MVCTPSender::GetSendRate() {
+	return send_rate_in_mbps;
+}
+
 
 void MVCTPSender::SetRetransmissionBufferSize(int size_mb) {
 	max_num_retrans_buffs = size_mb / 8;

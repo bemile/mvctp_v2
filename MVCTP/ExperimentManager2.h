@@ -17,6 +17,19 @@ class SenderStatusProxy;
 class MVCTPSender;
 
 
+struct File_Sample {
+	int total_file_size;
+	double total_time;
+	vector<int> file_sizes;
+	vector<double> inter_arrival_times;
+
+	File_Sample() {
+		total_file_size = 0;
+		total_time = 0.0;
+	}
+};
+
+
 class ExperimentManager2 {
 public:
 public:
@@ -33,7 +46,7 @@ private:
 	int retrans_scheme;
 	int num_retrans_thread;
 
-	vector<double> GenerateFiles();
+	File_Sample GenerateFiles();
 	//void DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	//void DoLowSpeedExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 };

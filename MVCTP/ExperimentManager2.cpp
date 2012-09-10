@@ -24,7 +24,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
 	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
-	vector<double> inter_arrival_times = GenerateFiles();
+	File_Sample sample = GenerateFiles();
 	sender_proxy->SendMessageLocal(INFORMATIONAL, "Files generated.\n");
 
 
@@ -48,7 +48,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 		}
 
 		double curr_time = GetElapsedSeconds(cpu_counter);
-		if (curr_time - last_time_mark < inter_arrival_times[i]) {
+		if (curr_time - last_time_mark < sample.inter_arrival_times[i]) {
 			time_spec.tv_nsec = (curr_time - last_time_mark) * 1000000000;
 			cout << "Wait for " << time_spec.tv_nsec << " nanoseconds" << endl;
 			nanosleep(&time_spec, NULL);
@@ -62,15 +62,19 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	while (!sender->IsTransferFinished(file_id)) {
 		usleep(2000);
 	}
-	sprintf(str, "Experiment Finished.\n\n***** Statistics *****\nTotal No. Files: %d\n"
-			"Total Transfer Time: %.2f seconds\n*****End of Statistics *****\n\n", FILE_COUNT, GetElapsedSeconds(cpu_counter));
+
+	double pho = sample.total_file_size * 8 / sample.total_time / (sender->GetSendRate() * 1000000.0);
+	sprintf(str, "Experiment Finished.\n\n***** Statistics *****\nTotal No. Files: %d\nTotal File Size: %d bytes\n"
+			"Total Arrival Time Span: %.2f second\nPho Value: %.2f\nTotal Transfer Time: %.2f seconds\n*****End of Statistics *****\n\n",
+			FILE_COUNT, sample.total_file_size, sample.total_time, pho, GetElapsedSeconds(cpu_counter));
 	sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 }
 
 
 // Randomly select and generate files from a given sample
-vector<double> ExperimentManager2::GenerateFiles() {
+File_Sample ExperimentManager2::GenerateFiles() {
 	static const int BUF_SIZE = 4096;
+	File_Sample sample;
 
 	cout << "Genearating files..." << endl;
 	ifstream fs_file("/tmp/temp/file_sizes.txt");
@@ -88,6 +92,8 @@ vector<double> ExperimentManager2::GenerateFiles() {
 	int total_size = 0;
 	for (int i = 0; i < FILE_COUNT; i++) {
 		int index = rand() % file_sizes.size();
+		sample.file_sizes.push_back(file_sizes[index]);
+		sample.total_file_size += file_sizes[index];
 		total_size += file_sizes[index];
 
 		// Generate the file
@@ -113,15 +119,15 @@ vector<double> ExperimentManager2::GenerateFiles() {
 	}
 	irt_file.close();
 
-	vector<double> res;
 	double total_time = 0.0;
 	for (int i = 0; i < FILE_COUNT; i++) {
 		int index = rand() % inter_arrival_times.size();
-		res.push_back(inter_arrival_times[index]);
+		sample.inter_arrival_times.push_back(inter_arrival_times[index]);
+		sample.total_time += inter_arrival_times[index];
 		total_time += inter_arrival_times[index];
 	}
 	cout << "Average inter-arrival time: " << (total_time / FILE_COUNT) << " second" << endl;
-	return res;
+	return sample;
 }
 
 

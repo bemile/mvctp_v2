@@ -84,6 +84,7 @@ public:
 	int		RestartTcpServer();
 	int		GetNumReceivers();
 	void 	SetSendRate(int num_mbps);
+	int		GetSendRate();
 
 	void 	SendAllStatistics();
 	void 	SendSessionStatistics();
