@@ -374,10 +374,10 @@ void MVCTPSender::SendFile(const char* file_name) {
 	msg->data_len = file_size;
 	strcpy(msg->text, file_name);
 
-	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
-	/*if (ptr_multicast_comm->SendData(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage), 0, NULL) < 0) {
+	//retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
+	if (ptr_multicast_comm->SendData(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage), 0, NULL) < 0) {
 		SysError("MVCTPSender::SendFile()::SendData() error");
-	}*/
+	}
 
 
 	//PerformanceCounter cpu_info(100);

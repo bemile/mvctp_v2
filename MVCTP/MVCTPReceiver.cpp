@@ -291,6 +291,7 @@ void MVCTPReceiver::RunReceivingThread() {
 	char* packet_data = packet_buffer + MVCTP_HLEN;
 
 	MvctpSenderMessage sender_msg;
+	MvctpSenderMessage *ptr_sender_msg = (MvctpSenderMessage *)packet_data;
 	int recv_bytes = 0;
 	fd_set read_set;
 	while (true) {
@@ -304,8 +305,12 @@ void MVCTPReceiver::RunReceivingThread() {
 					MVCTP_PACKET_LEN, 0, NULL, NULL)) < 0)
 				SysError("MVCTPReceiver::RunReceivingThread() multicast recv error");
 
-			// Check for EOF
-			if (header->flags & MVCTP_EOF) {
+			// Check for BOF and EOF
+			if (header->flags & MVCTP_BOF) {
+				HandleBofMessage(*ptr_sender_msg);
+				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an BOF message");
+			}
+			else if (header->flags & MVCTP_EOF) {
 				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
 				HandleEofMessage(header->session_id);
 			}
@@ -345,7 +350,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				SysError("MVCTPReceiver::ReceiveFile()::recv() error");
 			}
 
-			if (header->flags & MVCTP_BOF) {
+			/*if (header->flags & MVCTP_BOF) {
 				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an BOF message");
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
@@ -353,15 +358,15 @@ void MVCTPReceiver::RunReceivingThread() {
 				}
 				HandleBofMessage(sender_msg);
 			}
-			/*else if (header->flags & MVCTP_EOF) {
+			else if (header->flags & MVCTP_EOF) {
 				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
 				}
 				HandleEofMessage(header->session_id);
-			}*/
-			else if (header->flags & MVCTP_SENDER_MSG_EXP) {
+			}
+			else*/ if (header->flags & MVCTP_SENDER_MSG_EXP) {
 				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received a SENDER_MSG_EXP message");
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
