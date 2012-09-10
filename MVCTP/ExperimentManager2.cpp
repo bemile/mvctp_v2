@@ -60,7 +60,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 			last_time_mark = GetElapsedSeconds(cpu_counter);
 		}
 
-		sprintf(file_name, "/tmp/temp/temp%d.dat", i + 1);
+		sprintf(file_name, "/tmp/temp/temp%d.dat", i - BASE_NUM + 1);
 		sender->SendFile(file_name);
 	}
 }
