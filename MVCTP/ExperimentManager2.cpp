@@ -137,7 +137,7 @@ File_Sample ExperimentManager2::GenerateFiles() {
 	int count = 0;
 	while (count < FILE_COUNT) {
 		int index = rand() % inter_arrival_times.size();
-		if (inter_arrival_times[index] > 10.0)
+		if (inter_arrival_times[index] > 1.0)
 			continue;
 
 		sample.inter_arrival_times.push_back(inter_arrival_times[index]);
