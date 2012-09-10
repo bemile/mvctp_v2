@@ -308,9 +308,12 @@ void MVCTPReceiver::RunReceivingThread() {
 			if (it == recv_status_map.end())
 				continue;
 
-			// Add the received packet to the buffer When greater than packet_loss_rate,
-			// add the packet to the receive buffer. Otherwise, just drop the packet (emulates errored packet)
 			MessageReceiveStatus& recv_status = it->second;
+			if (recv_status.is_multicast_done) {
+				cout << "I have received a packet for the finished file" << header->session_id <<  " (EOF already received)." << endl;
+			}
+
+			// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
 			if (rand() % 1000 >= packet_loss_rate) {
 				if (header->seq_number > recv_status.current_offset) {
 					AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
@@ -496,6 +499,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 		return;
 
 	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
+	status.is_multicast_done = true;
 
 	int res;
 	int byte_count = 0;
