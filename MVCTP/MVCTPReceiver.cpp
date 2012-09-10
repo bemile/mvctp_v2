@@ -449,10 +449,13 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
-	char str[500];
-	sprintf(str, "Receiving file %d. File length: %d bytes\n\n",
-						sender_msg.session_id, sender_msg.data_len);
-	status_proxy->SendMessageLocal(INFORMATIONAL, str);
+	if (sender_msg.session_id % 50 == 0) {
+		char str[500];
+		sprintf(str, "Receiving file %d. File length: %d bytes\n\n",
+							sender_msg.session_id, sender_msg.data_len);
+		status_proxy->SendMessageLocal(INFORMATIONAL, str);
+	}
+
 
 	MessageReceiveStatus status;
 	status.msg_id = sender_msg.session_id;
