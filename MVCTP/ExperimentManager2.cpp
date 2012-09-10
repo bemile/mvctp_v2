@@ -18,6 +18,7 @@ ExperimentManager2::~ExperimentManager2() {
 }
 
 static const int FILE_COUNT = 50;
+static const int BASE_NUM = 1000;
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
@@ -50,7 +51,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 
 	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 	char file_name[256];
-	for (int i = 0; i < FILE_COUNT; i++) {
+	for (int i = BASE_NUM; i < BASE_NUM + FILE_COUNT; i++) {
 		double curr_time = GetElapsedSeconds(cpu_counter);
 		if (curr_time - last_time_mark < inter_arrival_times[i]) {
 			time_spec.tv_nsec = (curr_time - last_time_mark) * 1000000000;
@@ -69,13 +70,24 @@ void ExperimentManager2::GenerateFiles() {
 
 	ifstream infile ("/tmp/temp/file_sizes.txt");
 	int total_size = 0;
+	int num_files = 0;
 	int size = 0;
-	char file_name[50];
-	int file_index = 1;
-	char buf[BUF_SIZE];
+	vector<int> file_sizes;
 	while (infile >> size) {
-		int remained_size = size; //* 100;
-		total_size += remained_size;
+		file_sizes.push_back(size);
+		total_size += size;
+		num_files++;
+	}
+	cout << "Average file size: " << (total_size / num_files) << " bytes" << endl;
+
+
+	// Generate the files
+	int file_index = 1;
+	char file_name[50];
+	char buf[BUF_SIZE];
+	for (int i = BASE_NUM; i < BASE_NUM + FILE_COUNT; i++) {
+		int remained_size = file_sizes[i]; //* 100;
+
 		sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
 		ofstream outfile (file_name, ofstream::binary | ofstream::trunc);
 		while (remained_size > 0) {
@@ -84,13 +96,7 @@ void ExperimentManager2::GenerateFiles() {
 			remained_size -= data_len;
 		}
 		outfile.close();
-
-
-		if (file_index > FILE_COUNT)
-			break;
 	}
-
-	cout << "Average file size: " << (total_size / file_index) << " bytes" << endl;
 }
 
 
