@@ -63,10 +63,13 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 		usleep(2000);
 	}
 
+	double transfer_time = GetElapsedSeconds(cpu_counter);
 	double pho = sample.total_file_size * 8 / sample.total_time / (sender->GetSendRate() * 1000000.0);
+	double throughput = sample.total_file_size * 8 / 1000000.0 / transfer_time;
 	sprintf(str, "Experiment Finished.\n\n***** Statistics *****\nTotal No. Files: %d\nTotal File Size: %d bytes\n"
-			"Total Arrival Time Span: %.2f second\nPho Value: %.2f\nTotal Transfer Time: %.2f seconds\n*****End of Statistics *****\n\n",
-			FILE_COUNT, sample.total_file_size, sample.total_time, pho, GetElapsedSeconds(cpu_counter));
+			"Total Arrival Time Span: %.2f second\nPho Value: %.2f\nTotal Transfer Time: %.2f seconds\n"
+			"Throughput: %.2f Mbps\n*****End of Statistics *****\n\n",
+			FILE_COUNT, sample.total_file_size, sample.total_time, pho, transfer_time, throughput);
 	sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 }
 
