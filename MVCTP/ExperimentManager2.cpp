@@ -37,6 +37,8 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	CpuCycleCounter cpu_counter;
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	double last_time_mark = 0.0;
+	double sent_time = 0.0;
+	double curr_time = 0.0;
 
 	char file_name[256];
 	int file_id = 0;
@@ -47,12 +49,21 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 			sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 		}
 
-		double curr_time = GetElapsedSeconds(cpu_counter);
-		if (curr_time - last_time_mark < sample.inter_arrival_times[i]) {
-			time_spec.tv_nsec = (curr_time - last_time_mark) * 1000000000;
-			cout << "Wait for " << time_spec.tv_nsec << " nanoseconds" << endl;
+		sent_time += sample.inter_arrival_times[i];
+		curr_time = GetElapsedSeconds(cpu_counter);
+		double time_diff = sent_time - curr_time; // - last_time_mark;
+		if (time_diff > 0) {
+			if (time_diff > 1.0) {
+				time_spec.tv_sec = (int)time_diff;
+				time_spec.tv_nsec = (time_diff - time_spec.tv_sec) * 1000000000;
+			}
+			else {
+				time_spec.tv_sec = 0;
+				time_spec.tv_nsec = (curr_time - last_time_mark) * 1000000000;
+			}
+
+			cout << "Wait for " << time_diff << " seconds" << endl;
 			nanosleep(&time_spec, NULL);
-			last_time_mark = GetElapsedSeconds(cpu_counter);
 		}
 
 		sprintf(file_name, "/tmp/temp/temp%d.dat", i + 1);
