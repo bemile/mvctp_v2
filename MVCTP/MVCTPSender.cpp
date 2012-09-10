@@ -384,7 +384,7 @@ uint MVCTPSender::SendFile(const char* file_name) {
 	//cpu_info.SetCPUFlag(true);
 	//cpu_info.Start();
 
-	cout << "Start file transferring..." << endl;
+	//cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
 	int fd = open(file_name, O_RDWR);
 	if (fd < 0) {
@@ -440,7 +440,7 @@ uint MVCTPSender::SendFile(const char* file_name) {
 //	}
 
 	close(fd);
-	cout << "File multicast finished." << endl;
+	//cout << "File multicast finished." << endl;
 
 	//cpu_info.Stop();
 	//cout << "Retransmission to all receivers finished." << endl;

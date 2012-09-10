@@ -404,12 +404,12 @@ void MVCTPReceiver::RunReceivingThread() {
 					close(recv_status.file_descriptor);
 					recv_status_map.erase(header->session_id);
 
-					char str[256];
+					/*char str[256];
 					sprintf(str, "File transfer finished.\n***** Statistics for File %d *****\n"
 							"Transfer Time: %.2f seconds\nRetx. Packets: %lld\nRetx. Rate: %.2f",
 							recv_status.msg_id, GetElapsedSeconds(recv_status.start_time_counter), recv_status.retx_packets,
 								recv_status.retx_packets * 1.0 / (recv_status.multicast_packets + recv_status.retx_packets) );
-					status_proxy->SendMessageLocal(INFORMATIONAL, str);
+					status_proxy->SendMessageLocal(INFORMATIONAL, str);*/
 				}
 
 			}
@@ -450,7 +450,7 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	char str[500];
-	sprintf(str, "***** Receiving a new file *****\nFile ID: %d    File length: %d bytes\n\n",
+	sprintf(str, "Receiving file %d. File length: %d bytes\n\n",
 						sender_msg.session_id, sender_msg.data_len);
 	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
@@ -557,10 +557,10 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 
 	// Send a RETX_END message back to the sender
 	if (status.current_offset < status.msg_length) {
-		char str[500];
+		/*char str[500];
 		sprintf(str, "%lld bytes have been lost at the end of multicast for message %d.",
 					status.msg_length - status.current_offset, status.msg_id);
-		status_proxy->SendMessageLocal(INFORMATIONAL, str);
+		status_proxy->SendMessageLocal(INFORMATIONAL, str);*/
 
 		AddRetxRequest(msg_id, status.current_offset, status.msg_length);
 		status.current_offset = status.msg_length;
