@@ -25,6 +25,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
 	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
 	File_Sample sample = GenerateFiles();
+	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 	sender_proxy->SendMessageLocal(INFORMATIONAL, "Files generated.\n");
 
 
@@ -37,7 +38,6 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	double last_time_mark = 0.0;
 
-	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 	char file_name[256];
 	int file_id = 0;
 	char str[500];
