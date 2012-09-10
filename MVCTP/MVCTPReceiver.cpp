@@ -438,7 +438,7 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	char str[500];
-	sprintf(str, "***** Receiving a new file *****\nFile ID: %d    File length: %d bytes",
+	sprintf(str, "***** Receiving a new file *****\nFile ID: %d    File length: %d bytes\n\n",
 						sender_msg.session_id, sender_msg.data_len);
 	status_proxy->SendMessageLocal(INFORMATIONAL, str);
 
@@ -505,8 +505,12 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	int byte_count = 0;
 	while (status.current_offset < status.msg_length) {
 		res = ptr_multicast_comm->RecvData(read_ahead_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL);
-		if (res == EAGAIN || res < 0 || (read_ahead_header->session_id != msg_id))
+		if (res == EAGAIN || res < 0 || (read_ahead_header->session_id > msg_id))
 			break;
+
+		if (read_ahead_header->session_id < msg_id) {
+			continue;
+		}
 		//else if (res < 0)
 		//	SysError("MVCTPReceiver::HandleEofMessage() multicast recv error");
 		//else if (read_ahead_header->session_id != msg_id) {
