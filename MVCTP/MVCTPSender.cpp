@@ -421,8 +421,10 @@ void MVCTPSender::SendFile(const char* file_name) {
 	// Send a notification to all receivers to start retransmission
 	header->flags = MVCTP_EOF;
 	header->data_len = 0;
-	retrans_tcp_server->SendToAll(header, MVCTP_HLEN);
-
+	//retrans_tcp_server->SendToAll(header, MVCTP_HLEN);
+	if (ptr_multicast_comm->SendData(header, MVCTP_HLEN, 0, NULL) < 0) {
+		SysError("MVCTPSender::SendFile()::SendData() error");
+	}
 
 	// wait for all retransmission to finish
 //	bool is_retrans_finished = false;

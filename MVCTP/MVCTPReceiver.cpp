@@ -304,6 +304,13 @@ void MVCTPReceiver::RunReceivingThread() {
 					MVCTP_PACKET_LEN, 0, NULL, NULL)) < 0)
 				SysError("MVCTPReceiver::RunReceivingThread() multicast recv error");
 
+			// Check for EOF
+			if (header->flags & MVCTP_EOF) {
+				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
+				HandleEofMessage(header->session_id);
+			}
+
+
 			map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
 			if (it == recv_status_map.end())
 				continue;
@@ -346,14 +353,14 @@ void MVCTPReceiver::RunReceivingThread() {
 				}
 				HandleBofMessage(sender_msg);
 			}
-			else if (header->flags & MVCTP_EOF) {
+			/*else if (header->flags & MVCTP_EOF) {
 				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
 				}
 				HandleEofMessage(header->session_id);
-			}
+			}*/
 			else if (header->flags & MVCTP_SENDER_MSG_EXP) {
 				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received a SENDER_MSG_EXP message");
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
@@ -501,7 +508,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
 	status.is_multicast_done = true;
 
-	int res;
+	/*int res;
 	int byte_count = 0;
 	while (status.current_offset < status.msg_length) {
 		res = ptr_multicast_comm->RecvData(read_ahead_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL);
@@ -540,7 +547,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	sprintf(str, "%d bytes have been read after receiving EOF for file %d.",
 				byte_count, status.msg_id);
 	status_proxy->SendMessageLocal(INFORMATIONAL, str);
-
+	*/
 
 
 	// Send a RETX_END message back to the sender
