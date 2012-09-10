@@ -59,7 +59,7 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 			}
 			else {
 				time_spec.tv_sec = 0;
-				time_spec.tv_nsec = (curr_time - last_time_mark) * 1000000000;
+				time_spec.tv_nsec = time_diff * 1000000000;
 			}
 
 			cout << "Wait for " << time_diff << " seconds" << endl;
@@ -134,11 +134,16 @@ File_Sample ExperimentManager2::GenerateFiles() {
 	irt_file.close();
 
 	double total_time = 0.0;
-	for (int i = 0; i < FILE_COUNT; i++) {
+	int count = 0;
+	while (count < FILE_COUNT) {
 		int index = rand() % inter_arrival_times.size();
+		if (inter_arrival_times[index] > 10.0)
+			continue;
+
 		sample.inter_arrival_times.push_back(inter_arrival_times[index]);
 		sample.total_time += inter_arrival_times[index];
 		total_time += inter_arrival_times[index];
+		count++;
 	}
 	cout << "Average inter-arrival time: " << (total_time / FILE_COUNT) << " second" << endl;
 	return sample;
