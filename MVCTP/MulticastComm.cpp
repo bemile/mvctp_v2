@@ -12,9 +12,9 @@ MulticastComm::MulticastComm() {
 		SysError("Cannot create new socket.");
 	}
 
-	int x=fcntl(sock_fd,F_GETFL,0);
-	if (fcntl(sock_fd,F_SETFL,x | O_NONBLOCK) < 0)
-		SysError("MulticastComm()::Cannot set socket to non-blocking mode.");
+	//int x=fcntl(sock_fd,F_GETFL,0);
+	//if (fcntl(sock_fd,F_SETFL,x | O_NONBLOCK) < 0)
+	//	SysError("MulticastComm()::Cannot set socket to non-blocking mode.");
 }
 
 
