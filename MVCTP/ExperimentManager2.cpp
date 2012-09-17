@@ -97,6 +97,7 @@ File_Sample ExperimentManager2::GenerateFiles() {
 	while (fs_file >> size) {
 		file_sizes.push_back(size);
 	}
+	fs_file.close();
 
 	// Randomly generate FILE_COUNT files from the sample
 	srand(time(NULL));
@@ -156,8 +157,6 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	static const int BUF_SIZE = 4096;
 
 	sender->SetSendRate(600);
-	// Randomly generate FILE_COUNT files for the sample
-	sender_proxy->SendMessageLocal(INFORMATIONAL, "Generating files...\n");
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
 	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
@@ -169,6 +168,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	while (fs_file >> size) {
 		file_sizes.push_back(size);
 	}
+	fs_file.close();
 
 	ifstream irt_file("/tmp/temp/inter_arrival_times.txt");
 	double time;
@@ -181,6 +181,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 	// Run the experiments for NUM_EXPERIMENTS times
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
+		sender_proxy->SendMessageLocal(INFORMATIONAL, "Generating files...\n");
 		// Generate files
 		int file_index = 1;
 		char file_name[256];

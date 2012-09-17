@@ -417,6 +417,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
 				if (it != recv_status_map.end()) {
 					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
+					AddRetxRequest(recv_status.msg_id, recv_status.msg_length, recv_status.msg_length);
 					close(recv_status.file_descriptor);
 					recv_status_map.erase(header->session_id);
 
