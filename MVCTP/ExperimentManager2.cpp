@@ -156,7 +156,7 @@ static const int NUM_EXPERIMENTS = 2;
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	static const int BUF_SIZE = 4096;
 
-	sender->SetSendRate(400);
+	//sender->SetSendRate(600);
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
 	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
@@ -219,7 +219,6 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 		double last_time_mark = 0.0;
 		double sent_time = 0.0;
 		double curr_time = 0.0;
-
 
 		int file_id = 0;
 		char str[500];
