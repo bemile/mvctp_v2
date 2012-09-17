@@ -158,6 +158,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 	//sender->SetSendRate(600);
 	system("mkdir /tmp/temp");
+	system("sudo rm /tmp/temp/temp*.dat");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
 	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
 
@@ -166,8 +167,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	int size = 0;
 	vector<int> file_sizes;
 	while (fs_file >> size) {
-		if (size > 20000000)
-			size = 20000000;
+		if (size > 25000000)
+			size = 25000000;
 
 		file_sizes.push_back(size);
 	}
