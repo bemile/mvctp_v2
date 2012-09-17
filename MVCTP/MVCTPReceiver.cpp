@@ -560,10 +560,10 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 			}
 			break;
 		case COLLECT_STATISTICS:
-			//cout << "Start sending statistics to the sender." << endl;
+			cout << "Start sending statistics to the sender." << endl;
 			//SendStatisticsToSender();
 			SendHistoryStatsToSender();
-			//cout << "Statistics sent." << endl;
+			cout << "Statistics sent." << endl;
 			break;
 		case RESET_HISTORY_STATISTICS:
 			ResetHistoryStats();
