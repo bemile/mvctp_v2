@@ -82,6 +82,40 @@ void MVCTPReceiver::SendSessionStatistics() {
 	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 }
 
+
+
+void MVCTPReceiver::SendHistoryStats() {
+	char buf[512];
+	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
+	int robustness = recv_stats.num_failed_files * 100 / recv_stats.num_recved_files;  // in percentage
+	sprintf("%s,%.2f,%d", status_proxy->GetNodeId().c_str(), avg_throughput, robustness);
+	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
+}
+
+
+void MVCTPReceiver::ResetHistoryStats() {
+	recv_stats.total_recv_bytes = 0;
+	recv_stats.total_recv_packets = 0;
+	recv_stats.num_recved_files = 0;
+	recv_stats.num_failed_files = 0;
+	recv_stats.last_file_recv_time = 0.0;
+	AccessCPUCounter(&recv_stats.reset_cpu_timer.hi, &recv_stats.reset_cpu_timer.lo);
+}
+
+
+void MVCTPReceiver::SendHistoryStatsToSender() {
+	char buf[512];
+	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
+	int robustness = recv_stats.num_failed_files * 100 / recv_stats.num_recved_files;  // in percentage
+	sprintf("%s,%.2f,%d", status_proxy->GetNodeId().c_str(), avg_throughput, robustness);
+
+	int len = strlen(buf);
+	retrans_tcp_client->Send(&len, sizeof(len));
+	retrans_tcp_client->Send(buf, len);
+}
+
+
+
 // Clear session related statistics
 void MVCTPReceiver::ResetSessionStatistics() {
 	recv_stats.session_recv_packets = 0;
@@ -101,7 +135,7 @@ void MVCTPReceiver::ResetSessionStatistics() {
 }
 
 // Send session statistics to the sender through TCP connection
-void MVCTPReceiver::SendStatisticsToSender() {
+void MVCTPReceiver::SendSessionStatisticsToSender() {
 	char buf[512];
 	double send_rate = (recv_stats.session_recv_bytes + recv_stats.session_retrans_bytes)
 							/ 1000.0 / 1000.0 * 8 / recv_stats.session_total_time * SEND_RATE_RATIO;
@@ -339,6 +373,8 @@ void MVCTPReceiver::RunReceivingThread() {
 				recv_status.current_offset = header->seq_number + header->data_len;
 
 				// Update statistics
+				recv_stats.total_recv_packets++;
+				recv_stats.total_recv_bytes += header->data_len;
 				recv_status.multicast_packets++;
 				recv_status.multicast_bytes += header->data_len;
 			}
@@ -392,6 +428,8 @@ void MVCTPReceiver::RunReceivingThread() {
 				}
 
 				// Update statistics
+				recv_stats.total_recv_packets++;
+				recv_stats.total_recv_bytes += header->data_len;
 				recv_status.retx_packets++;
 				recv_status.retx_bytes += header->data_len;
 			}
@@ -404,6 +442,7 @@ void MVCTPReceiver::RunReceivingThread() {
 					close(recv_status.file_descriptor);
 					recv_status_map.erase(header->session_id);
 
+					recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
 					/*char str[256];
 					sprintf(str, "File transfer finished.\n***** Statistics for File %d *****\n"
 							"Transfer Time: %.2f seconds\nRetx. Packets: %lld\nRetx. Rate: %.2f",
@@ -420,6 +459,8 @@ void MVCTPReceiver::RunReceivingThread() {
 					AddRetxRequest(recv_status.msg_id, recv_status.msg_length, recv_status.msg_length);
 					close(recv_status.file_descriptor);
 					recv_status_map.erase(header->session_id);
+
+					recv_stats.num_failed_files++;
 
 					char str[256];
 					sprintf(str, "Receiving file %d failed because of retransmission timeout.", recv_status.msg_id);
@@ -498,6 +539,8 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 		read_ahead_header->session_id = -1;
 	}
 	recv_status_map[status.msg_id] = status;
+
+	recv_stats.num_recved_files++;
  }
 
 
@@ -511,10 +554,13 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 			}
 			break;
 		case COLLECT_STATISTICS:
-			cout << "Start sending statistics to the sender." << endl;
-			SendStatisticsToSender();
-			cout << "Statistics sent." << endl;
+			//cout << "Start sending statistics to the sender." << endl;
+			//SendStatisticsToSender();
+			SendHistoryStatsToSender();
+			//cout << "Statistics sent." << endl;
 			break;
+		case RESET_HISTORY_STATISTICS:
+			ResetHistoryStats();
 		case EXECUTE_COMMAND:
 			ExecuteCommand(sender_msg.text);
 			break;

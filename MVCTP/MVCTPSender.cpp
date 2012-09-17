@@ -98,7 +98,6 @@ void MVCTPSender::SendSessionStatistics() {
 // Collect experiment results for file transfer from all receivers
 void MVCTPSender::CollectExpResults() {
 	// Send requests to all receivers
-
 	char msg_packet[500];
 	MvctpHeader* header = (MvctpHeader*)msg_packet;
 	header->session_id = cur_session_id;
@@ -166,6 +165,21 @@ void MVCTPSender::ResetSessionStatistics() {
 	send_stats.session_total_time = 0.0;
 	send_stats.session_trans_time = 0.0;
 	send_stats.session_retrans_time = 0.0;
+}
+
+void MVCTPSender::ResetAllReceiverStats() {
+	char msg_packet[500];
+	MvctpHeader* header = (MvctpHeader*)msg_packet;
+	header->session_id = cur_session_id;
+	header->seq_number = 0;
+	header->data_len = sizeof(MvctpSenderMessage);
+	header->flags = MVCTP_SENDER_MSG_EXP;
+
+	MvctpSenderMessage* msg = (MvctpSenderMessage*)(msg_packet + MVCTP_HLEN);
+	msg->msg_type = RESET_HISTORY_STATISTICS;
+	msg->session_id = cur_session_id;
+	msg->data_len = 0;
+	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
 }
 
 

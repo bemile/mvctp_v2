@@ -36,7 +36,7 @@ struct MvctpReceiverStats {
 	CpuCycleCounter		reset_cpu_timer;
 	int					num_recved_files;
 	int					num_failed_files;
-
+	double				last_file_recv_time;
 };
 
 
@@ -81,9 +81,12 @@ public:
 	void 	SetPacketLossRate(int rate);
 	int 	GetPacketLossRate();
 	void	SetBufferSize(size_t size);
+	void 	SendHistoryStats();
+	void	ResetHistoryStats();
+	void	SendHistoryStatsToSender();
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
-	void	SendStatisticsToSender();
+	void	SendSessionStatisticsToSender();
 	void	ExecuteCommand(char* command);
 	void 	SetStatusProxy(StatusProxy* proxy);
 	const struct MvctpReceiverStats GetBufferStats();

@@ -180,6 +180,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 
 	// Run the experiments for NUM_EXPERIMENTS times
+	result_file.open("exp_results.csv");
+	result_file << "#Node ID, Throughput (Mbps), Robustness (%), Slow Node (True or False)" << endl;
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
 		sender_proxy->SendMessageLocal(INFORMATIONAL, "Generating files...\n");
 		// Generate files
@@ -208,8 +210,10 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 
 		// Start sending files
-		system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 		sender_proxy->SendMessageLocal(INFORMATIONAL, "Sending files...\n");
+		system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+		sender->ResetAllReceiverStats();
+
 		struct timespec time_spec;
 		time_spec.tv_sec = 0;
 		time_spec.tv_nsec = 0;
@@ -253,6 +257,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 			usleep(2000);
 		}
 
+		sender->CollectExpResults();
+
 		double transfer_time = GetElapsedSeconds(cpu_counter);
 		double pho = sample.total_file_size / sample.total_time / (sender->GetSendRate() * 1000000.0) * 8;
 		double throughput = sample.total_file_size / 1000000.0 / transfer_time * 8;
@@ -262,15 +268,16 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 				FILE_COUNT, sample.total_file_size, sample.total_time, pho, transfer_time, throughput);
 		sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 	}
+
+	result_file.close();
 }
 
 
 
 void ExperimentManager2::HandleExpResults(string msg) {
-	if (result_file.is_open() && finished_node_count < num_test_nodes) {
-		finished_node_count++;
-		if (finished_node_count == num_test_nodes)
-			result_file.flush();
+	if (result_file.is_open()) {
+		result_file << msg << endl;
+		result_file.flush();
 	}
 }
 

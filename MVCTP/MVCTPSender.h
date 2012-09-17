@@ -89,6 +89,7 @@ public:
 	void 	SendAllStatistics();
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
+	void	ResetAllReceiverStats();
 	// For memory-to-memory data tranfer
 	void 	SendMemoryData(void* data, size_t length);
 	// For disk-to-disk data transfer
