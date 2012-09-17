@@ -45,6 +45,11 @@ int	MVCTPSender::GetSendRate() {
 }
 
 
+bool MVCTPSender::IsTransferFinished(uint msg_id) {
+	return metadata.IsTransferFinished(msg_id);
+}
+
+
 void MVCTPSender::SetRetransmissionBufferSize(int size_mb) {
 	max_num_retrans_buffs = size_mb / 8;
 	if (max_num_retrans_buffs == 0)
@@ -329,8 +334,8 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 }
 
 
-
-uint MVCTPSender::SendFile(const char* file_name) {
+#define MIN_RETX_TIMEOUT 0.02
+uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
@@ -344,7 +349,8 @@ uint MVCTPSender::SendFile(const char* file_name) {
 	meta->msg_id = cur_session_id;
 	meta->msg_length = file_size;
 	meta->file_name = file_name;
-	meta->start_time_count = cpu_counter;
+	meta->multicast_start_cpu_time = cpu_counter;
+	meta->retx_timeout_ratio = retx_timeout_ratio;
 
 	// add all current receiver sockets into the unfinished receiver map
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
@@ -416,6 +422,10 @@ uint MVCTPSender::SendFile(const char* file_name) {
 	// Record memory data multicast time
 	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
 	meta->stats.session_trans_time = send_stats.session_trans_time;
+	double default_timeout = meta->stats.session_trans_time * (meta->retx_timeout_ratio / 100.0 + 1.0);
+	meta->retx_timeout_seconds = default_timeout > (MIN_RETX_TIMEOUT + meta->stats.session_retrans_time) ?
+									default_timeout : (MIN_RETX_TIMEOUT + meta->stats.session_retrans_time);
+
 
 	// TODO: remove this in real implementation
 	// For test ONLY: clear system cache before doing retransmission
@@ -468,88 +478,6 @@ uint MVCTPSender::SendFile(const char* file_name) {
 }
 
 
-bool MVCTPSender::IsTransferFinished(uint msg_id) {
-	return metadata.IsTransferFinished(msg_id);
-}
-
-
-void MVCTPSender::SendFileBufferedIO(const char* file_name) {
-	PerformanceCounter cpu_info(50);
-	cpu_info.SetCPUFlag(true);
-	cpu_info.Start();
-
-	ResetSessionStatistics();
-	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
-
-	struct stat file_status;
-	stat(file_name, &file_status);
-	ulong file_size = file_status.st_size;
-	ulong remained_size = file_size;
-
-	// Send a notification to all receivers before starting the memory transfer
-	struct MvctpSenderMessage msg;
-	msg.session_id = cur_session_id;
-	msg.msg_type = FILE_TRANSFER_START;
-	msg.data_len = file_size;
-	strcpy(msg.text, file_name);
-	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
-
-	//cout << "Start file transferring..." << endl;
-	// Transfer the file using memory mapped I/O
-	int fd = open(file_name, O_RDWR);
-	if (fd < 0) {
-		SysError("MVCTPSender()::SendFile(): File open error!");
-	}
-	char* buffer = (char *)malloc(MVCTP_DATA_LEN);
-	off_t offset = 0;
-	while (remained_size > 0) {
-		uint read_size = remained_size < MVCTP_DATA_LEN ? remained_size
-				: MVCTP_DATA_LEN;
-		ssize_t res = read(fd, buffer, read_size);
-		if (res < 0) {
-			SysError("MVCTPSender::SendFileBufferedIO()::read() error");
-		}
-
-		DoMemoryTransfer(buffer, read_size, offset);
-		offset += read_size;
-		remained_size -= read_size;
-	}
-	free(buffer);
-
-	// Record memory data multicast time
-	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
-
-	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
-	// Send a notification to all receivers to start retransmission
-	msg.msg_type = FILE_TRANSFER_FINISH;
-	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
-
-	//cout << "File transfer finished. Start retransmission..." << endl;
-
-	if (retrans_scheme == RETRANS_SERIAL)
-		DoFileRetransmissionSerial(fd);
-	else if (retrans_scheme == RETRANS_SERIAL_RR)
-		DoFileRetransmissionSerialRR(fd);
-	else if (retrans_scheme == RETRANS_PARALLEL)
-		DoFileRetransmissionParallel(file_name);
-
-
-	close(fd);
-
-	// collect experiment results from receivers
-	CollectExpResults();
-
-	// Record total transfer and retransmission time
-	send_stats.session_retrans_time = GetElapsedSeconds(cpu_counter); //send_stats.session_total_time - send_stats.session_trans_time;
-	send_stats.session_total_time = send_stats.session_trans_time + send_stats.session_retrans_time; //GetElapsedSeconds(cpu_counter);
-	send_stats.session_retrans_percentage = send_stats.session_retrans_packets  * 1.0
-									/ (send_stats.session_sent_packets + send_stats.session_retrans_packets);
-	// Increase the session id for the next transfer
-	cur_session_id++;
-	SendSessionStatistics();
-
-	cpu_info.Stop();
-}
 
 
 
@@ -604,7 +532,16 @@ void MVCTPSender::RunRetransThread(int sock) {
 			}
 
 			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
-			if (meta->is_disk_file) {	// is disk file transfer
+
+			// check whether the retransmission for the file has already time out
+			if (GetElapsedSeconds(meta->multicast_start_cpu_time) > meta->retx_timeout_seconds) {
+				send_header->session_id = recv_header->session_id;
+				send_header->flags = MVCTP_RETRANS_TIMEOUT;
+				send_header->data_len = 0;
+
+				retrans_tcp_server->SelectSend(sock_fd, send_buf, MVCTP_HLEN);
+			}
+			else if (meta->is_disk_file) {	// is disk file transfer
 				FileMessageMetadata* file_meta = (FileMessageMetadata*)meta;
 
 				// get the file descriptor to read data from the file
@@ -688,6 +625,87 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 }
 
+
+
+
+
+void MVCTPSender::SendFileBufferedIO(const char* file_name) {
+	PerformanceCounter cpu_info(50);
+	cpu_info.SetCPUFlag(true);
+	cpu_info.Start();
+
+	ResetSessionStatistics();
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+
+	struct stat file_status;
+	stat(file_name, &file_status);
+	ulong file_size = file_status.st_size;
+	ulong remained_size = file_size;
+
+	// Send a notification to all receivers before starting the memory transfer
+	struct MvctpSenderMessage msg;
+	msg.session_id = cur_session_id;
+	msg.msg_type = FILE_TRANSFER_START;
+	msg.data_len = file_size;
+	strcpy(msg.text, file_name);
+	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+
+	//cout << "Start file transferring..." << endl;
+	// Transfer the file using memory mapped I/O
+	int fd = open(file_name, O_RDWR);
+	if (fd < 0) {
+		SysError("MVCTPSender()::SendFile(): File open error!");
+	}
+	char* buffer = (char *)malloc(MVCTP_DATA_LEN);
+	off_t offset = 0;
+	while (remained_size > 0) {
+		uint read_size = remained_size < MVCTP_DATA_LEN ? remained_size
+				: MVCTP_DATA_LEN;
+		ssize_t res = read(fd, buffer, read_size);
+		if (res < 0) {
+			SysError("MVCTPSender::SendFileBufferedIO()::read() error");
+		}
+
+		DoMemoryTransfer(buffer, read_size, offset);
+		offset += read_size;
+		remained_size -= read_size;
+	}
+	free(buffer);
+
+	// Record memory data multicast time
+	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
+
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+	// Send a notification to all receivers to start retransmission
+	msg.msg_type = FILE_TRANSFER_FINISH;
+	retrans_tcp_server->SendToAll(&msg, sizeof(msg));
+
+	//cout << "File transfer finished. Start retransmission..." << endl;
+
+	if (retrans_scheme == RETRANS_SERIAL)
+		DoFileRetransmissionSerial(fd);
+	else if (retrans_scheme == RETRANS_SERIAL_RR)
+		DoFileRetransmissionSerialRR(fd);
+	else if (retrans_scheme == RETRANS_PARALLEL)
+		DoFileRetransmissionParallel(file_name);
+
+
+	close(fd);
+
+	// collect experiment results from receivers
+	CollectExpResults();
+
+	// Record total transfer and retransmission time
+	send_stats.session_retrans_time = GetElapsedSeconds(cpu_counter); //send_stats.session_total_time - send_stats.session_trans_time;
+	send_stats.session_total_time = send_stats.session_trans_time + send_stats.session_retrans_time; //GetElapsedSeconds(cpu_counter);
+	send_stats.session_retrans_percentage = send_stats.session_retrans_packets  * 1.0
+									/ (send_stats.session_sent_packets + send_stats.session_retrans_packets);
+	// Increase the session id for the next transfer
+	cur_session_id++;
+	SendSessionStatistics();
+
+	cpu_info.Stop();
+}
 
 
 

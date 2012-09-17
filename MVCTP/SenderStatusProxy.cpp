@@ -14,6 +14,8 @@ SenderStatusProxy::SenderStatusProxy(string addr, int port, string group_addr, i
 	buffer_size = buff_size;
 	ptr_sender = NULL;
 
+	file_retx_timeout_ratio = 20;
+
 	ConfigureEnvironment();
 }
 
@@ -98,6 +100,11 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 		if (parts.size() == 2) {
 			int rate = atoi(parts.back().c_str());
 			SetSendRate(rate); //ptr_sender->SetSendRate(rate);
+		}
+	}
+	else if (parts.front().compare("SetRetxTimeoutRatio") == 0) {
+		if (parts.size() == 2) {
+			file_retx_timeout_ratio = atoi(parts.back().c_str());
 		}
 	}
 	else if (parts.front().compare("SetTCRate") == 0) {
@@ -282,7 +289,7 @@ void SenderStatusProxy::TransferFile(string file_name) {
 	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
 	SendMessageLocal(INFORMATIONAL, "Transferring file...");
-	ptr_sender->SendFile(file_name.c_str());
+	ptr_sender->SendFile(file_name.c_str(), file_retx_timeout_ratio);
 	//ptr_sender->SendFileBufferedIO(file_name.c_str());
 	SendMessageLocal(COMMAND_RESPONSE, "File transfer completed.");
 }

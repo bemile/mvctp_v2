@@ -78,7 +78,8 @@ const u_int32_t MVCTP_SENDER_MSG_EXP = 0x00000004;	// sender messages used for e
 const u_int32_t MVCTP_RETRANS_REQ = 0x00000008;		// retransmission request
 const u_int32_t MVCTP_RETRANS_DATA = 0x00000010; 	// retransmission data
 const u_int32_t MVCTP_RETRANS_END = 0x00000020;
-const u_int32_t MVCTP_BOF_REQ = 0x00000040;     	// BOF request
+const u_int32_t MVCTP_RETRANS_TIMEOUT = 0x00000040; // retransmission timeout message
+const u_int32_t MVCTP_BOF_REQ = 0x00000080;     	// BOF request
 
 
 /************ The BOF/EOF message data types ****************/

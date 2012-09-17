@@ -67,6 +67,9 @@ private:
 	int			mvctp_port_num;
 	int			buffer_size;
 
+	// experiment specific parameters
+	int			file_retx_timeout_ratio;
+
 	ExperimentManager  	exp_manager;
 	ExperimentManager2	exp_manager2;
 

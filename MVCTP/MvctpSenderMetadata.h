@@ -43,19 +43,23 @@ enum MsgTransferStatus {BOF_NOT_RECEIVED, IN_NORMAL_TRANSFER, FINISHED};
 };
 */
 
+#define	DOUBLE_MAX	99999999999.0
 struct MessageMetadata {
 	u_int32_t 				msg_id;
 	bool					ignore_file;
-    bool 					is_disk_file;          	// true for disk file transfer, false for memory transfer
-    long long 				msg_length;    			// the length of the file
-    CpuCycleCounter			start_time_count;		// the CPU time counter when file transfer starts
+    bool 					is_disk_file;          		// true for disk file transfer, false for memory transfer
+    long long 				msg_length;    				// the length of the file
+    CpuCycleCounter			multicast_start_cpu_time;	// the CPU time counter when multicast is started
+    int		  				retx_timeout_ratio;		// the CPU time counter when multicast is finished
+    double					retx_timeout_seconds;
     MessageTransferStats 	stats;
-    void* 					info;                   // the pointer to any auxiliary data that the user wants to pass
-    map<int, bool> 			unfinished_recvers;		// unfinished receiver map with the format <socket_number, is_finished>
+    void* 					info;                   	// the pointer to any auxiliary data that the user wants to pass
+    map<int, bool> 			unfinished_recvers;			// unfinished receiver map with the format <socket_number, is_finished>
 
 
     MessageMetadata(): msg_id(0), ignore_file(false),
-    		is_disk_file(true), msg_length(0), info(NULL) {}
+    		is_disk_file(true), msg_length(0), retx_timeout_ratio(20),
+    		retx_timeout_seconds(DOUBLE_MAX), info(NULL) {}
 
     virtual ~MessageMetadata() {
 
