@@ -164,13 +164,13 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 	// read in file sizes and inter-arrival-times
 	ifstream fs_file("/tmp/temp/file_sizes.txt");
-	int size = 0;
+	double size = 0;
 	vector<int> file_sizes;
 	while (fs_file >> size) {
-		if (size > 25000000)
-			size = 25000000;
+		//if (size > 25000000)
+		//	size = 25000000;
 
-		file_sizes.push_back(size);
+		file_sizes.push_back((int)size);
 	}
 	fs_file.close();
 
