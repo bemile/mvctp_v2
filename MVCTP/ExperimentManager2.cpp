@@ -156,7 +156,7 @@ static const int NUM_EXPERIMENTS = 2;
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	static const int BUF_SIZE = 4096;
 
-	sender->SetSendRate(600);
+	sender->SetSendRate(400);
 	system("mkdir /tmp/temp");
 	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
 	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
