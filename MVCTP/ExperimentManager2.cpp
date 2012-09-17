@@ -255,8 +255,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 		}
 
 		double transfer_time = GetElapsedSeconds(cpu_counter);
-		double pho = sample.total_file_size * 8 / sample.total_time / (sender->GetSendRate() * 1000000.0);
-		double throughput = sample.total_file_size * 8 / 1000000.0 / transfer_time;
+		double pho = sample.total_file_size / sample.total_time / (sender->GetSendRate() * 1000000.0) * 8;
+		double throughput = sample.total_file_size / 1000000.0 / transfer_time * 8;
 		sprintf(str, "Experiment Finished.\n\n***** Statistics *****\nTotal No. Files: %d\nTotal File Size: %d bytes\n"
 				"Total Arrival Time Span: %.2f second\nPho Value: %.2f\nTotal Transfer Time: %.2f seconds\n"
 				"Throughput: %.2f Mbps\n*****End of Statistics *****\n\n",
