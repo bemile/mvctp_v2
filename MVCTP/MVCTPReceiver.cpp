@@ -567,6 +567,7 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 			break;
 		case RESET_HISTORY_STATISTICS:
 			ResetHistoryStats();
+			break;
 		case EXECUTE_COMMAND:
 			ExecuteCommand(sender_msg.text);
 			break;
