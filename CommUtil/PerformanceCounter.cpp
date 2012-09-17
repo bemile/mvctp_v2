@@ -10,7 +10,7 @@
 PerformanceCounter::PerformanceCounter() : interval(1000) {
 	keep_running = false;
 
-	measure_cpu = false;
+	measure_cpu = true;
 	measure_udp_recv_buffer = false;
 }
 
@@ -53,6 +53,9 @@ void PerformanceCounter::Start() {
 
 void PerformanceCounter::Stop() {
 	keep_running = false;
+	thread_exited = false;
+	while (!thread_exited)
+		usleep(10000);
 }
 
 
@@ -122,8 +125,9 @@ void PerformanceCounter::RunCountThread() {
 		AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 	}
 
-	cout << "Performance Counter has been stopped." << endl;
+	//cout << "Performance Counter has been stopped." << endl;
 	output.close();
+	thread_exited = true;
 }
 
 

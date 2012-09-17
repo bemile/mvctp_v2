@@ -45,6 +45,7 @@ private:
 
 	bool    measure_cpu;
 	bool    measure_udp_recv_buffer;
+	bool	thread_exited;
 
 	vector<int>		cpu_values;
 	vector<int>		udp_buffer_values;

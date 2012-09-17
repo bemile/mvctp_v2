@@ -181,7 +181,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 	// Run the experiments for NUM_EXPERIMENTS times
 	result_file.open("exp_results.csv");
-	result_file << "#Node ID, Throughput (Mbps), Robustness (%), Slow Node (True or False)" << endl;
+	result_file << "#Node ID, Throughput (Mbps), Robustness (%), Avg. CPU Usage (%), Slow Node (True or False)" << endl;
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
 		sender_proxy->SendMessageLocal(INFORMATIONAL, "Generating files...\n");
 		// Generate files

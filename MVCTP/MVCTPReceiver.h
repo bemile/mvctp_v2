@@ -33,6 +33,7 @@ struct MvctpReceiverStats {
 	double 	session_retrans_time;
 
 	// new stat fields
+	PerformanceCounter	cpu_monitor;
 	CpuCycleCounter		reset_cpu_timer;
 	int					num_recved_files;
 	int					num_failed_files;
