@@ -263,69 +263,6 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 				FILE_COUNT, sample.total_file_size, sample.total_time, pho, transfer_time, throughput);
 		sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 	}
-
-
-
-
-
-	File_Sample sample = GenerateFiles();
-	system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
-	sender_proxy->SendMessageLocal(INFORMATIONAL, "Files generated.\n");
-
-
-	sender_proxy->SendMessageLocal(INFORMATIONAL, "Sending files...\n");
-	struct timespec time_spec;
-	time_spec.tv_sec = 0;
-	time_spec.tv_nsec = 0;
-
-	CpuCycleCounter cpu_counter;
-	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
-	double last_time_mark = 0.0;
-	double sent_time = 0.0;
-	double curr_time = 0.0;
-
-	char file_name[256];
-	int file_id = 0;
-	char str[500];
-	for (int i = 0; i < FILE_COUNT; i++) {
-		if (i % 100 == 0) {
-			sprintf(str, "Sending file %d", i);
-			sender_proxy->SendMessageLocal(INFORMATIONAL, str);
-		}
-
-		sent_time += sample.inter_arrival_times[i];
-		curr_time = GetElapsedSeconds(cpu_counter);
-		double time_diff = sent_time - curr_time; // - last_time_mark;
-		if (time_diff > 0) {
-			if (time_diff > 1.0) {
-				time_spec.tv_sec = (int)time_diff;
-				time_spec.tv_nsec = (time_diff - time_spec.tv_sec) * 1000000000;
-			}
-			else {
-				time_spec.tv_sec = 0;
-				time_spec.tv_nsec = time_diff * 1000000000;
-			}
-
-			cout << "Wait for " << time_diff << " seconds" << endl;
-			nanosleep(&time_spec, NULL);
-		}
-
-		sprintf(file_name, "/tmp/temp/temp%d.dat", i + 1);
-		file_id = sender->SendFile(file_name);
-	}
-
-	while (!sender->IsTransferFinished(file_id)) {
-		usleep(2000);
-	}
-
-	double transfer_time = GetElapsedSeconds(cpu_counter);
-	double pho = sample.total_file_size * 8 / sample.total_time / (sender->GetSendRate() * 1000000.0);
-	double throughput = sample.total_file_size * 8 / 1000000.0 / transfer_time;
-	sprintf(str, "Experiment Finished.\n\n***** Statistics *****\nTotal No. Files: %d\nTotal File Size: %d bytes\n"
-			"Total Arrival Time Span: %.2f second\nPho Value: %.2f\nTotal Transfer Time: %.2f seconds\n"
-			"Throughput: %.2f Mbps\n*****End of Statistics *****\n\n",
-			FILE_COUNT, sample.total_file_size, sample.total_time, pho, transfer_time, throughput);
-	sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 }
 
 
