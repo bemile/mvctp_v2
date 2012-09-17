@@ -52,10 +52,12 @@ void PerformanceCounter::Start() {
 
 
 void PerformanceCounter::Stop() {
-	keep_running = false;
-	thread_exited = false;
-	while (!thread_exited)
-		usleep(10000);
+	if (keep_running) {
+		keep_running = false;
+		thread_exited = false;
+		while (!thread_exited)
+			usleep(10000);
+	}
 }
 
 
