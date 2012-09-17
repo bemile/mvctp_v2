@@ -462,7 +462,7 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
-	//if (sender_msg.session_id % 50 == 0)
+	if (sender_msg.session_id % 50 == 0)
 	{
 		char str[500];
 		sprintf(str, "Receiving file %d. File length: %d bytes\n\n",
