@@ -115,6 +115,9 @@ void MVCTPReceiver::SendHistoryStatsToSender() {
 	sprintf("%s,%.2f,%d,%d,%s", status_proxy->GetNodeId().c_str(), avg_throughput, robustness,
 			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
 
+	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
+	return;
+
 	int len = strlen(buf);
 
 	char msg_packet[1024];
