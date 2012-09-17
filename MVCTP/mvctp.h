@@ -80,6 +80,7 @@ const u_int32_t MVCTP_RETRANS_DATA = 0x00000010; 	// retransmission data
 const u_int32_t MVCTP_RETRANS_END = 0x00000020;
 const u_int32_t MVCTP_RETRANS_TIMEOUT = 0x00000040; // retransmission timeout message
 const u_int32_t MVCTP_BOF_REQ = 0x00000080;     	// BOF request
+const u_int32_t MVCTP_HISTORY_STATISTICS = 0x00000100;
 
 
 /************ The BOF/EOF message data types ****************/

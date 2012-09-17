@@ -116,8 +116,16 @@ void MVCTPReceiver::SendHistoryStatsToSender() {
 			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
 
 	int len = strlen(buf);
-	retrans_tcp_client->Send(&len, sizeof(len));
-	retrans_tcp_client->Send(buf, len);
+
+	char msg_packet[1024];
+	MvctpHeader* header = (MvctpHeader*)msg_packet;
+	header->session_id = 0;
+	header->seq_number = 0;
+	header->data_len = len;
+	header->flags = MVCTP_HISTORY_STATISTICS;
+
+	memcpy(msg_packet + MVCTP_HLEN, buf, len);
+	retrans_tcp_client->Send(msg_packet, MVCTP_HLEN + len);
 }
 
 

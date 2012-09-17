@@ -111,7 +111,7 @@ void MVCTPSender::CollectExpResults() {
 	msg->data_len = 0;
 	retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
 
-	char buf[512];
+	/*char buf[512];
 	int client_sock;
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
 	int str_len;
@@ -130,7 +130,7 @@ void MVCTPSender::CollectExpResults() {
 			}
 			sock_list.remove(client_sock);
 		}
-	}
+	}*/
 }
 
 
@@ -632,6 +632,14 @@ void MVCTPSender::RunRetransThread(int sock) {
 				status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 			}*/
 			//cout << "Receive finishing mark request from sock " << sock_fd << endl;
+		}
+		else if (recv_header->flags & MVCTP_HISTORY_STATISTICS) {
+			char buf[1024];
+			if (retrans_tcp_server->Receive(sock_fd, buf, recv_header->data_len) < 0) {
+				break;
+			}
+			buf[recv_header->data_len] = '\0';
+			status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 		}
 	}
 
