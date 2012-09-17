@@ -37,6 +37,7 @@ public:
 	~ExperimentManager2();
 
 	void StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
+	void StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	void HandleExpResults(string msg);
 
 private:

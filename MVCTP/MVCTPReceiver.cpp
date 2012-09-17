@@ -404,12 +404,12 @@ void MVCTPReceiver::RunReceivingThread() {
 					close(recv_status.file_descriptor);
 					recv_status_map.erase(header->session_id);
 
-					char str[256];
+					/*char str[256];
 					sprintf(str, "File transfer finished.\n***** Statistics for File %d *****\n"
 							"Transfer Time: %.2f seconds\nRetx. Packets: %lld\nRetx. Rate: %.2f",
 							recv_status.msg_id, GetElapsedSeconds(recv_status.start_time_counter), recv_status.retx_packets,
 								recv_status.retx_packets * 1.0 / (recv_status.multicast_packets + recv_status.retx_packets) );
-					status_proxy->SendMessageLocal(INFORMATIONAL, str);
+					status_proxy->SendMessageLocal(INFORMATIONAL, str);*/
 				}
 
 			}
