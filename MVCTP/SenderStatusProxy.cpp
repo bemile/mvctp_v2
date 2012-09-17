@@ -105,6 +105,10 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 	else if (parts.front().compare("SetRetxTimeoutRatio") == 0) {
 		if (parts.size() == 2) {
 			file_retx_timeout_ratio = atoi(parts.back().c_str());
+
+			char buf[256];
+			sprintf(buf, "Retransmission timeout ratio has been set to %d%%.", atoi(parts.back().c_str()));
+			SendMessageLocal(COMMAND_RESPONSE, buf);
 		}
 	}
 	else if (parts.front().compare("SetTCRate") == 0) {
