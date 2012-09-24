@@ -116,10 +116,9 @@ void MVCTPReceiver::SendHistoryStatsToSender() {
 			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
 
 	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
-	return;
+	//return;
 
 	int len = strlen(buf);
-
 	char msg_packet[1024];
 	MvctpHeader* header = (MvctpHeader*)msg_packet;
 	header->session_id = 0;
