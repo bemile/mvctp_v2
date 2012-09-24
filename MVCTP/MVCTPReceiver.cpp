@@ -87,8 +87,8 @@ void MVCTPReceiver::SendSessionStatistics() {
 void MVCTPReceiver::SendHistoryStats() {
 	char buf[512];
 	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
-	int robustness = recv_stats.num_failed_files * 100 / recv_stats.num_recved_files;  // in percentage
-	sprintf("%s,%.2f,%d", status_proxy->GetNodeId().c_str(), avg_throughput, robustness);
+	double robustness = 100.0 - recv_stats.num_failed_files * 100.0 / recv_stats.num_recved_files;  // in percentage
+	sprintf("%s,%.2f,%.2f", status_proxy->GetNodeId().c_str(), avg_throughput, robustness);
 	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 }
 
@@ -111,8 +111,8 @@ void MVCTPReceiver::ResetHistoryStats() {
 void MVCTPReceiver::SendHistoryStatsToSender() {
 	char buf[1024];
 	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
-	int robustness = 100 - recv_stats.num_failed_files * 100 / recv_stats.num_recved_files;  // in percentage
-	sprintf(buf, "%s,%.2f,%d,%d,%s", status_proxy->GetNodeId().c_str(), avg_throughput, robustness,
+	double robustness = 100.0 - recv_stats.num_failed_files * 100.0 / recv_stats.num_recved_files;  // in percentage
+	sprintf(buf, "%s,%.2f,%.2f,%d,%s", status_proxy->GetNodeId().c_str(), avg_throughput, robustness,
 			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
 
 	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
