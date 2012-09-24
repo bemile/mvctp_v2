@@ -49,8 +49,13 @@ bool MvctpSenderMetadata::IsTransferFinished(uint msg_id) {
 	bool is_finished = false;
 	map<uint, MessageMetadata*>::iterator it;
 	pthread_rwlock_rdlock(&map_lock);
-	if ( (it = metadata_map.find(msg_id)) != metadata_map.end())
-		is_finished = (it->second->unfinished_recvers.size() == 0);
+	if ( (it = metadata_map.find(msg_id)) != metadata_map.end()) {
+		if (GetElapsedSeconds(it->second->multicast_start_cpu_time) > it->second->retx_timeout_seconds)
+			is_finished = true;
+		else
+			is_finished = (it->second->unfinished_recvers.size() == 0);
+	}
+
 	pthread_rwlock_unlock(&map_lock);
 	return is_finished;
 }
