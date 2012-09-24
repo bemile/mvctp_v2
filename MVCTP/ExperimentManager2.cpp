@@ -10,11 +10,12 @@
 
 
 ExperimentManager2::ExperimentManager2() {
+	pthread_mutex_init(&write_mutex, NULL);
 }
 
 
 ExperimentManager2::~ExperimentManager2() {
-
+	pthread_mutex_destroy(&write_mutex);
 }
 
 static const int FILE_COUNT = 500;
@@ -282,10 +283,12 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 
 void ExperimentManager2::HandleExpResults(string msg) {
+	pthread_mutex_lock(&write_mutex);
 	if (result_file.is_open()) {
 		cout << "I received a result report: " << msg << endl;
 		result_file << msg << endl;
 		result_file.flush();
 	}
+	pthread_mutex_unlock(&write_mutex);
 }
 
