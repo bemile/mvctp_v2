@@ -273,7 +273,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 		sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 	}
 
-	//result_file.close();
+	sleep(2);
+	result_file.close();
 }
 
 
