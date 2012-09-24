@@ -669,7 +669,6 @@ void MVCTPSender::RunRetransThread(int sock) {
 			}
 			buf[recv_header->data_len] = '\0';
 			status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
-			cout << "I received a result report." << endl;
 		}
 	}
 
