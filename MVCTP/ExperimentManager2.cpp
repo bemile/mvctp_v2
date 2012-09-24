@@ -152,7 +152,7 @@ File_Sample ExperimentManager2::GenerateFiles() {
 
 
 
-static const int NUM_EXPERIMENTS = 50;
+static const int NUM_EXPERIMENTS = 30;
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	static const int BUF_SIZE = 4096;
 
@@ -186,8 +186,10 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	// Run the experiments for NUM_EXPERIMENTS times
 	result_file.open("exp_results.csv");
 	result_file << "#Node ID, Throughput (Mbps), Robustness (%), Avg. CPU Usage (%), Slow Node (True or False)" << endl;
+	char str[256];
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
-		sender_proxy->SendMessageLocal(INFORMATIONAL, "Generating files...\n");
+		sprintf(str, "\n\n***** Run %d *****\nGenerating files...\n", n + 1);
+		sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 		// Generate files
 		int file_index = 1;
 		char file_name[256];
