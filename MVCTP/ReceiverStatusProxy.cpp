@@ -29,8 +29,8 @@ void ReceiverStatusProxy::ConfigureEnvironment() {
 	//system("sudo sysctl -w net.ipv4.tcp_wmem=\"4096 8388608 36777216\"");
 
 	system("sudo sysctl -w net.ipv4.udp_mem=\"4096 8388608 36777216\""); // 16777216
-	system("sudo sysctl -w net.core.rmem_default=\"80777216\""); //8388608
-	system("sudo sysctl -w net.core.rmem_max=\"1280777216\""); // 16777216
+	system("sudo sysctl -w net.core.rmem_default=\"8388608\""); //8388608
+	system("sudo sysctl -w net.core.rmem_max=\"16777216\""); // 16777216
 	system("sudo sysctl -w net.core.wmem_default=\"16777216\""); //8388608
 	system("sudo sysctl -w net.core.wmem_max=\"36777216\""); //
 }

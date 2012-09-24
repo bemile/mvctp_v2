@@ -17,7 +17,7 @@ ExperimentManager2::~ExperimentManager2() {
 
 }
 
-static const int FILE_COUNT = 100;
+static const int FILE_COUNT = 500;
 void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	// Randomly generate FILE_COUNT files for the sample
 	sender_proxy->SendMessageLocal(INFORMATIONAL, "Generating files...\n");

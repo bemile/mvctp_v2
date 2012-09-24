@@ -348,7 +348,7 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 }
 
 
-#define MIN_RETX_TIMEOUT 0.002
+#define MIN_RETX_TIMEOUT 0.001
 uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	ResetSessionStatistics();
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
