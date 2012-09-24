@@ -160,8 +160,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	//sender->SetSendRate(600);
 	system("mkdir /tmp/temp");
 	system("sudo rm /tmp/temp/temp*.dat");
-	system("cp /users/jieli/src/file_sizes.txt /tmp/temp");
-	system("cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
+	system("sudo cp /users/jieli/src/file_sizes.txt /tmp/temp");
+	system("sudo cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
 
 	// read in file sizes and inter-arrival-times
 	ifstream fs_file("/tmp/temp/file_sizes.txt");
@@ -234,7 +234,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 		int file_id = 0;
 		char str[500];
 		for (int i = 0; i < FILE_COUNT; i++) {
-			if (i % 50 == 0) {
+			if (i % 100 == 0) {
 				sprintf(str, "Sending file %d", i);
 				sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 			}
