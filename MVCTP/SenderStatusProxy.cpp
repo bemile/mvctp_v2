@@ -65,7 +65,6 @@ int SenderStatusProxy::SendMessageLocal(int msg_type, string msg) {
 //			result_file << msg;
 //			//result_file << exp_manager.GetFileSize() << "," << exp_manager.GetSendRate() << "," << msg;
 //		}
-		cout << "I received a result report." << endl;
 		exp_manager2.HandleExpResults(msg);
 		return 1;
 	}
