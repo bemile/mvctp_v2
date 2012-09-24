@@ -371,9 +371,9 @@ void MVCTPReceiver::RunReceivingThread() {
 				continue;
 
 			MessageReceiveStatus& recv_status = it->second;
-			if (recv_status.is_multicast_done) {
+			/*if (recv_status.is_multicast_done) {
 				cout << "I have received a packet for the finished file" << header->session_id <<  " (EOF already received)." << endl;
-			}
+			}*/
 
 			// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
 			if (rand() % 1000 >= packet_loss_rate) {
@@ -478,9 +478,9 @@ void MVCTPReceiver::RunReceivingThread() {
 
 					recv_stats.num_failed_files++;
 
-					char str[256];
+					/*char str[256];
 					sprintf(str, "Receiving file %d failed because of retransmission timeout.", recv_status.msg_id);
-					status_proxy->SendMessageLocal(INFORMATIONAL, str);
+					status_proxy->SendMessageLocal(INFORMATIONAL, str); */
 				}
 			}
 		}
