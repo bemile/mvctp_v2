@@ -75,6 +75,7 @@ public:
 	MVCTPSender(int buf_size);
 	virtual ~MVCTPSender();
 
+	void 	SetSchedRR(bool is_rr);
 	void 	SetStatusProxy(StatusProxy* proxy);
 	void    SetRetransmissionBufferSize(int size_mb);
 	void	SetRetransmissionScheme(int scheme);

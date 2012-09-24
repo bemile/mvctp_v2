@@ -173,6 +173,18 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 			exp_manager.StartExperimentLowSpeed(this, ptr_sender);
 			SendMessageLocal(INFORMATIONAL, "All experiments finished.");
 	}
+	else if (parts.front().compare("SetSchedRR") == 0) {
+		if (parts.size() == 2) {
+			if (parts.back().compare("TRUE") == 0) {
+				ptr_sender->SetSchedRR(true);
+				SendMessageLocal(INFORMATIONAL, "Sending thread has been set to SCHED_RR mode.");
+			}
+			else {
+				ptr_sender->SetSchedRR(false);
+				SendMessageLocal(INFORMATIONAL, "Sending thread has been set to SCHED_RR mode.");
+			}
+		}
+	}
 	else {
 		StatusProxy::HandleCommand(command);
 	}

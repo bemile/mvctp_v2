@@ -22,6 +22,11 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	retrans_scheme = RETRANS_SERIAL;
 	num_retrans_threads = 1;
 
+	// Set CPU affinity
+	cpu_set_t cpu_mask;
+	CPU_SET(1, &cpu_mask);
+	sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask);
+
 	//event_queue_manager = new MvctpEventQueueManager();
 }
 
@@ -34,6 +39,30 @@ MVCTPSender::~MVCTPSender() {
 		delete (it->second);
 	}
 }
+
+
+// Set the process scheduling mode to SCHED_RR or SCHED_OTHER (the default process scheduling mode in linux)
+void MVCTPSender::SetSchedRR(bool is_rr) {
+	static int normal_priority = getpriority(PRIO_PROCESS, 0);
+
+	struct sched_param sp;
+	if (is_rr) {
+		sp.__sched_priority = sched_get_priority_max(SCHED_RR);
+		sched_setscheduler(0, SCHED_RR, &sp);
+
+		struct sched_param sp_normal;
+		sp_normal.__sched_priority = normal_priority;
+		map<int, pthread_t*>::iterator it;
+		for (it = retrans_thread_map.begin(); it != retrans_thread_map.end(); it++) {
+			pthread_setschedparam(*it->second, SCHED_OTHER, &sp_normal);
+		}
+	}
+	else {
+		sp.__sched_priority = normal_priority;
+		sched_setscheduler(0, SCHED_OTHER, &sp);
+	}
+}
+
 
 void MVCTPSender::SetSendRate(int num_mbps) {
 	send_rate_in_mbps = num_mbps;
@@ -640,6 +669,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 			}
 			buf[recv_header->data_len] = '\0';
 			status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
+			cout << "I received a result report." << endl;
 		}
 	}
 
