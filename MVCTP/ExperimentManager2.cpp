@@ -171,7 +171,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 		//if (size > 25000000)
 		//	size = 25000000;
 
-		file_sizes.push_back((int)size);
+		file_sizes.push_back((int)size / 100);
 	}
 	fs_file.close();
 
