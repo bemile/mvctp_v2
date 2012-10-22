@@ -213,7 +213,7 @@ int MVCTPReceiver::ConnectSenderOnTCP() {
 	if (retrans_tcp_client != NULL)
 		delete retrans_tcp_client;
 
-	retrans_tcp_client =  new TcpClient("10.1.1.2", BUFFER_TCP_SEND_PORT);
+	retrans_tcp_client =  new TcpClient("128.143.10.221"/*"10.1.1.2"*/, BUFFER_TCP_SEND_PORT);
 	retrans_tcp_client->Connect();
 	retrans_tcp_sock = retrans_tcp_client->GetSocket();
 	max_sock_fd = multicast_sock > retrans_tcp_sock ? multicast_sock : retrans_tcp_sock;
