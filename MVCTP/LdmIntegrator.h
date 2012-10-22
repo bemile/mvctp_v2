@@ -49,6 +49,7 @@ private:
 	bool send_thread_exited;
 	StatusProxy* proxy;
 
+	pthread_mutex_t send_mutex;
 	pthread_t  recv_thread;
 	static void* StartReceiveThread(void* ptr);
 	void RunReceiveThread();
@@ -57,6 +58,8 @@ private:
 	pthread_t  send_thread;
 	static void* StartSendThread(void* ptr);
 	void RunSendThread();
+
+	void SendMessage(char* msg);
 };
 
 #endif /* LDMINTEGRATOR_H_ */

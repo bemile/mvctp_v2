@@ -19,10 +19,11 @@ LdmIntegrator::LdmIntegrator(MVCTPSender* s, string save_path, StatusProxy* p) {
 	keep_alive = false;
 	send_thread_exited = true;
 	recv_thread_exited = true;
+	pthread_mutex_init(&send_mutex, NULL);
 }
 
 LdmIntegrator::~LdmIntegrator() {
-	// TODO Auto-generated destructor stub
+	pthread_mutex_destroy(&send_mutex);
 }
 
 
@@ -55,7 +56,7 @@ void LdmIntegrator::RunSendThread() {
 	while (keep_alive) {
 		GetFilesInDirectory(files);
 		if (files.size() == 0) {
-			usleep(100000);
+			usleep(50000);
 			continue;
 		}
 
@@ -112,6 +113,8 @@ void LdmIntegrator::RunReceiveThread() {
 
 	int server_sock;
 	if ((server_sock = socket(AF_INET, SOCK_STREAM, 0)) < 0) {
+		recv_thread_exited = true;
+		SendMessage("Error creating a new socket!");
 		return;
 	}
 
@@ -122,10 +125,14 @@ void LdmIntegrator::RunReceiveThread() {
 	server_addr.sin_port = htons(SERVER_PORT);
 
 	if (bind(server_sock, (struct sockaddr *) &server_addr, sizeof(server_addr)) < 0) {
+		recv_thread_exited = true;
+		SendMessage("Error binding a socket!");
 		return;
 	}
 
 	if (listen(server_sock, 1000) < 0) {
+		recv_thread_exited = true;
+		SendMessage("Error start listening!");
 		return;
 	}
 
@@ -158,6 +165,13 @@ void LdmIntegrator::RunReceiveThread() {
 
 	close(server_sock);
 	recv_thread_exited = true;
+}
+
+
+void LdmIntegrator::SendMessage(char* msg) {
+	pthread_mutex_lock(&send_mutex);
+	proxy->SendMessageLocal(INFORMATIONAL, msg);
+	pthread_mutex_unlock(&send_mutex);
 }
 
 
