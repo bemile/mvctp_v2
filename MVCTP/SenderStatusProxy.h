@@ -12,6 +12,7 @@
 #include "MVCTPSender.h"
 #include "ExperimentManager.h"
 #include "ExperimentManager2.h"
+#include "LdmIntegrator.h"
 #include <sys/time.h>
 
 
@@ -66,7 +67,7 @@ private:
 	string 		mvctp_group_addr;
 	int			mvctp_port_num;
 	int			buffer_size;
-
+	LdmIntegrator* integrator;
 	// experiment specific parameters
 	int			file_retx_timeout_ratio;
 

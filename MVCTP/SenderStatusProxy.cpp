@@ -13,6 +13,7 @@ SenderStatusProxy::SenderStatusProxy(string addr, int port, string group_addr, i
 	mvctp_port_num = mvctp_port;
 	buffer_size = buff_size;
 	ptr_sender = NULL;
+	integrator = NULL;
 
 	file_retx_timeout_ratio = 20;
 
@@ -21,6 +22,8 @@ SenderStatusProxy::SenderStatusProxy(string addr, int port, string group_addr, i
 
 SenderStatusProxy::~SenderStatusProxy() {
 	delete ptr_sender;
+	if (integrator != NULL)
+		delete integrator;
 }
 
 
@@ -169,9 +172,24 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 		SendMessageLocal(INFORMATIONAL, "All experiments finished.");
 	}
 	else if (parts.front().compare("StartExperimentLS") == 0) {
-			SendMessageLocal(INFORMATIONAL, "Starting low-speed experiments...");
-			exp_manager.StartExperimentLowSpeed(this, ptr_sender);
-			SendMessageLocal(INFORMATIONAL, "All experiments finished.");
+		SendMessageLocal(INFORMATIONAL, "Starting low-speed experiments...");
+		exp_manager.StartExperimentLowSpeed(this, ptr_sender);
+		SendMessageLocal(INFORMATIONAL, "All experiments finished.");
+	}
+	else if (parts.front().compare("StartLDMIntegration") == 0) {
+		if (parts.size() != 2)
+			return -1;
+
+		if (integrator != NULL) {
+			integrator->Stop();
+			delete integrator;
+		}
+		integrator = new LdmIntegrator(ptr_sender, parts.back(), this);
+		integrator->Start();
+	}
+	else if (parts.front().compare("StartLDMIntegration") == 0) {
+		if (integrator != NULL)
+			integrator->Stop();
 	}
 	else if (parts.front().compare("SetSchedRR") == 0) {
 		if (parts.size() == 2) {
