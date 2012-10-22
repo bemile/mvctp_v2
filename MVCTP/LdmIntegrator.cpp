@@ -30,7 +30,7 @@ LdmIntegrator::~LdmIntegrator() {
 void LdmIntegrator::Start() {
 	keep_alive = true;
 
-	pthread_create(&send_thread, NULL, &LdmIntegrator::StartSendThread, this);
+	//pthread_create(&send_thread, NULL, &LdmIntegrator::StartSendThread, this);
 	pthread_create(&recv_thread, NULL, &LdmIntegrator::StartReceiveThread, this);
 }
 
