@@ -10,7 +10,7 @@
 
 LdmIntegrator::LdmIntegrator(MVCTPSender* s, string save_path, StatusProxy* p) {
 	sender = s;
-	if (save_path[save_path.size() - 1] == '/')
+	if (save_path.size() > 0 && save_path[save_path.size() - 1] == '/')
 		save_dir = save_path;
 	else
 		save_dir = save_path + '/';
@@ -45,6 +45,7 @@ void LdmIntegrator::Stop() {
 
 void* LdmIntegrator::StartSendThread(void* ptr) {
 	((LdmIntegrator*)ptr)->RunSendThread();
+	return NULL;
 }
 
 

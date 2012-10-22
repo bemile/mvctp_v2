@@ -186,10 +186,13 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 		}
 		integrator = new LdmIntegrator(ptr_sender, parts.back(), this);
 		integrator->Start();
+		SendMessageLocal(INFORMATIONAL, "LDM Integrator has been started.");
 	}
 	else if (parts.front().compare("StartLDMIntegration") == 0) {
 		if (integrator != NULL)
 			integrator->Stop();
+
+		SendMessageLocal(INFORMATIONAL, "LDM Integrator has been stopped.");
 	}
 	else if (parts.front().compare("SetSchedRR") == 0) {
 		if (parts.size() == 2) {
