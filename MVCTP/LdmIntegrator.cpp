@@ -94,7 +94,8 @@ int LdmIntegrator::GetFilesInDirectory(vector<string> &files)
     }
 
     while ((dirp = readdir(dp)) != NULL) {
-        files.push_back(string(dirp->d_name));
+    	string fname = save_dir + dirp->d_name;
+        files.push_back(fname);
     }
     closedir(dp);
     return 0;
