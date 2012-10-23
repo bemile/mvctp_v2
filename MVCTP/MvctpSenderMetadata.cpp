@@ -22,6 +22,8 @@ MvctpSenderMetadata::~MvctpSenderMetadata() {
 
 void MvctpSenderMetadata::AddMessageMetadata(MessageMetadata* ptr_meta) {
 	pthread_rwlock_wrlock(&map_lock);
+	if (metadata_map.size() > METADATA_SIZE_LIMIT)
+		metadata_map.clear();
 	metadata_map[ptr_meta->msg_id] = ptr_meta;
 	pthread_rwlock_unlock(&map_lock);
 }
@@ -46,7 +48,7 @@ MessageMetadata* MvctpSenderMetadata::GetMetadata(uint msg_id) {
 
 
 bool MvctpSenderMetadata::IsTransferFinished(uint msg_id) {
-	bool is_finished = false;
+	bool is_finished = true;
 	map<uint, MessageMetadata*>::iterator it;
 	pthread_rwlock_rdlock(&map_lock);
 	if ( (it = metadata_map.find(msg_id)) != metadata_map.end()) {
@@ -55,8 +57,8 @@ bool MvctpSenderMetadata::IsTransferFinished(uint msg_id) {
 		else
 			is_finished = (it->second->unfinished_recvers.size() == 0);
 	}
-
 	pthread_rwlock_unlock(&map_lock);
+
 	return is_finished;
 }
 

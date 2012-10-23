@@ -43,7 +43,8 @@ enum MsgTransferStatus {BOF_NOT_RECEIVED, IN_NORMAL_TRANSFER, FINISHED};
 };
 */
 
-#define	DOUBLE_MAX	99999999999.0
+#define	DOUBLE_MAX				99999999999.0
+#define METADATA_SIZE_LIMIT		10000
 struct MessageMetadata {
 	u_int32_t 				msg_id;
 	bool					ignore_file;
