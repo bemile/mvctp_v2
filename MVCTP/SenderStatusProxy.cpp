@@ -188,7 +188,7 @@ int SenderStatusProxy::HandleCommand(const char* command) {
 		integrator->Start();
 		SendMessageLocal(INFORMATIONAL, "LDM Integrator has been started.");
 	}
-	else if (parts.front().compare("StartLDMIntegration") == 0) {
+	else if (parts.front().compare("StopLDMIntegration") == 0) {
 		if (integrator != NULL)
 			integrator->Stop();
 
