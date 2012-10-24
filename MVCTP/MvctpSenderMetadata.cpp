@@ -22,8 +22,8 @@ MvctpSenderMetadata::~MvctpSenderMetadata() {
 
 void MvctpSenderMetadata::AddMessageMetadata(MessageMetadata* ptr_meta) {
 	pthread_rwlock_wrlock(&map_lock);
-	if (metadata_map.size() > METADATA_SIZE_LIMIT)
-		metadata_map.clear();
+	//if (metadata_map.size() > METADATA_SIZE_LIMIT)
+	//	metadata_map.clear();
 	metadata_map[ptr_meta->msg_id] = ptr_meta;
 	pthread_rwlock_unlock(&map_lock);
 }
