@@ -153,7 +153,7 @@ File_Sample ExperimentManager2::GenerateFiles() {
 
 
 
-static const int NUM_EXPERIMENTS = 3;
+static const int NUM_EXPERIMENTS = 30;
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	static const int BUF_SIZE = 4096;
 
