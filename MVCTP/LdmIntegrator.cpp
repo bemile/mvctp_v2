@@ -167,6 +167,10 @@ void LdmIntegrator::RunReceiveThread() {
 		}
 		outfile.close();
 		count++;
+
+		if (close(sock) < 0) {
+			SendMessage("Error: cannot close the socket!");
+		}
 	}
 
 	close(server_sock);
