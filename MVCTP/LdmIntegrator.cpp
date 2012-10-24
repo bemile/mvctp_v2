@@ -147,11 +147,14 @@ void LdmIntegrator::RunReceiveThread() {
 	while (keep_alive) {
 		int sock;
 		if ((sock = accept(server_sock, (struct sockaddr*) NULL, NULL)) < 0) {
+			recv_thread_exited = true;
 			return;
 		}
 
-		if ((bytes = recv(sock, &product_len, sizeof(int), 0)) < 0)
+		if ((bytes = recv(sock, &product_len, sizeof(int), 0)) < 0) {
+			recv_thread_exited = true;
 			return;
+		}
 
 		sprintf(file_name, "%sproduct%d.dat", save_dir.c_str(), count);
 		ofstream outfile(file_name);
