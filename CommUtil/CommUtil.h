@@ -37,7 +37,7 @@ enum MsgType {
 };
 
 
-#define BUFFER_SIZE 	10000
+#define BUFFER_SIZE 	65536
 
 
 #endif /* COMMUTIL_H_ */

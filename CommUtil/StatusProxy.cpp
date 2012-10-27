@@ -381,9 +381,9 @@ void StatusProxy::HandleRestartCommand() {
 
 
 int StatusProxy::ExecSysCommand(const char* command) {
+	static char output[BUFFER_SIZE];
 	FILE* pFile = popen(command, "r");
 	if (pFile != NULL) {
-		char output[BUFFER_SIZE];
 		int bytes = fread(output, 1, BUFFER_SIZE, pFile);
 		output[bytes] = '\0';
 		pclose(pFile);
