@@ -32,11 +32,11 @@ using namespace std;
 #define SERVER_PORT 	12350
 #define	BUFFER_SIZE		4096
 
-class StatusProxy;
+class SenderStatusProxy;
 
 class LdmIntegrator {
 public:
-	LdmIntegrator(MVCTPSender* s, string save_path, StatusProxy* p);
+	LdmIntegrator(MVCTPSender* s, string save_path, SenderStatusProxy* p);
 	void Start();
 	void Stop();
 	~LdmIntegrator();
@@ -47,7 +47,7 @@ private:
 	bool keep_alive;
 	bool recv_thread_exited;
 	bool send_thread_exited;
-	StatusProxy* proxy;
+	SenderStatusProxy* proxy;
 
 	pthread_mutex_t send_mutex;
 	pthread_t  recv_thread;

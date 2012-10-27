@@ -231,6 +231,9 @@ void SenderStatusProxy::SetSendRate(int rate_mbps) {
 	SendMessageLocal(COMMAND_RESPONSE, command);
 }
 
+int SenderStatusProxy::GetRetransmissionTimeoutRatio() {
+	return file_retx_timeout_ratio;
+}
 
 void SenderStatusProxy::SetRetransmissionBufferSize(int size_mb) {
 	ptr_sender->SetRetransmissionBufferSize(size_mb);

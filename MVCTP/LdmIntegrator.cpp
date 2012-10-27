@@ -6,9 +6,9 @@
  */
 
 #include "LdmIntegrator.h"
-#include "../CommUtil/StatusProxy.h"
+#include "SenderStatusProxy.h"
 
-LdmIntegrator::LdmIntegrator(MVCTPSender* s, string save_path, StatusProxy* p) {
+LdmIntegrator::LdmIntegrator(MVCTPSender* s, string save_path, SenderStatusProxy* p) {
 	sender = s;
 	if (save_path.size() > 0 && save_path[save_path.size() - 1] == '/')
 		save_dir = save_path;
@@ -62,7 +62,8 @@ void LdmIntegrator::RunSendThread() {
 		}
 
 		for (int i = 0; i < files.size(); i++) {
-			ids.push_back(sender->SendFile(files[i].c_str(), 100000));
+			ids.push_back(sender->SendFile(files[i].c_str(),
+							proxy->GetRetransmissionTimeoutRatio()));
 		}
 
 		for (int i = 0; i < ids.size(); i++) {
