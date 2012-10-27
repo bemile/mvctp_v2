@@ -91,8 +91,8 @@ void MVCTPReceiver::SendHistoryStats() {
 	double robustness = recv_stats.num_recved_files == 0 ? 100.0 :
 											(100.0 - recv_stats.num_failed_files * 100.0 / recv_stats.num_recved_files);  // in percentage
 
-	sprintf(buf, "***** Statistics *****Total received files: %d\nTotal received packets: %d\n"
-			"Total retx packets: %d\nRetx rate:%.1f\%\nRobustness:%.2f", recv_stats.num_recved_files, recv_stats.total_recv_packets,
+	sprintf(buf, "***** Statistics *****\nTotal received files: %d\nTotal received packets: %d\n"
+			"Total retx packets: %d\nRetx rate:%.1f\%\nRobustness:%.2f\%\n", recv_stats.num_recved_files, recv_stats.total_recv_packets,
 				recv_stats.total_retrans_packets, retx_rate, robustness);
 	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 }
