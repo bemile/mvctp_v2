@@ -101,6 +101,8 @@ void MVCTPReceiver::SendHistoryStats() {
 void MVCTPReceiver::ResetHistoryStats() {
 	recv_stats.total_recv_bytes = 0;
 	recv_stats.total_recv_packets = 0;
+	recv_stats.total_retrans_bytes = 0;
+	recv_stats.total_retrans_packets = 0;
 	recv_stats.num_recved_files = 0;
 	recv_stats.num_failed_files = 0;
 	recv_stats.last_file_recv_time = 0.0;
