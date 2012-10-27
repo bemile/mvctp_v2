@@ -96,6 +96,13 @@ int ReceiverStatusProxy::HandleCommand(const char* command) {
 		sprintf(msg, "Packet loss rate: %d per thousand.", rate);
 		SendMessageLocal(COMMAND_RESPONSE, msg);
 	}
+	else if (parts.front().compare("ResetStatistics")) {
+		ptr_receiver->ResetHistoryStats();
+		SendMessageLocal(COMMAND_RESPONSE, "Statistics has been reset.");
+	}
+	else if (parts.front().compare("GetStatistics") == 0) {
+		ptr_receiver->SendHistoryStats();
+	}
 	else if (parts.front().compare("SetBufferSize") == 0) {
 		if (parts.size() == 2) {
 			int buf_size = atoi(parts.back().c_str());

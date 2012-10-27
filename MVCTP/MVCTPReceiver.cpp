@@ -85,11 +85,14 @@ void MVCTPReceiver::SendSessionStatistics() {
 
 
 void MVCTPReceiver::SendHistoryStats() {
-	char buf[512];
-	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
+	char buf[1024];
+	double retx_rate = recv_stats.total_retrans_packets * 100.0 / recv_stats.total_recv_packets;
 	double robustness = 100.0 - recv_stats.num_failed_files * 100.0 / recv_stats.num_recved_files;  // in percentage
-	sprintf("%s,%.2f,%.2f", status_proxy->GetNodeId().c_str(), avg_throughput, robustness);
-	status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
+	sprintf(buf, "***** Statistics *****Total received files: %d\nTotal received packets: %d\n"
+			"Total retx packets: %d\nRetx rate:%.1f\%\nRobustness:%.2f", recv_stats.num_recved_files, recv_stats.total_recv_packets,
+				recv_stats.total_retrans_packets, retx_rate, robustness);
+
+	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 }
 
 
