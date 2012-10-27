@@ -94,7 +94,7 @@ public:
 	// For memory-to-memory data tranfer
 	void 	SendMemoryData(void* data, size_t length);
 	// For disk-to-disk data transfer
-	uint 	SendFile(const char* file_name, int retx_timeout_ratio = 20);
+	uint 	SendFile(const char* file_name, int retx_timeout_ratio = 1000000);
 	bool	IsTransferFinished(uint msg_id);
 	void 	SendFileBufferedIO(const char* file_name);
 	// Send data using TCP connections, for performance comparison

@@ -15,7 +15,7 @@ SenderStatusProxy::SenderStatusProxy(string addr, int port, string group_addr, i
 	ptr_sender = NULL;
 	integrator = NULL;
 
-	file_retx_timeout_ratio = 20;
+	file_retx_timeout_ratio = 1000000; //almost infinite retransmission deadline
 
 	ConfigureEnvironment();
 }

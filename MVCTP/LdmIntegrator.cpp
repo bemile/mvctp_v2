@@ -62,7 +62,7 @@ void LdmIntegrator::RunSendThread() {
 		}
 
 		for (int i = 0; i < files.size(); i++) {
-			ids.push_back(sender->SendFile(files[i].c_str(), 100));
+			ids.push_back(sender->SendFile(files[i].c_str(), 100000));
 		}
 
 		for (int i = 0; i < ids.size(); i++) {

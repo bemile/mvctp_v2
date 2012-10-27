@@ -451,6 +451,8 @@ void MVCTPReceiver::RunReceivingThread() {
 				// Update statistics
 				recv_stats.total_recv_packets++;
 				recv_stats.total_recv_bytes += header->data_len;
+				recv_stats.total_retrans_packets++;
+				recv_stats.total_retrans_bytes += header->data_len;
 				recv_status.retx_packets++;
 				recv_status.retx_bytes += header->data_len;
 			}
