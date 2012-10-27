@@ -96,7 +96,7 @@ int ReceiverStatusProxy::HandleCommand(const char* command) {
 		sprintf(msg, "Packet loss rate: %d per thousand.", rate);
 		SendMessageLocal(COMMAND_RESPONSE, msg);
 	}
-	else if (parts.front().compare("ResetStatistics")) {
+	else if (parts.front().compare("ResetStatistics") == 0) {
 		ptr_receiver->ResetHistoryStats();
 		SendMessageLocal(COMMAND_RESPONSE, "Statistics has been reset.");
 	}
