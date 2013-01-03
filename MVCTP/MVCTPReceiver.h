@@ -91,7 +91,7 @@ public:
 	void	SendHistoryStatsToSender();
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
-	void 	AddSessionStatistics();
+	void 	AddSessionStatistics(uint msg_id);
 	void	SendSessionStatisticsToSender();
 	void	ExecuteCommand(char* command);
 	void 	SetStatusProxy(StatusProxy* proxy);

@@ -193,13 +193,13 @@ void MVCTPReceiver::SendSessionStatisticsToSender() {
 
 // Format of a report entry:
 //   host_name, msg_id, file_size, transfer_time, retx bytes, success (1 or 0), cpu_usage, is_slow_receiver
-void MVCTPReceiver::AddSessionStatistics() {
+void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
+	MessageReceiveStatus& status = recv_status_map[msg_id];
+
 	char buf[1024];
-	sprintf(buf, "%s,%u,%lld,%.2f,%d,%d,%d,%s\n", status_proxy->GetNodeId().c_str(), recv_stats.current_msg_id,
-			recv_status_map[recv_stats.current_msg_id].msg_length,
-			GetElapsedSeconds(recv_status_map[recv_stats.current_msg_id].start_time_counter),
-			recv_stats.session_retrans_bytes,
-			recv_status_map[recv_stats.current_msg_id].recv_failed ? 0 : 1,
+	sprintf(buf, "%s,%u,%lld,%.2f,%d,%d,%d,%s\n", status_proxy->GetNodeId().c_str(), msg_id,
+			status.msg_length, GetElapsedSeconds(status.start_time_counter),
+			status.retx_bytes, status.recv_failed ? 0 : 1,
 			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
 
 	recv_stats.session_stats_vec.push_back(buf);
@@ -289,80 +289,6 @@ void MVCTPReceiver::ReconnectSender() {
 
 void MVCTPReceiver::Start() {
 	StartReceivingThread();
-	/*char buf[MVCTP_PACKET_LEN];
-	MvctpHeader* header = (MvctpHeader*)buf;
-	char* data = buf + MVCTP_HLEN;
-
-	struct MvctpSenderMessage sender_msg;
-	fd_set read_set;
-	while (true) {
-		read_set = read_sock_set;
-		if (select(max_sock_fd + 1, &read_set, NULL, NULL, NULL) == -1) {
-			SysError("MVCTPReceiver::Start()::select() error");
-		}
-
-		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
-			if (recv(retrans_tcp_sock, header, sizeof(MvctpHeader), 0) <= 0) {
-				ReconnectSender();
-				continue;
-			}
-
-			if (!(header->flags & MVCTP_SENDER_MSG_EXP)) {
-				if (recv(retrans_tcp_sock, data, header->data_len, 0) < 0)
-					ReconnectSender();
-
-				continue;
-			}
-
-
-			if (recv(retrans_tcp_sock, &sender_msg, sizeof(sender_msg), 0) <= 0) {
-				ReconnectSender();
-				continue;
-			}
-
-			switch (sender_msg.msg_type) {
-			case MEMORY_TRANSFER_START:
-			{
-				char* buf = (char*)malloc(sender_msg.data_len);
-				ReceiveMemoryData(sender_msg, buf);
-				free(buf);
-				break;
-			}
-			case FILE_TRANSFER_START:
-				ReceiveFileMemoryMappedIO(sender_msg);
-				//ReceiveFileBufferedIO(msg);
-				break;
-			case TCP_MEMORY_TRANSFER_START: {
-				char* buf = (char*) malloc(sender_msg.data_len);
-				TcpReceiveMemoryData(sender_msg, buf);
-				free(buf);
-				break;
-			}
-			case TCP_FILE_TRANSFER_START:
-				TcpReceiveFile(sender_msg);
-				break;
-			case SPEED_TEST:
-				if (recv_stats.session_retrans_percentage > 0.3) {
-					status_proxy->SendMessageLocal(INFORMATIONAL, "I'm going offline because I'm a slow node...");
-					system("sudo reboot");
-				}
-				break;
-			case COLLECT_STATISTICS:
-				cout << "Start sending statistics to the sender." << endl;
-				SendStatisticsToSender();
-				cout << "Statistics sent." << endl;
-				break;
-			case EXECUTE_COMMAND:
-				ExecuteCommand(sender_msg.text);
-				break;
-			default:
-				break;
-			}
-
-		} else if (FD_ISSET(multicast_sock, &read_set)) {
-
-		}
-	}*/
 }
 
 
@@ -504,7 +430,7 @@ void MVCTPReceiver::RunReceivingThread() {
 					recv_status_map.erase(header->session_id);
 
 					recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
-					AddSessionStatistics();
+					AddSessionStatistics(header->session_id);
 					/*char str[256];
 					sprintf(str, "File transfer finished.\n***** Statistics for File %d *****\n"
 							"Transfer Time: %.2f seconds\nRetx. Packets: %lld\nRetx. Rate: %.2f",
@@ -524,7 +450,7 @@ void MVCTPReceiver::RunReceivingThread() {
 
 					recv_stats.num_failed_files++;
 					recv_status_map[header->session_id].recv_failed = true;
-					AddSessionStatistics();
+					AddSessionStatistics(header->session_id);
 
 					/*char str[256];
 					sprintf(str, "Receiving file %d failed because of retransmission timeout.", recv_status.msg_id);
