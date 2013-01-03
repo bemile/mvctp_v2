@@ -197,7 +197,7 @@ void MVCTPReceiver::SendSessionStatisticsToSender() {
 //   host_name, msg_id, file_size, transfer_time, retx bytes, success (1 or 0), cpu_usage, is_slow_receiver
 void MVCTPReceiver::AddSessionStatistics() {
 	char buf[1024];
-	sprintf(buf, "%s,%d,%d,%.2f,%d,%d,%d,%s\n", status_proxy->GetNodeId().c_str(), recv_stats.current_msg_id,
+	sprintf(buf, "%s,%u,%lld,%.2f,%d,%d,%d,%s\n", status_proxy->GetNodeId().c_str(), recv_stats.current_msg_id,
 			recv_status_map[recv_stats.current_msg_id].msg_length,
 			GetElapsedSeconds(recv_status_map[recv_stats.current_msg_id].start_time_counter),
 			recv_stats.session_retrans_bytes,
