@@ -299,7 +299,6 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 void ExperimentManager2::HandleExpResults(string msg) {
 	pthread_mutex_lock(&write_mutex);
-	cout << "I received a message: " << msg << endl;
 	if (result_file.is_open()) {
 		result_file << msg << endl;
 		result_file.flush();
