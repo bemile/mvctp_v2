@@ -170,11 +170,11 @@ void ExperimentManager2::ReadFileSizes(vector<int>& file_sizes) {
 void ExperimentManager2::ReadInterArrivals(vector<double>& inter_arrival_times) {
 	system("sudo cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
 	ifstream irt_file("/tmp/temp/inter_arrival_times.txt");
-		double time;
-		while (irt_file >> time) {
-			inter_arrival_times.push_back(time);
-		}
-		irt_file.close();
+	double time;
+	while (irt_file >> time) {
+		inter_arrival_times.push_back(time);
+	}
+	irt_file.close();
 }
 
 
@@ -279,7 +279,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 			usleep(2000);
 		}
 
-		//sender->CollectExpResults();
+		sender->CollectExpResults();
 
 		double transfer_time = GetElapsedSeconds(cpu_counter);
 		double pho = sample.total_file_size / sample.total_time / (sender->GetSendRate() * 1000000.0) * 8;
