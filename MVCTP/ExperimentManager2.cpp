@@ -209,7 +209,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	// Run the experiments for NUM_EXPERIMENTS times
 	result_file.open("exp_results.csv");
 	//result_file << "#Node ID, Throughput (Mbps), Robustness (%), Avg. CPU Usage (%), Slow Node (True or False)" << endl;
-	result_file << "#Node ID, File ID, File Size (bytes), Transfer Time (sec), Retx Bytes, Success, CPU Usage (%), Is Slow Node" << endl;
+	result_file << "#Node ID, File ID, File Size (bytes), Transfer Time (sec), Retx Bytes, Success, Is Slow Node" << endl;
 	char str[256];
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
 		sprintf(str, "\n\n***** Run %d *****\nGenerating files...\n", n + 1);
