@@ -86,6 +86,8 @@ void ExperimentManager2::StartExperiment(SenderStatusProxy* sender_proxy, MVCTPS
 }
 
 
+
+
 // Randomly select and generate files from a given sample
 File_Sample ExperimentManager2::GenerateFiles() {
 	static const int BUF_SIZE = 4096;
@@ -152,41 +154,62 @@ File_Sample ExperimentManager2::GenerateFiles() {
 }
 
 
-
-static const int NUM_EXPERIMENTS = 3; //0;
-void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
-	static const int BUF_SIZE = 4096;
-
-	//sender->SetSendRate(600);
-	system("mkdir /tmp/temp");
-	system("sudo rm /tmp/temp/temp*.dat");
+void ExperimentManager2::ReadFileSizes(vector<int>& file_sizes) {
 	system("sudo cp /users/jieli/src/file_sizes.txt /tmp/temp");
-	system("sudo cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
-
 	// read in file sizes and inter-arrival-times
 	ifstream fs_file("/tmp/temp/file_sizes.txt");
 	double size = 0;
-	vector<int> file_sizes;
-	while (fs_file >> size) {
-		//if (size > 25000000)
-		//	size = 25000000;
 
+	while (fs_file >> size) {
 		file_sizes.push_back((int)size / 4);
 	}
 	fs_file.close();
+}
 
+
+void ExperimentManager2::ReadInterArrivals(vector<double>& inter_arrival_times) {
+	system("sudo cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
 	ifstream irt_file("/tmp/temp/inter_arrival_times.txt");
-	double time;
-	vector<double> inter_arrival_times;
-	while (irt_file >> time) {
-		inter_arrival_times.push_back(time);
+		double time;
+		while (irt_file >> time) {
+			inter_arrival_times.push_back(time);
+		}
+		irt_file.close();
+}
+
+
+void ExperimentManager2::GenerateFile(string file_name, int size) {
+	static const int BUF_SIZE = 4096;
+	static char buf[BUF_SIZE];
+
+	int remained_size = size; //* 100;
+	ofstream outfile(file_name.c_str(), ofstream::binary | ofstream::trunc);
+	while (remained_size > 0) {
+		int data_len = (remained_size > BUF_SIZE) ? BUF_SIZE : remained_size;
+		outfile.write(buf, data_len);
+		remained_size -= data_len;
 	}
-	irt_file.close();
+	outfile.close();
+}
+
+
+static const int NUM_EXPERIMENTS = 3; //0;
+void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	//sender->SetSendRate(600);
+	system("mkdir /tmp/temp");
+	system("sudo rm /tmp/temp/temp*.dat");
+
+	vector<int> file_sizes;
+	ReadFileSizes(file_sizes);
+
+	vector<double> inter_arrival_times;
+	ReadInterArrivals(inter_arrival_times);
 
 
 	// Run the experiments for NUM_EXPERIMENTS times
 	result_file.open("exp_results.csv");
-	result_file << "#Node ID, Throughput (Mbps), Robustness (%), Avg. CPU Usage (%), Slow Node (True or False)" << endl;
+	//result_file << "#Node ID, Throughput (Mbps), Robustness (%), Avg. CPU Usage (%), Slow Node (True or False)" << endl;
+	result_file << "#Node ID, File ID, File Size (bytes), Transfer Time (sec), Retx Bytes, Success, CPU Usage (%), Is Slow Node";
 	char str[256];
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
 		sprintf(str, "\n\n***** Run %d *****\nGenerating files...\n", n + 1);
@@ -194,7 +217,6 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 		// Generate files
 		int file_index = 1;
 		char file_name[256];
-		char buf[BUF_SIZE];
 		File_Sample sample;
 		for (int i = 0; i < FILE_COUNT; i++) {
 			int index = n * FILE_COUNT + i;
@@ -204,15 +226,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 			sample.total_time += inter_arrival_times[index];
 
 			// Generate the file
-			int remained_size = file_sizes[index]; //* 100;
 			sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
-			ofstream outfile (file_name, ofstream::binary | ofstream::trunc);
-			while (remained_size > 0) {
-				int data_len = (remained_size > BUF_SIZE) ? BUF_SIZE : remained_size;
-				outfile.write(buf, data_len);
-				remained_size -= data_len;
-			}
-			outfile.close();
+			GenerateFile(file_name, file_sizes[index]);
 		}
 
 
@@ -252,7 +267,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 					time_spec.tv_nsec = time_diff * 1000000000;
 				}
 
-				cout << "Wait for " << time_diff << " seconds" << endl;
+				//cout << "Wait for " << time_diff << " seconds" << endl;
 				nanosleep(&time_spec, NULL);
 			}
 
@@ -285,7 +300,6 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 void ExperimentManager2::HandleExpResults(string msg) {
 	pthread_mutex_lock(&write_mutex);
 	if (result_file.is_open()) {
-		cout << "I received a result report: " << msg << endl;
 		result_file << msg << endl;
 		result_file.flush();
 	}

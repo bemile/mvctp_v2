@@ -38,6 +38,10 @@ public:
 
 	void StartExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	void StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
+	void ReadFileSizes(vector<int>& file_sizes);
+	void GenerateFile(string file_name, int size);
+	void ReadInterArrivals(vector<double>& file_sizes);
+
 	void HandleExpResults(string msg);
 
 private:

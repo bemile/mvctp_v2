@@ -19,6 +19,7 @@ typedef	void (*VCMTP_BOF_Function)();
 typedef void (*VCMTP_Recv_Complete_Function)();
 
 struct MvctpReceiverStats {
+	uint	current_msg_id;
 	uint 	total_recv_packets;
 	uint	total_recv_bytes;
 	uint 	total_retrans_packets;
@@ -38,6 +39,7 @@ struct MvctpReceiverStats {
 	int					num_recved_files;
 	int					num_failed_files;
 	double				last_file_recv_time;
+	vector<string>		session_stats_vec;
 };
 
 
@@ -55,6 +57,7 @@ struct MessageReceiveStatus {
 	long long	multicast_bytes;
 	long long 	retx_packets;
 	long long 	retx_bytes;
+	bool		recv_failed;
 	CpuCycleCounter 	start_time_counter;
 };
 
@@ -69,6 +72,7 @@ struct MvctpReceiverConfig {
 };
 
 
+// MVCTPReceiver is the main class that communicates with the MVCTP Sender
 class MVCTPReceiver : public MVCTPComm {
 public:
 	MVCTPReceiver(int buf_size);
@@ -87,6 +91,7 @@ public:
 	void	SendHistoryStatsToSender();
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
+	void 	AddSessionStatistics();
 	void	SendSessionStatisticsToSender();
 	void	ExecuteCommand(char* command);
 	void 	SetStatusProxy(StatusProxy* proxy);

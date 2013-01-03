@@ -106,6 +106,7 @@ void MVCTPReceiver::ResetHistoryStats() {
 	recv_stats.num_recved_files = 0;
 	recv_stats.num_failed_files = 0;
 	recv_stats.last_file_recv_time = 0.0;
+	recv_stats.session_stats_vec.clear();
 	AccessCPUCounter(&recv_stats.reset_cpu_timer.hi, &recv_stats.reset_cpu_timer.lo);
 
 	recv_stats.cpu_monitor.Stop();
@@ -116,25 +117,37 @@ void MVCTPReceiver::ResetHistoryStats() {
 
 
 void MVCTPReceiver::SendHistoryStatsToSender() {
-	char buf[1024];
+	/*char buf[1024];
 	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
 	double robustness = 100.0 - recv_stats.num_failed_files * 100.0 / recv_stats.num_recved_files;  // in percentage
 	sprintf(buf, "%s,%.2f,%.2f,%d,%s", status_proxy->GetNodeId().c_str(), avg_throughput, robustness,
 			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
 
 	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
-	//return;
 
 	int len = strlen(buf);
 	char msg_packet[1024];
+	//return;*/
+
+
+	string res = "";
+	int size = recv_stats.session_stats_vec.size();
+	for (int i = 0; i < size; i++) {
+		res += recv_stats.session_stats_vec[i];
+	}
+
+	char* msg_packet = new char[MVCTP_HLEN + res.size()];
+
 	MvctpHeader* header = (MvctpHeader*)msg_packet;
 	header->session_id = 0;
 	header->seq_number = 0;
-	header->data_len = len;
+	header->data_len = res.size();
 	header->flags = MVCTP_HISTORY_STATISTICS;
 
-	memcpy(msg_packet + MVCTP_HLEN, buf, len);
-	retrans_tcp_client->Send(msg_packet, MVCTP_HLEN + len);
+	memcpy(msg_packet + MVCTP_HLEN, res.c_str(), res.size());
+	retrans_tcp_client->Send(msg_packet, MVCTP_HLEN + res.size());
+
+	delete[] msg_packet;
 }
 
 
@@ -153,9 +166,9 @@ void MVCTPReceiver::ResetSessionStatistics() {
 	// reset the total missing bytes and current received retransmission bytes to zero
 	total_missing_bytes = 0;
 	received_retrans_bytes = 0;
-
 	is_multicast_finished = false;
 }
+
 
 // Send session statistics to the sender through TCP connection
 void MVCTPReceiver::SendSessionStatisticsToSender() {
@@ -175,6 +188,29 @@ void MVCTPReceiver::SendSessionStatisticsToSender() {
 	int len = strlen(buf);
 	retrans_tcp_client->Send(&len, sizeof(len));
 	retrans_tcp_client->Send(buf, len);
+}
+
+
+// Format of a report entry:
+//   host_name, msg_id, file_size, transfer_time, retx bytes, success (1 or 0), cpu_usage, is_slow_receiver
+void MVCTPReceiver::AddSessionStatistics() {
+	char buf[1024];
+	sprintf(buf, "%s,%d,%d,%.2f,%d,%d,%d,%s\n", status_proxy->GetNodeId().c_str(), recv_stats.current_msg_id,
+			recv_status_map[recv_stats.current_msg_id].msg_length,
+			GetElapsedSeconds(recv_status_map[recv_stats.current_msg_id].start_time_counter),
+			recv_stats.session_retrans_bytes,
+			recv_status_map[recv_stats.current_msg_id].recv_failed ? 0 : 1,
+			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
+
+	recv_stats.session_stats_vec.push_back(buf);
+
+
+//	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
+//	double robustness = 100.0 - recv_stats.num_failed_files * 100.0 / recv_stats.num_recved_files;  // in percentage
+//	sprintf(buf, "%s,%.2f,%.2f,%d,%s", status_proxy->GetNodeId().c_str(), avg_throughput, robustness,
+//			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
+//
+//	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
 }
 
 
@@ -468,6 +504,7 @@ void MVCTPReceiver::RunReceivingThread() {
 					recv_status_map.erase(header->session_id);
 
 					recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
+					AddSessionStatistics();
 					/*char str[256];
 					sprintf(str, "File transfer finished.\n***** Statistics for File %d *****\n"
 							"Transfer Time: %.2f seconds\nRetx. Packets: %lld\nRetx. Rate: %.2f",
@@ -486,6 +523,8 @@ void MVCTPReceiver::RunReceivingThread() {
 					recv_status_map.erase(header->session_id);
 
 					recv_stats.num_failed_files++;
+					recv_status_map[header->session_id].recv_failed = true;
+					AddSessionStatistics();
 
 					/*char str[256];
 					sprintf(str, "Receiving file %d failed because of retransmission timeout.", recv_status.msg_id);
@@ -536,6 +575,8 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 		status_proxy->SendMessageLocal(INFORMATIONAL, str);
 	}
 
+	// First reset all session related counters
+	ResetSessionStatistics();
 
 	MessageReceiveStatus status;
 	status.msg_id = sender_msg.session_id;
@@ -548,6 +589,7 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	status.multicast_bytes = 0;
 	status.retx_packets = 0;
 	status.retx_bytes = 0;
+	status.recv_failed = false;
 	status.file_descriptor = open(sender_msg.text, O_RDWR | O_CREAT | O_TRUNC);
 	if (status.file_descriptor < 0)
 		SysError("MVCTPReceiver::PrepareForFileTransfer open file error");
@@ -565,6 +607,7 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	}
 	recv_status_map[status.msg_id] = status;
 
+	recv_stats.current_msg_id = sender_msg.session_id;
 	recv_stats.num_recved_files++;
  }
 
@@ -949,6 +992,7 @@ void MVCTPReceiver::ReceiveFileBufferedIO(const MvctpSenderMessage & transfer_ms
 	is_multicast_finished = false;
 	received_retrans_bytes = 0;
 	total_missing_bytes = 0;
+	recv_stats.current_msg_id = transfer_msg.session_id;
 
 	char str[256];
 	sprintf(str, "Started disk-to-disk file transfer. Size: %u",
