@@ -130,7 +130,12 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 	pthread_mutex_lock(&sock_list_mutex);
 	for (it = conn_sock_list.begin(); it != conn_sock_list.end(); it++) {
 		if (FD_ISSET(*it, &read_fds)) {
+			again:
 			res = recv(*it, buffer, length, MSG_WAITALL);
+			if (errno == EINTR) {
+				goto again;
+			}
+
 			if (res <= 0) {
 				bad_socks.push_back(*it);
 			}
@@ -155,6 +160,10 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 // Receive data from a given socket
 int TcpServer::Receive(int sock_fd, void* buffer, size_t length) {
 	int res = recv(sock_fd, buffer, length, MSG_WAITALL);
+	if (errno == EINTR) {
+		Receive(sock_fd, buffer, length);
+	}
+
 	if (res <= 0) {
 		pthread_mutex_lock(&sock_list_mutex);
 		conn_sock_list.remove(sock_fd);

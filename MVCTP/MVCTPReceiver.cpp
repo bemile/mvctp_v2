@@ -194,7 +194,7 @@ void MVCTPReceiver::SendSessionStatisticsToSender() {
 
 
 // Format of a report entry:
-//   host_name, msg_id, file_size, transfer_time, retx bytes, success (1 or 0), is_slow_receiver
+// host_name, msg_id, file_size, transfer_time, retx bytes, success (1 or 0), is_slow_receiver
 void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
 	MessageReceiveStatus& status = recv_status_map[msg_id];
 
