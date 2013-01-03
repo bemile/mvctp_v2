@@ -109,6 +109,8 @@ void MVCTPReceiver::ResetHistoryStats() {
 	recv_stats.session_stats_vec.clear();
 	AccessCPUCounter(&recv_stats.reset_cpu_timer.hi, &recv_stats.reset_cpu_timer.lo);
 
+	recv_status_map.clear();
+
 	recv_stats.cpu_monitor.Stop();
 	recv_stats.cpu_monitor.SetCPUFlag(true);
 	recv_stats.cpu_monitor.SetInterval(200);
@@ -427,7 +429,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				if (it != recv_status_map.end()) {
 					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
 					close(recv_status.file_descriptor);
-					recv_status_map.erase(header->session_id);
+					//recv_status_map.erase(header->session_id);
 
 					recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
 					AddSessionStatistics(header->session_id);
@@ -446,7 +448,7 @@ void MVCTPReceiver::RunReceivingThread() {
 					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
 					AddRetxRequest(recv_status.msg_id, recv_status.msg_length, recv_status.msg_length);
 					close(recv_status.file_descriptor);
-					recv_status_map.erase(header->session_id);
+					//recv_status_map.erase(header->session_id);
 
 					recv_stats.num_failed_files++;
 					recv_status_map[header->session_id].recv_failed = true;
