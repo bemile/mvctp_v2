@@ -148,6 +148,8 @@ void MVCTPReceiver::SendHistoryStatsToSender() {
 	retrans_tcp_client->Send(msg_packet, MVCTP_HLEN + res.size());
 
 	delete[] msg_packet;
+
+	cout << "History statistics sent." << endl;
 }
 
 
