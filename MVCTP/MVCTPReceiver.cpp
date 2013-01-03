@@ -199,7 +199,7 @@ void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
 	MessageReceiveStatus& status = recv_status_map[msg_id];
 
 	char buf[1024];
-	sprintf(buf, "%s,%u,%lld,%.5f,%lld,%d,%d,%s\n", status_proxy->GetNodeId().c_str(), msg_id,
+	sprintf(buf, "%s,%u,%lld,%.5f,%lld,%d,%s\n", status_proxy->GetNodeId().c_str(), msg_id,
 			status.msg_length, GetElapsedSeconds(status.start_time_counter),
 			status.retx_bytes, status.recv_failed ? 0 : 1,
 			(packet_loss_rate > 0 ? "True" : "False"));
