@@ -193,7 +193,7 @@ void ExperimentManager2::GenerateFile(string file_name, int size) {
 }
 
 
-static const int NUM_EXPERIMENTS = 3; //0;
+static const int NUM_EXPERIMENTS = 10;
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	//sender->SetSendRate(600);
 	system("mkdir /tmp/temp");
