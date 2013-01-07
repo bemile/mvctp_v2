@@ -642,6 +642,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 			//cout << "Receive finishing mark request from sock " << sock_fd << endl;
 		}
 		else if (recv_header->flags & MVCTP_HISTORY_STATISTICS) {
+			cout << "I have received a history statistics." << endl;
 			char* buf = new char[recv_header->data_len + 1];
 			if (retrans_tcp_server->Receive(sock_fd, buf, recv_header->data_len) < 0) {
 				break;
@@ -649,6 +650,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 			buf[recv_header->data_len] = '\0';
 			status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 			delete[] buf;
+			cout << "Finished receiving a history statistics." << endl;
 		}
 	}
 
