@@ -528,7 +528,6 @@ void* MVCTPSender::StartRetransThread(void* ptr) {
 // The execution function for the retransmission thread
 void MVCTPSender::RunRetransThread(int sock) {
 	int sock_fd = sock;
-	cout << "Retx thread created for socket " << sock_fd << endl;
 
 	// Opened file descriptor map for the retransmission.  Format: <msg_id, file_descriptor>
 	map<uint, int> retrans_fd_map;
