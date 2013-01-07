@@ -643,9 +643,21 @@ void MVCTPSender::RunRetransThread(int sock) {
 		else if (recv_header->flags & MVCTP_HISTORY_STATISTICS) {
 			cout << "I have received a history statistics from socket " << sock_fd << endl;
 			char* buf = new char[recv_header->data_len + 1];
-			if (retrans_tcp_server->Receive(sock_fd, buf, recv_header->data_len) < 0) {
-				break;
+			//if (retrans_tcp_server->Receive(sock_fd, buf, recv_header->data_len) < 0) {
+			//	break;
+			//}
+
+			int remained = recv_header->data_len;
+			char* ptr = buf;
+			while (remained > 0) {
+				int bytes = remained > 4096 ? 4096 : remained;
+				int res = retrans_tcp_server->Receive(sock_fd, ptr, bytes);
+				if (res < 0)
+					break;
+				remained -= res;
+				ptr += res;
 			}
+
 			buf[recv_header->data_len] = '\0';
 			status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 			delete[] buf;
