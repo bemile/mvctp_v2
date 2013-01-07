@@ -659,7 +659,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 			buf[recv_header->data_len] = '\0';
 			status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 			delete[] buf;
-			cout << "Finished receiving a history statistics." << endl;
+			cout << "Finished receiving a history statistics from socket " << sock_fd << endl;
 		}
 	}
 
