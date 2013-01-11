@@ -11,6 +11,7 @@
 #include <iostream>
 #include <list>
 #include <netdb.h>
+#include <unistd.h>
 #include <string>
 #include <stdio.h>
 #include <stdlib.h>
