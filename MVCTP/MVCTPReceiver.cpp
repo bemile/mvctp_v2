@@ -311,10 +311,10 @@ void MVCTPReceiver::RunReceivingThread() {
 	MvctpHeader* header = (MvctpHeader*) packet_buffer;
 	char* packet_data = packet_buffer + MVCTP_HLEN;
 
-	MvctpSenderMessage sender_msg;
 	MvctpSenderMessage *ptr_sender_msg = (MvctpSenderMessage *)packet_data;
-	int recv_bytes = 0;
-	fd_set read_set;
+	int 	recv_bytes = 0;
+	fd_set 	read_set;
+	map<uint, MessageReceiveStatus>::iterator it;
 	while (true) {
 		read_set = read_sock_set;
 		if (select(max_sock_fd + 1, &read_set, NULL, NULL, NULL) == -1) {
@@ -329,41 +329,34 @@ void MVCTPReceiver::RunReceivingThread() {
 			// Check for BOF and EOF
 			if (header->flags & MVCTP_BOF) {
 				HandleBofMessage(*ptr_sender_msg);
-				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an BOF message");
 			}
 			else if (header->flags & MVCTP_EOF) {
-				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
 				HandleEofMessage(header->session_id);
 			}
+			else { // is a data packet
+				if ( (it = recv_status_map.find(header->session_id)) == recv_status_map.end())
+					continue;
 
-
-			map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
-			if (it == recv_status_map.end())
-				continue;
-
-			MessageReceiveStatus& recv_status = it->second;
-			/*if (recv_status.is_multicast_done) {
-				cout << "I have received a packet for the finished file" << header->session_id <<  " (EOF already received)." << endl;
-			}*/
-
-			// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
-			if (rand() % 1000 >= packet_loss_rate) {
-				if (header->seq_number > recv_status.current_offset) {
-					AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
-					if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0) {
-						SysError("MVCTPReceiver::ReceiveFileBufferedIO()::lseek() error");
+				MessageReceiveStatus& recv_status = it->second;
+				// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
+				if (rand() % 1000 >= packet_loss_rate) {
+					if (header->seq_number > recv_status.current_offset) {
+						AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
 					}
+
+					if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0)
+						SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on multicast data");
+
+					if (write(recv_status.file_descriptor, packet_data, header->data_len) < 0)
+						SysError("MVCTPReceiver::RunReceivingThread()::write() error on multicast data");
+					recv_status.current_offset = header->seq_number + header->data_len;
+
+					// Update statistics
+					recv_stats.total_recv_packets++;
+					recv_stats.total_recv_bytes += header->data_len;
+					recv_status.multicast_packets++;
+					recv_status.multicast_bytes += header->data_len;
 				}
-
-				if (write(recv_status.file_descriptor, packet_data, header->data_len) < 0)
-					SysError("MVCTPReceiver::ReceiveFileBufferedIO() write multicast data error");
-				recv_status.current_offset = header->seq_number + header->data_len;
-
-				// Update statistics
-				recv_stats.total_recv_packets++;
-				recv_stats.total_recv_bytes += header->data_len;
-				recv_status.multicast_packets++;
-				recv_status.multicast_bytes += header->data_len;
 			}
 		}
 
@@ -373,24 +366,9 @@ void MVCTPReceiver::RunReceivingThread() {
 				SysError("MVCTPReceiver::ReceiveFile()::recv() error");
 			}
 
-			/*if (header->flags & MVCTP_BOF) {
-				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an BOF message");
-				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
-					ReconnectSender();
-					continue;
-				}
-				HandleBofMessage(sender_msg);
-			}
-			else if (header->flags & MVCTP_EOF) {
-				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received an EOF message");
-				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
-					ReconnectSender();
-					continue;
-				}
-				HandleEofMessage(header->session_id);
-			}
-			else*/ if (header->flags & MVCTP_SENDER_MSG_EXP) {
+			if (header->flags & MVCTP_SENDER_MSG_EXP) {
 				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received a SENDER_MSG_EXP message");
+				MvctpSenderMessage sender_msg;
 				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
 					ReconnectSender();
 					continue;
@@ -399,19 +377,21 @@ void MVCTPReceiver::RunReceivingThread() {
 			}
 			else if (header->flags & MVCTP_RETRANS_DATA) {
 				if (retrans_tcp_client->Receive(packet_data, header->data_len) < 0)
-					SysError("MVCTPReceiver::RunningReceivingThread() recv error");
+					SysError("MVCTPReceiver::RunningReceivingThread()::receive error on TCP");
 
-				map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
-				if (it == recv_status_map.end())
+				if ( (it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
+					if (retrans_tcp_client->Receive(packet_data, header->data_len) < 0)
+						SysError("MVCTPReceiver::RunningReceivingThread()::receive error on TCP");
 					continue;
+				}
 
 				MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
 				if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) == -1) {
-					SysError("MVCTPReceiver::ReceiveFile()::lseek() error");
+					SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on retx data");
 				}
 				if (write(recv_status.file_descriptor, packet_data, header->data_len) < 0) {
 					//SysError("MVCTPReceiver::ReceiveFile()::write() error");
-					cout << "MVCTPReceiver::ReceiveFile()::write() error" << endl;
+					cout << "MVCTPReceiver::RunReceivingThread()::write() error on retx data" << endl;
 				}
 
 				// Update statistics
@@ -464,7 +444,9 @@ void MVCTPReceiver::RunReceivingThread() {
 }
 
 
-
+/**
+ * Handle a BOF message for a new file
+ */
 void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 	switch (sender_msg.msg_type) {
 	case MEMORY_TRANSFER_START: {
@@ -474,8 +456,6 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 		break;
 	}
 	case FILE_TRANSFER_START:
-		//ReceiveFileMemoryMappedIO(sender_msg);
-		//ReceiveFileBufferedIO(msg);
 		PrepareForFileTransfer(sender_msg);
 		break;
 	case TCP_MEMORY_TRANSFER_START: {
@@ -540,6 +520,9 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
  }
 
 
+/**
+ * Handle a command message from the sender
+ */
 void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 	switch (sender_msg.msg_type) {
 		case SPEED_TEST:
@@ -563,6 +546,9 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 }
 
 
+/**
+ * Take actions after receiving an EOF message for a specific file
+ */
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(msg_id);
 	if (it == recv_status_map.end())
@@ -571,55 +557,8 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
 	status.is_multicast_done = true;
 
-	/*int res;
-	int byte_count = 0;
-	while (status.current_offset < status.msg_length) {
-		res = ptr_multicast_comm->RecvData(read_ahead_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL);
-		if (res == EAGAIN || res < 0 || (read_ahead_header->session_id > msg_id))
-			break;
-
-		if (read_ahead_header->session_id < msg_id) {
-			continue;
-		}
-		//else if (res < 0)
-		//	SysError("MVCTPReceiver::HandleEofMessage() multicast recv error");
-		//else if (read_ahead_header->session_id != msg_id) {
-		//	break;
-		//}
-
-		// Check on the UDP socket for the remaining packets of the message
-		if (rand() % 1000 >= packet_loss_rate) {
-			if (read_ahead_header->seq_number > status.current_offset) {
-				AddRetxRequest(read_ahead_header->session_id, status.current_offset, read_ahead_header->seq_number);
-					if (lseek(status.file_descriptor, read_ahead_header->seq_number, SEEK_SET) < 0) {
-						SysError("MVCTPReceiver::ReceiveFileBufferedIO()::lseek() error");
-					}
-				}
-
-			if (write(status.file_descriptor, read_ahead_data, read_ahead_header->data_len) < 0)
-				SysError("MVCTPReceiver::ReceiveFileBufferedIO() write multicast data error");
-			status.current_offset = read_ahead_header->seq_number + read_ahead_header->data_len;
-
-			// Update statistics
-			status.multicast_packets++;
-			status.multicast_bytes += read_ahead_header->data_len;
-			byte_count += read_ahead_header->data_len;
-		}
-	}
-	char str[500];
-	sprintf(str, "%d bytes have been read after receiving EOF for file %d.",
-				byte_count, status.msg_id);
-	status_proxy->SendMessageLocal(INFORMATIONAL, str);
-	*/
-
-
-	// Send a RETX_END message back to the sender
+	// Check data loss at the end
 	if (status.current_offset < status.msg_length) {
-		/*char str[500];
-		sprintf(str, "%lld bytes have been lost at the end of multicast for message %d.",
-					status.msg_length - status.current_offset, status.msg_id);
-		status_proxy->SendMessageLocal(INFORMATIONAL, str);*/
-
 		AddRetxRequest(msg_id, status.current_offset, status.msg_length);
 		status.current_offset = status.msg_length;
 	}
@@ -629,6 +568,9 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 }
 
 
+/**
+ * Insert a new retransmission request to the request list
+ */
 void MVCTPReceiver::AddRetxRequest(uint msg_id, uint current_offset, uint received_seq) {
 	MvctpRetransRequest req;
 	req.msg_id = msg_id;
@@ -654,6 +596,7 @@ void MVCTPReceiver::StartRetransmissionThread() {
 
 void* MVCTPReceiver::StartRetransmissionThread(void* ptr) {
 	((MVCTPReceiver*)ptr)->RunRetransmissionThread();
+	return NULL;
 }
 
 
@@ -676,15 +619,12 @@ void MVCTPReceiver::RunRetransmissionThread() {
 				request->msg_id = req.msg_id;
 				request->seq_num = req.seq_num;
 				request->data_len = req.data_len;
-				if (request->data_len == 0)
-					header->flags = MVCTP_RETRANS_END;
-				else
-					header->flags = MVCTP_RETRANS_REQ;
 
+				header->flags = (request->data_len == 0) ? MVCTP_RETRANS_END : MVCTP_RETRANS_REQ;
 				header->session_id = req.msg_id;
 				header->seq_number = 0;
 
-				retrans_tcp_client->Send(buf, header->data_len + MVCTP_HLEN);
+				retrans_tcp_client->Send(buf, MVCTP_HLEN + header->data_len);
 				retrans_list.pop_front();
 			}
 		pthread_mutex_unlock(&retrans_list_mutex);

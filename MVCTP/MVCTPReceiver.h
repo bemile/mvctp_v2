@@ -76,7 +76,7 @@ struct MvctpReceiverConfig {
 class MVCTPReceiver : public MVCTPComm {
 public:
 	MVCTPReceiver(int buf_size);
-	~MVCTPReceiver();
+	virtual ~MVCTPReceiver();
 
 	int 	JoinGroup(string addr, u_short port);
 	int		ConnectSenderOnTCP();
