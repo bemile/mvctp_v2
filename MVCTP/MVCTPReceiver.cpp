@@ -481,7 +481,7 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
-	if (sender_msg.session_id % 100 == 0)
+	if (sender_msg.session_id % 100 == 1)
 	{
 		char str[500];
 		sprintf(str, "Receiving file %d. File length: %d bytes\n\n",
@@ -587,6 +587,8 @@ void MVCTPReceiver::AddRetxRequest(uint msg_id, uint current_offset, uint receiv
 	pthread_mutex_lock(&retrans_list_mutex);
 	retrans_list.push_back(req);
 	pthread_mutex_unlock(&retrans_list_mutex);
+
+	cout << "Added a retx request for file " << msg_id << endl;
 }
 
 
