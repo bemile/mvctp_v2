@@ -515,9 +515,9 @@ void MVCTPSender::RunRetransThread(int sock) {
 				SysError("MVCTPSender::RunRetransThread()::receive retx request data error");
 			}
 
-			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
+			MessageMetadata* meta = metadata.GetMetadata(retx_request->msg_id);
 			if (meta == NULL) {
-				cout << "Error: could not find metadata for the specific file. Request file ID: " << recv_header->session_id;
+				cout << "Error: could not find metadata for the specific file. Request file ID: " << retx_request->msg_id << endl;
 				exit(-1);
 			}
 
