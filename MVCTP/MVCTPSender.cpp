@@ -23,10 +23,11 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	num_retrans_threads = 1;
 
 	// Set CPU affinity
-	cpu_set_t cpu_mask;
+	/*cpu_set_t cpu_mask;
 	CPU_SET(1, &cpu_mask);
 	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask) == -1)
 		SysError("MVCTPSender::MVCTPSender()::sched_setaffinity() error");
+	 */
 
 	//event_queue_manager = new MvctpEventQueueManager();
 }
