@@ -415,6 +415,8 @@ void MVCTPReceiver::RunReceivingThread() {
 				if (it != recv_status_map.end()) {
 					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
 					close(recv_status.file_descriptor);
+					if (recv_status.retx_file_descriptor > 0)
+						close(recv_status.retx_file_descriptor);
 					//recv_status_map.erase(header->session_id);
 
 					recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
