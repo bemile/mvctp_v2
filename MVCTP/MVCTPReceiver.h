@@ -50,6 +50,7 @@ struct MessageReceiveStatus {
 			void* 	mem_buffer;
 			int		file_descriptor;
 		};
+	int			retx_file_descriptor;
 	bool		is_multicast_done;
 	long long 	msg_length;
 	uint		current_offset;

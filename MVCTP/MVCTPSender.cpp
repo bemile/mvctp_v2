@@ -372,6 +372,8 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 
 	// Create metadata for the new file
 	FileMessageMetadata* meta = new FileMessageMetadata();
+	if (meta == NULL)
+		SysError("MVCTPSender::SendFile()::cannot allocate memory for FileMessageMetadata");
 	meta->msg_id = cur_session_id;
 	meta->msg_length = file_size;
 	meta->file_name = file_name;

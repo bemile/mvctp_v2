@@ -334,18 +334,19 @@ void MVCTPReceiver::RunReceivingThread() {
 				HandleEofMessage(header->session_id);
 			}
 			else { // is a data packet
-				if ( (it = recv_status_map.find(header->session_id)) == recv_status_map.end())
+				if ( (it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
+					cout << "Could not find the message ID in recv_status_map: " << header->session_id << endl;
 					continue;
+				}
 
 				MessageReceiveStatus& recv_status = it->second;
 				// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
 				if (rand() % 1000 >= packet_loss_rate) {
 					if (header->seq_number > recv_status.current_offset) {
 						AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
+						if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0)
+							SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on multicast data");
 					}
-
-					if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0)
-						SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on multicast data");
 
 					if (write(recv_status.file_descriptor, packet_data, header->data_len) < 0)
 						SysError("MVCTPReceiver::RunReceivingThread()::write() error on multicast data");
@@ -386,10 +387,15 @@ void MVCTPReceiver::RunReceivingThread() {
 				}
 
 				MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
-				if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) == -1) {
+				if (recv_status.retx_file_descriptor == -1) {
+					recv_status.retx_file_descriptor = open(recv_status.msg_name.c_str(), O_RDWR | O_CREAT | O_TRUNC);
+					if (recv_status.retx_file_descriptor < 0)
+							SysError("MVCTPReceiver::RunReceivingThread() open file error");
+				}
+				if (lseek(recv_status.retx_file_descriptor, header->seq_number, SEEK_SET) == -1) {
 					SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on retx data");
 				}
-				if (write(recv_status.file_descriptor, packet_data, header->data_len) < 0) {
+				if (write(recv_status.retx_file_descriptor, packet_data, header->data_len) < 0) {
 					//SysError("MVCTPReceiver::ReceiveFile()::write() error");
 					cout << "MVCTPReceiver::RunReceivingThread()::write() error on retx data" << endl;
 				}
@@ -498,6 +504,7 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	status.retx_packets = 0;
 	status.retx_bytes = 0;
 	status.recv_failed = false;
+	status.retx_file_descriptor = -1;
 	status.file_descriptor = open(sender_msg.text, O_RDWR | O_CREAT | O_TRUNC);
 	if (status.file_descriptor < 0)
 		SysError("MVCTPReceiver::PrepareForFileTransfer open file error");
