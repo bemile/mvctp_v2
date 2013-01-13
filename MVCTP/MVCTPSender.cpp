@@ -25,7 +25,8 @@ MVCTPSender::MVCTPSender(int buf_size) : MVCTPComm() {
 	// Set CPU affinity
 	cpu_set_t cpu_mask;
 	CPU_SET(1, &cpu_mask);
-	sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask);
+	if (sched_setaffinity(0, sizeof(cpu_set_t), &cpu_mask) == -1)
+		SysError("MVCTPSender::MVCTPSender()::sched_setaffinity() error");
 
 	//event_queue_manager = new MvctpEventQueueManager();
 }
@@ -359,6 +360,8 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 #define MIN_RETX_TIMEOUT 0.001
 uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	ResetSessionStatistics();
+	// Increase the session id for new file transfer
+	cur_session_id++;
 	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
 	struct stat file_status;
@@ -380,17 +383,6 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 		meta->unfinished_recvers[*it] = false;
 	}
 	metadata.AddMessageMetadata(meta);
-
-	/*multicast_task_info.type = DISK_TO_DISK_TRANSFER;
-	strcpy(multicast_task_info.file_name, file_name);
-
-	map<int, bool>::iterator it;
-		for (it = retrans_finish_map.begin(); it != retrans_finish_map.end(); it++) {
-			it->second = false;
-	}*/
-
-
-
 
 	// Send the BOF message to all receivers before starting the file transfer
 	char msg_packet[500];
@@ -418,7 +410,7 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 
 	//cout << "Start file transferring..." << endl;
 	// Transfer the file using memory mapped I/O
-	int fd = open(file_name, O_RDWR);
+	int fd = open(file_name, O_RDONLY);
 	if (fd < 0) {
 		SysError("MVCTPSender()::SendFile(): File open error!");
 	}
@@ -462,38 +454,7 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 		SysError("MVCTPSender::SendFile()::SendData() error");
 	}
 
-	// wait for all retransmission to finish
-//	bool is_retrans_finished = false;
-//	while (!is_retrans_finished) {
-//		is_retrans_finished = true;
-//		for (it = retrans_finish_map.begin(); it != retrans_finish_map.end(); it++) {
-//			if (!it->second) {
-//				is_retrans_finished = false;
-//				usleep(10000);
-//				break;
-//			}
-//		}
-//	}
-
 	close(fd);
-	//cout << "File multicast finished." << endl;
-
-	//cpu_info.Stop();
-	//cout << "Retransmission to all receivers finished." << endl;
-
-	// collect experiment results from receivers
-	//CollectExpResults();
-
-	// Record total transfer and retransmission time
-	//send_stats.cpu_usage = cpu_info.GetAverageCpuUsage();
-	//send_stats.session_retrans_time = GetElapsedSeconds(cpu_counter); //send_stats.session_total_time - send_stats.session_trans_time;
-	//send_stats.session_total_time = send_stats.session_trans_time + send_stats.session_retrans_time; //GetElapsedSeconds(cpu_counter);
-	//send_stats.session_retrans_percentage = send_stats.session_retrans_packets  * 1.0
-	//							/ (send_stats.session_sent_packets + send_stats.session_retrans_packets);
-
-
-	// Increase the session id for the next transfer
-	cur_session_id++;
 
 	//SendSessionStatistics();
 	return meta->msg_id;
@@ -531,6 +492,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 	// Opened file descriptor map for the retransmission.  Format: <msg_id, file_descriptor>
 	map<uint, int> retrans_fd_map;
+	map<uint, int>::iterator it;
 
 	char recv_buf[MVCTP_PACKET_LEN];
 	MvctpHeader* recv_header = (MvctpHeader*)recv_buf;
@@ -543,16 +505,19 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 	while (true) {
 		if (retrans_tcp_server->Receive(sock_fd, recv_header, sizeof(MvctpHeader)) <= 0) {
-			break;
+			SysError("MVCTPSender::RunRetransThread()::receive header error");
 		}
 
 		// Handle a retransmission request
 		if (recv_header->flags & MVCTP_RETRANS_REQ) {
 			if (retrans_tcp_server->Receive(sock_fd, retx_request, sizeof(MvctpRetransRequest)) < 0) {
-				break;
+				SysError("MVCTPSender::RunRetransThread()::receive retx request data error");
 			}
 
 			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
+			if (meta == NULL) {
+				SysError("MVCTPSender::RunRetransThread()::could not find metadata for the specific file");
+			}
 
 			// check whether the retransmission for the file has already time out
 			if (GetElapsedSeconds(meta->multicast_start_cpu_time) > meta->retx_timeout_seconds) {
@@ -567,13 +532,11 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 				// get the file descriptor to read data from the file
 				int fd;
-				map<uint, int>::iterator it = retrans_fd_map.find(recv_header->session_id);
-				if (it != retrans_fd_map.end()) {
+				if ( (it = retrans_fd_map.find(recv_header->session_id)) != retrans_fd_map.end()) {
 					fd = it->second;
 				}
 				else {
-					fd = open(file_meta->file_name.c_str(), O_RDONLY);
-					if (fd < 0)
+					if ( (fd = open(file_meta->file_name.c_str(), O_RDONLY)) < 0)
 						SysError("MVCTPSender::RunRetransThread() file open error");
 					else
 						retrans_fd_map[recv_header->session_id] = fd;
@@ -594,8 +557,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 					send_header->data_len = data_length;
 
 					read(fd, send_packet_data, send_header->data_len);
-					retrans_tcp_server->SelectSend(sock_fd, send_buf,
-							MVCTP_HLEN + send_header->data_len);
+					retrans_tcp_server->SelectSend(sock_fd, send_buf, MVCTP_HLEN + send_header->data_len);
 
 					curr_pos += data_length;
 					remained_size -= data_length;

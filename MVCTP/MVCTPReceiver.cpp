@@ -363,7 +363,7 @@ void MVCTPReceiver::RunReceivingThread() {
 		// check received data on the TCP connection
 		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
 			if (retrans_tcp_client->Receive(header, sizeof(MvctpHeader)) < 0) {
-				SysError("MVCTPReceiver::ReceiveFile()::recv() error");
+				SysError("MVCTPReceiver::RunReceivingThread()::recv() error");
 			}
 
 			if (header->flags & MVCTP_SENDER_MSG_EXP) {
