@@ -250,7 +250,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 		char str[500];
 		for (int i = 0; i < FILE_COUNT; i++) {
 			if (i % 100 == 0) {
-				sprintf(str, "Sending file %d", i);
+				sprintf(str, "Sending file %d", i + 1);
 				sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 			}
 
