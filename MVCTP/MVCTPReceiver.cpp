@@ -587,8 +587,6 @@ void MVCTPReceiver::AddRetxRequest(uint msg_id, uint current_offset, uint receiv
 	pthread_mutex_lock(&retrans_list_mutex);
 	retrans_list.push_back(req);
 	pthread_mutex_unlock(&retrans_list_mutex);
-
-	cout << "Added a retx request for file " << msg_id << endl;
 }
 
 
@@ -636,6 +634,7 @@ void MVCTPReceiver::RunRetransmissionThread() {
 
 				retrans_tcp_client->Send(buf, MVCTP_HLEN + header->data_len);
 				retrans_list.pop_front();
+				cout << "Added a retx request for file " << request->msg_id << endl;
 			}
 		pthread_mutex_unlock(&retrans_list_mutex);
 		usleep(10000);
