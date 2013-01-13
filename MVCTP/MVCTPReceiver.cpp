@@ -629,7 +629,7 @@ void MVCTPReceiver::RunRetransmissionThread() {
 
 				header->session_id = req.msg_id;
 				header->seq_number = 0;
-				header->flags = (request->data_len == 0) ? MVCTP_RETRANS_END : MVCTP_RETRANS_REQ;
+				header->flags = ((request->data_len == 0) ? MVCTP_RETRANS_END : MVCTP_RETRANS_REQ);
 
 
 				retrans_tcp_client->Send(buf, MVCTP_HLEN + header->data_len);
@@ -1085,9 +1085,9 @@ void MVCTPReceiver::ReceiveFileMemoryMappedIO(const MvctpSenderMessage & transfe
 					munmap(file_buffer, mapped_size);
 
 					file_start_pos += mapped_size;
-					mapped_size = (transfer_msg.data_len - file_start_pos)
+					mapped_size = ((transfer_msg.data_len - file_start_pos)
 							< MAPPED_BUFFER_SIZE ? (transfer_msg.data_len
-							- file_start_pos) : MAPPED_BUFFER_SIZE;
+							- file_start_pos) : MAPPED_BUFFER_SIZE);
 					file_buffer = (char*) mmap(0, mapped_size,
 							PROT_READ | PROT_WRITE, MAP_FILE | MAP_SHARED, recv_fd,
 							file_start_pos);
