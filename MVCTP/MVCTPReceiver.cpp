@@ -620,9 +620,10 @@ void MVCTPReceiver::RunRetransmissionThread() {
 				request->seq_num = req.seq_num;
 				request->data_len = req.data_len;
 
-				header->flags = (request->data_len == 0) ? MVCTP_RETRANS_END : MVCTP_RETRANS_REQ;
 				header->session_id = req.msg_id;
 				header->seq_number = 0;
+				header->flags = (request->data_len == 0) ? MVCTP_RETRANS_END : MVCTP_RETRANS_REQ;
+
 
 				retrans_tcp_client->Send(buf, MVCTP_HLEN + header->data_len);
 				retrans_list.pop_front();

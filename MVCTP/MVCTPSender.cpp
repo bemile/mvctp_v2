@@ -505,7 +505,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 	char* send_packet_data = send_buf + MVCTP_HLEN;
 
 	while (true) {
-		if (retrans_tcp_server->Receive(sock_fd, recv_header, sizeof(MvctpHeader)) <= 0) {
+		if (retrans_tcp_server->Receive(sock_fd, recv_header, MVCTP_HLEN) <= 0) {
 			SysError("MVCTPSender::RunRetransThread()::receive header error");
 		}
 
@@ -517,7 +517,8 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
 			if (meta == NULL) {
-				SysError("MVCTPSender::RunRetransThread()::could not find metadata for the specific file");
+				cout << "Error: could not find metadata for the specific file. Request file ID: " << recv_header->session_id;
+				exit(-1);
 			}
 
 			// check whether the retransmission for the file has already time out
