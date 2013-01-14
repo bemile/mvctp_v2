@@ -520,10 +520,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 			//cout << "Received a retx request for file " << retx_request->msg_id << endl;
 			MessageMetadata* meta = metadata.GetMetadata(retx_request->msg_id);
 			if (meta == NULL) {
-				cout << "Error: could not find metadata for the specific file." << endl;
-				cout << "  Request file ID: " << retx_request->msg_id << endl;
-				cout << "  Request seq. no.: " << retx_request->seq_num << endl;
-				cout << "  Request data len: " << retx_request->data_len << endl;
+				cout << "Error: could not find metadata for file " << retx_request->msg_id << endl;
 				//exit(-1);
 				continue;
 			}
