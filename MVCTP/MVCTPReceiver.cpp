@@ -335,7 +335,7 @@ void MVCTPReceiver::RunReceivingThread() {
 			}
 			else { // is a data packet
 				if ( (it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
-					cout << "Could not find the message ID in recv_status_map: " << header->session_id << endl << flush;
+					cout << "Could not find the message ID in recv_status_map: " << header->session_id << endl;
 					continue;
 				}
 
@@ -345,7 +345,7 @@ void MVCTPReceiver::RunReceivingThread() {
 					if (header->seq_number > recv_status.current_offset) {
 						AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
 						if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0) {
-							cout << "Error in file " << header->session_id << ":  " << endl << flush;
+							cout << "Error in file " << header->session_id << ":  " << endl;
 							SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on multicast data");
 						}
 					}
@@ -415,7 +415,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				if (it == recv_status_map.end())
 				{
 					cout << "[MVCTP_RETRANS_END] Could not find the message ID in recv_status_map: "
-							<< header->session_id << endl << flush;
+							<< header->session_id << endl;
 					continue;
 				}
 				else {
@@ -535,7 +535,7 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	recv_stats.current_msg_id = sender_msg.session_id;
 	recv_stats.num_recved_files++;
 
-	cout << "Added a new recv status for file " << status.msg_id << endl << flush;
+	//cout << "Added a new recv status for file " << status.msg_id << endl;
  }
 
 
@@ -646,7 +646,6 @@ void MVCTPReceiver::RunRetransmissionThread() {
 
 				retrans_tcp_client->Send(buf, MVCTP_HLEN + header->data_len);
 				retrans_list.pop_front();
-				cout << "Sent a retx request for file " << request->msg_id << endl << flush;
 			}
 		pthread_mutex_unlock(&retrans_list_mutex);
 		usleep(10000);
