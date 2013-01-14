@@ -389,7 +389,7 @@ void MVCTPReceiver::RunReceivingThread() {
 
 				MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
 				if (recv_status.retx_file_descriptor == -1) {
-					recv_status.retx_file_descriptor = open(recv_status.msg_name.c_str(), O_RDWR | O_CREAT | O_TRUNC);
+					recv_status.retx_file_descriptor = dup(recv_status.file_descriptor);
 					if (recv_status.retx_file_descriptor < 0)
 							SysError("MVCTPReceiver::RunReceivingThread() open file error");
 				}
