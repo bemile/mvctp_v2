@@ -513,7 +513,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 		// Handle a retransmission request
 		if (recv_header->flags & MVCTP_RETRANS_REQ) {
-			if (retrans_tcp_server->Receive(sock_fd, retx_request, sizeof(MvctpRetransRequest)) < 0) {
+			if (retrans_tcp_server->Receive(sock_fd, retx_request, recv_header->data_len) < 0) {
 				SysError("MVCTPSender::RunRetransThread()::receive retx request data error");
 			}
 
@@ -589,12 +589,6 @@ void MVCTPSender::RunRetransThread(int sock) {
 			if (it != retrans_fd_map.end()) {
 				close(it->second);
 				retrans_fd_map.erase(it);
-			}
-			else {
-				cout << "MVCTP_RETRANS_END Error: could not find metadata for the specific file. Request file ID: "
-						<< retx_request->msg_id << endl;
-				//exit(-1);
-				continue;
 			}
 
 			// send back the retransmission end message to the receiver

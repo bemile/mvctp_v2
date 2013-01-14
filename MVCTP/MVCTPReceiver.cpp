@@ -365,7 +365,7 @@ void MVCTPReceiver::RunReceivingThread() {
 
 		// check received data on the TCP connection
 		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
-			if (retrans_tcp_client->Receive(header, sizeof(MvctpHeader)) < 0) {
+			if (retrans_tcp_client->Receive(header, MVCTP_HLEN) < 0) {
 				SysError("MVCTPReceiver::RunReceivingThread()::recv() error");
 			}
 
@@ -411,10 +411,14 @@ void MVCTPReceiver::RunReceivingThread() {
 				recv_status.retx_bytes += header->data_len;
 			}
 			else if (header->flags & MVCTP_RETRANS_END) {
-				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received a RETX_END message");
-
 				map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
-				if (it != recv_status_map.end()) {
+				if (it == recv_status_map.end())
+				{
+					cout << "[MVCTP_RETRANS_END] Could not find the message ID in recv_status_map: "
+							<< header->session_id << endl << flush;
+					continue;
+				}
+				else {
 					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
 					close(recv_status.file_descriptor);
 					if (recv_status.retx_file_descriptor > 0)
