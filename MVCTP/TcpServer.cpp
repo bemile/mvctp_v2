@@ -164,6 +164,7 @@ int TcpServer::Receive(int sock_fd, void* buffer, size_t length) {
 	}
 
 	if (res <= 0) {
+		perror("TcpServer::Receive() error");
 		pthread_mutex_lock(&sock_list_mutex);
 		conn_sock_list.remove(sock_fd);
 		close(sock_fd);

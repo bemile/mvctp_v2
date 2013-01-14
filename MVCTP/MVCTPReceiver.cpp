@@ -411,7 +411,7 @@ void MVCTPReceiver::RunReceivingThread() {
 				recv_status.retx_bytes += header->data_len;
 			}
 			else if (header->flags & MVCTP_RETRANS_END) {
-				map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
+				it = recv_status_map.find(header->session_id);
 				if (it == recv_status_map.end())
 				{
 					cout << "[MVCTP_RETRANS_END] Could not find the message ID in recv_status_map: "
@@ -438,7 +438,7 @@ void MVCTPReceiver::RunReceivingThread() {
 			}
 			else if (header->flags & MVCTP_RETRANS_TIMEOUT) {
 				cout << "I have received a timeout message for file " << header->session_id << endl;
-				map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
+				it = recv_status_map.find(header->session_id);
 				if (it != recv_status_map.end()) {
 					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
 					if (!recv_status.recv_failed) {
