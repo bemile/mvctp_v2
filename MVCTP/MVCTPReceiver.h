@@ -155,6 +155,8 @@ private:
 	void 	StartReceivingThread();
 	static void* StartReceivingThread(void* ptr);
 	void	RunReceivingThread();
+	void	HandleMulticastPacket();
+	void	HandleUnicastPacket();
 	void	HandleBofMessage(MvctpSenderMessage& sender_msg);
 	void  	HandleEofMessage(uint msg_id);
 	void	PrepareForFileTransfer(MvctpSenderMessage& sender_msg);

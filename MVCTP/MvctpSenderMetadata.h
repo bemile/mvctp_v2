@@ -9,8 +9,10 @@
 #define MVCTPSENDERMETADATA_H_
 
 #include <pthread.h>
+#include <set>
 #include "mvctp.h"
 
+using namespace std;
 
 struct MessageTransferStats {
 	uint 	session_sent_packets;
@@ -51,11 +53,11 @@ struct MessageMetadata {
     bool 					is_disk_file;          		// true for disk file transfer, false for memory transfer
     long long 				msg_length;    				// the length of the file
     CpuCycleCounter			multicast_start_cpu_time;	// the CPU time counter when multicast is started
-    int		  				retx_timeout_ratio;		// the CPU time counter when multicast is finished
+    int		  				retx_timeout_ratio;			// the retransmission timeout in terms of a ratio of the total multicast time
     double					retx_timeout_seconds;
     MessageTransferStats 	stats;
     void* 					info;                   	// the pointer to any auxiliary data that the user wants to pass
-    map<int, bool> 			unfinished_recvers;			// unfinished receiver map with the format <socket_number, is_finished>
+    set<int> 				unfinished_recvers;			// unfinished receiver set with socket ID as the key
 
 
     MessageMetadata(): msg_id(0), ignore_file(false),

@@ -383,7 +383,7 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	// add all current receiver sockets into the unfinished receiver map
 	list<int> sock_list = retrans_tcp_server->GetSocketList();
 	for (list<int>::iterator it = sock_list.begin(); it != sock_list.end(); it++) {
-		meta->unfinished_recvers[*it] = false;
+		meta->unfinished_recvers.insert(*it);
 	}
 	metadata.AddMessageMetadata(meta);
 
@@ -521,7 +521,6 @@ void MVCTPSender::RunRetransThread(int sock) {
 			MessageMetadata* meta = metadata.GetMetadata(retx_request->msg_id);
 			if (meta == NULL) {
 				cout << "Error: could not find metadata for file " << retx_request->msg_id << endl;
-				//exit(-1);
 				continue;
 			}
 
@@ -585,7 +584,6 @@ void MVCTPSender::RunRetransThread(int sock) {
 				SysError("MVCTPSender::RunRetransThread()::receive retx end msg error");
 			}
 
-			MessageMetadata* meta = metadata.GetMetadata(recv_header->session_id);
 			map<uint, int>::iterator it = retrans_fd_map.find(recv_header->session_id);
 			if (it != retrans_fd_map.end()) {
 				close(it->second);
@@ -601,13 +599,6 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 			// mark the completion of retransmission to one receiver
 			metadata.RemoveFinishedReceiver(recv_header->session_id, sock_fd);
-			/*if (metadata.IsTransferFinished(recv_header->session_id)) {
-				char buf[200];
-				sprintf(buf, "File transfer for message %d finished. Total transfer time: %.2f seconds",
-								recv_header->session_id, GetElapsedSeconds(meta->start_time_count));
-				status_proxy->SendMessageLocal(INFORMATIONAL, buf);
-			}*/
-			//cout << "Receive finishing mark request from sock " << sock_fd << endl;
 		}
 		else if (recv_header->flags & MVCTP_HISTORY_STATISTICS) {
 			cout << "I have received a history statistics from socket " << sock_fd << endl;
@@ -615,17 +606,6 @@ void MVCTPSender::RunRetransThread(int sock) {
 			if (retrans_tcp_server->Receive(sock_fd, buf, recv_header->data_len) < 0) {
 				break;
 			}
-
-			/*int remained = recv_header->data_len;
-			char* ptr = buf;
-			while (remained > 0) {
-				int bytes = remained > 4096 ? 4096 : remained;
-				int res = retrans_tcp_server->Receive(sock_fd, ptr, bytes);
-				if (res < 0)
-					break;
-				remained -= res;
-				ptr += res;
-			}*/
 
 			buf[recv_header->data_len] = '\0';
 			status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
@@ -839,6 +819,7 @@ void MVCTPSender::TcpSendFile(const char* file_name) {
 void* MVCTPSender::StartTcpSendThread(void* ptr) {
 	TcpThreadInfo* info_ptr = (TcpThreadInfo*)ptr;
 	info_ptr->ptr->RunTcpSendThread(info_ptr->file_name, info_ptr->sock_fd);
+	return NULL;
 }
 
 void MVCTPSender::RunTcpSendThread(const char* file_name, int sock_fd) {

@@ -84,8 +84,10 @@ int MvctpSenderMetadata::GetFileDescriptor(uint msg_id) {
 
 
 void MvctpSenderMetadata::RemoveFinishedReceiver(uint msg_id, int sock_fd) {
+	map<uint, MessageMetadata*>::iterator it;
 	pthread_rwlock_wrlock(&map_lock);
-	metadata_map[msg_id]->unfinished_recvers.erase(sock_fd);
+	if ( (it = metadata_map.find(msg_id)) != metadata_map.end())
+		it->second->unfinished_recvers.erase(sock_fd);
 	pthread_rwlock_unlock(&map_lock);
 }
 

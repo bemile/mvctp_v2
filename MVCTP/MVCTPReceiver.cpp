@@ -307,156 +307,161 @@ void* MVCTPReceiver::StartReceivingThread(void* ptr) {
 
 // Main file receiving function
 void MVCTPReceiver::RunReceivingThread() {
-	char packet_buffer[MVCTP_PACKET_LEN];
-	MvctpHeader* header = (MvctpHeader*) packet_buffer;
-	char* packet_data = packet_buffer + MVCTP_HLEN;
-
-	MvctpSenderMessage *ptr_sender_msg = (MvctpSenderMessage *)packet_data;
-	int 	recv_bytes = 0;
 	fd_set 	read_set;
-	map<uint, MessageReceiveStatus>::iterator it;
 	while (true) {
 		read_set = read_sock_set;
 		if (select(max_sock_fd + 1, &read_set, NULL, NULL, NULL) == -1) {
 			SysError("TcpServer::SelectReceive::select() error");
 		}
 
+		// check received data on the multicast socket
 		if (FD_ISSET(multicast_sock, &read_set)) {
-			if ( (recv_bytes = ptr_multicast_comm->RecvData(packet_buffer,
-					MVCTP_PACKET_LEN, 0, NULL, NULL)) < 0)
-				SysError("MVCTPReceiver::RunReceivingThread() multicast recv error");
-
-			// Check for BOF and EOF
-			if (header->flags & MVCTP_BOF) {
-				HandleBofMessage(*ptr_sender_msg);
-			}
-			else if (header->flags & MVCTP_EOF) {
-				HandleEofMessage(header->session_id);
-			}
-			else { // is a data packet
-				if ( (it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
-					cout << "Could not find the message ID in recv_status_map: " << header->session_id << endl;
-					continue;
-				}
-
-				MessageReceiveStatus& recv_status = it->second;
-				// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
-				if (rand() % 1000 >= packet_loss_rate) {
-					if (header->seq_number > recv_status.current_offset) {
-						AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
-						if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0) {
-							cout << "Error in file " << header->session_id << ":  " << endl;
-							SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on multicast data");
-						}
-					}
-
-					if (write(recv_status.file_descriptor, packet_data, header->data_len) < 0)
-						SysError("MVCTPReceiver::RunReceivingThread()::write() error on multicast data");
-					recv_status.current_offset = header->seq_number + header->data_len;
-
-					// Update statistics
-					recv_stats.total_recv_packets++;
-					recv_stats.total_recv_bytes += header->data_len;
-					recv_status.multicast_packets++;
-					recv_status.multicast_bytes += header->data_len;
-				}
-			}
+			HandleMulticastPacket();
 		}
 
 		// check received data on the TCP connection
 		if (FD_ISSET(retrans_tcp_sock, &read_set)) {
-			if (retrans_tcp_client->Receive(header, MVCTP_HLEN) < 0) {
-				SysError("MVCTPReceiver::RunReceivingThread()::recv() error");
+			HandleUnicastPacket();
+		}
+	}
+}
+
+
+// Handle the receive of a single multicast packet
+void MVCTPReceiver::HandleMulticastPacket() {
+	static char packet_buffer[MVCTP_PACKET_LEN];
+	static MvctpHeader* header = (MvctpHeader*) packet_buffer;
+	static char* packet_data = packet_buffer + MVCTP_HLEN;
+
+	static MvctpSenderMessage *ptr_sender_msg = (MvctpSenderMessage *) packet_data;
+	static map<uint, MessageReceiveStatus>::iterator it;
+
+	if (ptr_multicast_comm->RecvData(packet_buffer, MVCTP_PACKET_LEN, 0, NULL, NULL) < 0)
+		SysError("MVCTPReceiver::RunReceivingThread() multicast recv error");
+
+	// Check for BOF and EOF
+	if (header->flags & MVCTP_BOF) {
+		HandleBofMessage(*ptr_sender_msg);
+	} else if (header->flags & MVCTP_EOF) {
+		HandleEofMessage(header->session_id);
+	} else if (header->flags & MVCTP_DATA) {
+		if ((it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
+			cout << "Could not find the message ID in recv_status_map: " << header->session_id << endl;
+			return;
+		}
+
+		MessageReceiveStatus& recv_status = it->second;
+		// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
+		if (rand() % 1000 >= packet_loss_rate) {
+			if (header->seq_number > recv_status.current_offset) {
+				AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
+				if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0) {
+					cout << "Error in file " << header->session_id << ":  " << endl;
+					SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on multicast data");
+				}
 			}
 
-			if (header->flags & MVCTP_SENDER_MSG_EXP) {
-				//status_proxy->SendMessageLocal(INFORMATIONAL, "I received a SENDER_MSG_EXP message");
-				MvctpSenderMessage sender_msg;
-				if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
-					ReconnectSender();
-					continue;
-				}
-				HandleSenderMessage(sender_msg);
+			if (write(recv_status.file_descriptor, packet_data, header->data_len) < 0)
+				SysError("MVCTPReceiver::RunReceivingThread()::write() error on multicast data");
+
+			recv_status.current_offset = header->seq_number + header->data_len;
+
+			// Update statistics
+			recv_status.multicast_packets++;
+			recv_status.multicast_bytes += header->data_len;
+			recv_stats.total_recv_packets++;
+			recv_stats.total_recv_bytes += header->data_len;
+		}
+	}
+}
+
+
+// Handle the receive of a single TCP packet
+void MVCTPReceiver::HandleUnicastPacket() {
+	static char packet_buffer[MVCTP_PACKET_LEN];
+	static MvctpHeader* header = (MvctpHeader*) packet_buffer;
+	static char* packet_data = packet_buffer + MVCTP_HLEN;
+
+	static MvctpSenderMessage sender_msg;
+	static map<uint, MessageReceiveStatus>::iterator it;
+
+	if (retrans_tcp_client->Receive(header, MVCTP_HLEN) < 0) {
+		SysError("MVCTPReceiver::RunReceivingThread()::recv() error");
+	}
+
+	if (header->flags & MVCTP_SENDER_MSG_EXP) {
+		if (retrans_tcp_client->Receive(&sender_msg, header->data_len) < 0) {
+			ReconnectSender();
+			return;
+		}
+		HandleSenderMessage(sender_msg);
+	} else if (header->flags & MVCTP_RETRANS_DATA) {
+		if (retrans_tcp_client->Receive(packet_data, header->data_len) < 0)
+			SysError("MVCTPReceiver::RunningReceivingThread()::receive error on TCP");
+
+		if ((it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
+			return;
+		}
+
+		MessageReceiveStatus& recv_status = it->second;
+		if (recv_status.retx_file_descriptor == -1) {
+			recv_status.retx_file_descriptor = dup(recv_status.file_descriptor);
+			if (recv_status.retx_file_descriptor < 0)
+				SysError("MVCTPReceiver::RunReceivingThread() open file error");
+		}
+
+		if (lseek(recv_status.retx_file_descriptor, header->seq_number, SEEK_SET) == -1) {
+			SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on retx data");
+		}
+
+		if (write(recv_status.retx_file_descriptor, packet_data, header->data_len) < 0) {
+			//SysError("MVCTPReceiver::ReceiveFile()::write() error");
+			cout << "MVCTPReceiver::RunReceivingThread()::write() error on retx data" << endl;
+		}
+
+		// Update statistics
+		recv_status.retx_packets++;
+		recv_status.retx_bytes += header->data_len;
+		recv_stats.total_recv_packets++;
+		recv_stats.total_recv_bytes += header->data_len;
+		recv_stats.total_retrans_packets++;
+		recv_stats.total_retrans_bytes += header->data_len;
+
+	} else if (header->flags & MVCTP_RETRANS_END) {
+		it = recv_status_map.find(header->session_id);
+		if (it == recv_status_map.end()) {
+			cout << "[MVCTP_RETRANS_END] Could not find the message ID in recv_status_map: " << header->session_id << endl;
+			return;
+		} else {
+			MessageReceiveStatus& recv_status = it->second;
+			close(recv_status.file_descriptor);
+			if (recv_status.retx_file_descriptor > 0)
+				close(recv_status.retx_file_descriptor);
+
+			recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
+			AddSessionStatistics(header->session_id);
+		}
+
+	} else if (header->flags & MVCTP_RETRANS_TIMEOUT) {
+		cout << "I have received a timeout message for file " << header->session_id << endl;
+		it = recv_status_map.find(header->session_id);
+		if (it != recv_status_map.end()) {
+			MessageReceiveStatus& recv_status = it->second;
+			if (!recv_status.recv_failed) {
+				recv_status.recv_failed = true;
+				AddRetxRequest(recv_status.msg_id, recv_status.msg_length,
+						recv_status.msg_length);
+				close(recv_status.file_descriptor);
+				if (recv_status.retx_file_descriptor > 0)
+					close(recv_status.retx_file_descriptor);
+				//recv_status_map.erase(header->session_id);
+
+				recv_stats.num_failed_files++;
+				AddSessionStatistics(header->session_id);
 			}
-			else if (header->flags & MVCTP_RETRANS_DATA) {
-				if (retrans_tcp_client->Receive(packet_data, header->data_len) < 0)
-					SysError("MVCTPReceiver::RunningReceivingThread()::receive error on TCP");
-
-				if ( (it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
-					if (retrans_tcp_client->Receive(packet_data, header->data_len) < 0)
-						SysError("MVCTPReceiver::RunningReceivingThread()::receive error on TCP");
-					continue;
-				}
-
-				MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
-				if (recv_status.retx_file_descriptor == -1) {
-					recv_status.retx_file_descriptor = dup(recv_status.file_descriptor);
-					if (recv_status.retx_file_descriptor < 0)
-							SysError("MVCTPReceiver::RunReceivingThread() open file error");
-				}
-				if (lseek(recv_status.retx_file_descriptor, header->seq_number, SEEK_SET) == -1) {
-					SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on retx data");
-				}
-				if (write(recv_status.retx_file_descriptor, packet_data, header->data_len) < 0) {
-					//SysError("MVCTPReceiver::ReceiveFile()::write() error");
-					cout << "MVCTPReceiver::RunReceivingThread()::write() error on retx data" << endl;
-				}
-
-				// Update statistics
-				recv_stats.total_recv_packets++;
-				recv_stats.total_recv_bytes += header->data_len;
-				recv_stats.total_retrans_packets++;
-				recv_stats.total_retrans_bytes += header->data_len;
-				recv_status.retx_packets++;
-				recv_status.retx_bytes += header->data_len;
-			}
-			else if (header->flags & MVCTP_RETRANS_END) {
-				it = recv_status_map.find(header->session_id);
-				if (it == recv_status_map.end())
-				{
-					cout << "[MVCTP_RETRANS_END] Could not find the message ID in recv_status_map: "
-							<< header->session_id << endl;
-					continue;
-				}
-				else {
-					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
-					close(recv_status.file_descriptor);
-					if (recv_status.retx_file_descriptor > 0)
-						close(recv_status.retx_file_descriptor);
-					//recv_status_map.erase(header->session_id);
-
-					recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
-					AddSessionStatistics(header->session_id);
-					/*char str[256];
-					sprintf(str, "File transfer finished.\n***** Statistics for File %d *****\n"
-							"Transfer Time: %.2f seconds\nRetx. Packets: %lld\nRetx. Rate: %.2f",
-							recv_status.msg_id, GetElapsedSeconds(recv_status.start_time_counter), recv_status.retx_packets,
-								recv_status.retx_packets * 1.0 / (recv_status.multicast_packets + recv_status.retx_packets) );
-					status_proxy->SendMessageLocal(INFORMATIONAL, str);*/
-				}
-
-			}
-			else if (header->flags & MVCTP_RETRANS_TIMEOUT) {
-				cout << "I have received a timeout message for file " << header->session_id << endl;
-				it = recv_status_map.find(header->session_id);
-				if (it != recv_status_map.end()) {
-					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
-					if (!recv_status.recv_failed) {
-						recv_status.recv_failed = true;
-						AddRetxRequest(recv_status.msg_id, recv_status.msg_length, recv_status.msg_length);
-						close(recv_status.file_descriptor);
-						if (recv_status.retx_file_descriptor > 0)
-							close(recv_status.retx_file_descriptor);
-						//recv_status_map.erase(header->session_id);
-
-						recv_stats.num_failed_files++;
-						AddSessionStatistics(header->session_id);
-					}
-					/*char str[256];
-					sprintf(str, "Receiving file %d failed because of retransmission timeout.", recv_status.msg_id);
-					status_proxy->SendMessageLocal(INFORMATIONAL, str); */
-				}
-			}
+		}
+		else {
+			cout << "Could not find message in recv_status_map for file " << header->session_id << endl;
 		}
 	}
 }
