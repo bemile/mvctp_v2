@@ -172,7 +172,8 @@ void ExperimentManager2::ReadInterArrivals(vector<double>& inter_arrival_times) 
 	ifstream irt_file("/tmp/temp/inter_arrival_times.txt");
 	double time;
 	while (irt_file >> time) {
-		inter_arrival_times.push_back(time);
+		if (time < 20.0)
+			inter_arrival_times.push_back(time);
 	}
 	irt_file.close();
 }
