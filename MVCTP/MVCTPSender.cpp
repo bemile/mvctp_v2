@@ -329,7 +329,7 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 	header->src_port = 0;
 	header->dest_port = 0;
 	header->seq_number = 0;
-	header->flags = 0;
+	header->flags = MVCTP_DATA;
 
 	size_t remained_size = length;
 	size_t offset = 0;

@@ -530,7 +530,7 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	recv_stats.current_msg_id = sender_msg.session_id;
 	recv_stats.num_recved_files++;
 
-	cout << "Added a new recv status for file " << status.msg_id << endl;
+	cout << "Added a new recv status for file " << status.msg_id << endl << flush;
  }
 
 
