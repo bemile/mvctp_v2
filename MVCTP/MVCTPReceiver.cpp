@@ -345,6 +345,7 @@ void MVCTPReceiver::RunReceivingThread() {
 					if (header->seq_number > recv_status.current_offset) {
 						AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
 						if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0)
+							cout << "Error in file " << header->session_id << ":  ";
 							SysError("MVCTPReceiver::RunReceivingThread()::lseek() error on multicast data");
 					}
 
