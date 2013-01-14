@@ -280,7 +280,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 			usleep(2000);
 		}
 
-		sender->CollectExpResults();
+		//sender->CollectExpResults();
 
 		double transfer_time = GetElapsedSeconds(cpu_counter);
 		double pho = sample.total_file_size / sample.total_time / (sender->GetSendRate() * 1000000.0) * 8;
