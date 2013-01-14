@@ -440,16 +440,17 @@ void MVCTPReceiver::RunReceivingThread() {
 				map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(header->session_id);
 				if (it != recv_status_map.end()) {
 					MessageReceiveStatus& recv_status = it->second; //recv_status_map[header->session_id];
-					AddRetxRequest(recv_status.msg_id, recv_status.msg_length, recv_status.msg_length);
-					close(recv_status.file_descriptor);
-					if (recv_status.retx_file_descriptor > 0)
-						close(recv_status.retx_file_descriptor);
-					//recv_status_map.erase(header->session_id);
+					if (!recv_status.recv_failed) {
+						recv_status.recv_failed = true;
+						AddRetxRequest(recv_status.msg_id, recv_status.msg_length, recv_status.msg_length);
+						close(recv_status.file_descriptor);
+						if (recv_status.retx_file_descriptor > 0)
+							close(recv_status.retx_file_descriptor);
+						//recv_status_map.erase(header->session_id);
 
-					recv_stats.num_failed_files++;
-					recv_status_map[header->session_id].recv_failed = true;
-					AddSessionStatistics(header->session_id);
-
+						recv_stats.num_failed_files++;
+						AddSessionStatistics(header->session_id);
+					}
 					/*char str[256];
 					sprintf(str, "Receiving file %d failed because of retransmission timeout.", recv_status.msg_id);
 					status_proxy->SendMessageLocal(INFORMATIONAL, str); */
