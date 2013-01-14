@@ -158,7 +158,7 @@ int TcpServer::SelectReceive(int* conn_sock, void* buffer, size_t length) {
 
 // Receive data from a given socket
 int TcpServer::Receive(int sock_fd, void* buffer, size_t length) {
-	int res = recv(sock_fd, buffer, length, 0/*MSG_WAITALL*/);
+	int res = recv(sock_fd, buffer, length, MSG_WAITALL);
 	if (errno == EINTR) {
 		Receive(sock_fd, buffer, length);
 	}
