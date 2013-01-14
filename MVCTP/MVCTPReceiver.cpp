@@ -576,22 +576,23 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	cout << "Received a EOF for file " << msg_id << endl;
 	map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(msg_id);
-	if (it == recv_status_map.end()) {
-		cout << "Could not find message in recv_status_map for file " << msg_id << endl;
-		return;
+	if (it != recv_status_map.end()) {
+		MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
+		status.is_multicast_done = true;
+
+		// Check data loss at the end
+		if (status.current_offset < status.msg_length) {
+			AddRetxRequest(msg_id, status.current_offset, status.msg_length);
+			status.current_offset = status.msg_length;
+		}
 	}
-
-	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
-	status.is_multicast_done = true;
-
-	// Check data loss at the end
-	if (status.current_offset < status.msg_length) {
-		AddRetxRequest(msg_id, status.current_offset, status.msg_length);
-		status.current_offset = status.msg_length;
+	else {
+		cout << "Could not find message in recv_status_map for file " << msg_id << endl;
+		//return;
 	}
 
 	// Add a RETX_END message to the end of the request list
-	AddRetxRequest(msg_id, status.msg_length, status.msg_length);
+	AddRetxRequest(msg_id, 0, 0);
 }
 
 
