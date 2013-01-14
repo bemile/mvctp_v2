@@ -441,7 +441,6 @@ void MVCTPReceiver::HandleUnicastPacket() {
 			recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
 			AddSessionStatistics(header->session_id);
 		}
-
 	} else if (header->flags & MVCTP_RETRANS_TIMEOUT) {
 		cout << "I have received a timeout message for file " << header->session_id << endl;
 		it = recv_status_map.find(header->session_id);
@@ -575,9 +574,12 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
  * Take actions after receiving an EOF message for a specific file
  */
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
+	cout << "Received a EOF for file " << msg_id << endl;
 	map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(msg_id);
-	if (it == recv_status_map.end())
+	if (it == recv_status_map.end()) {
+		cout << "Could not find message in recv_status_map for file " << msg_id << endl;
 		return;
+	}
 
 	MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
 	status.is_multicast_done = true;
