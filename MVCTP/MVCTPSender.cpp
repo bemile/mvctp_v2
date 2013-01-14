@@ -590,15 +590,15 @@ void MVCTPSender::RunRetransThread(int sock) {
 				retrans_fd_map.erase(it);
 			}
 
+			// mark the completion of retransmission to one receiver
+			metadata.RemoveFinishedReceiver(recv_header->session_id, sock_fd);
+
 			// send back the retransmission end message to the receiver
 			send_header->session_id = recv_header->session_id;
 			send_header->seq_number = 0;
 			send_header->data_len = 0;
 			send_header->flags = MVCTP_RETRANS_END;
 			retrans_tcp_server->SelectSend(sock_fd, send_header, MVCTP_HLEN);
-
-			// mark the completion of retransmission to one receiver
-			metadata.RemoveFinishedReceiver(recv_header->session_id, sock_fd);
 		}
 		else if (recv_header->flags & MVCTP_HISTORY_STATISTICS) {
 			cout << "I have received a history statistics from socket " << sock_fd << endl;

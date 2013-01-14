@@ -449,8 +449,7 @@ void MVCTPReceiver::HandleUnicastPacket() {
 			MessageReceiveStatus& recv_status = it->second;
 			if (!recv_status.recv_failed) {
 				recv_status.recv_failed = true;
-				AddRetxRequest(recv_status.msg_id, recv_status.msg_length,
-						recv_status.msg_length);
+				//AddRetxRequest(recv_status.msg_id, recv_status.msg_length, recv_status.msg_length);
 				close(recv_status.file_descriptor);
 				if (recv_status.retx_file_descriptor > 0)
 					close(recv_status.retx_file_descriptor);
