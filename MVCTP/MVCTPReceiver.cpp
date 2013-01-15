@@ -364,7 +364,8 @@ void MVCTPReceiver::HandleMulticastPacket() {
 				}
 			}
 
-			if (write(recv_status.file_descriptor, packet_data, header->data_len) < 0)
+			if (recv_status.file_descriptor > 0 &&
+					write(recv_status.file_descriptor, packet_data, header->data_len) < 0)
 				SysError("MVCTPReceiver::RunReceivingThread()::write() error on multicast data");
 
 			recv_status.current_offset = header->seq_number + header->data_len;
@@ -438,8 +439,11 @@ void MVCTPReceiver::HandleUnicastPacket() {
 		} else {
 			MessageReceiveStatus& recv_status = it->second;
 			close(recv_status.file_descriptor);
-			if (recv_status.retx_file_descriptor > 0)
+			recv_status.file_descriptor = -1;
+			if (recv_status.retx_file_descriptor > 0) {
 				close(recv_status.retx_file_descriptor);
+				recv_status.retx_file_descriptor = -1;
+			}
 
 			recv_stats.last_file_recv_time = GetElapsedSeconds(recv_stats.reset_cpu_timer);
 			AddSessionStatistics(header->session_id);
@@ -451,11 +455,13 @@ void MVCTPReceiver::HandleUnicastPacket() {
 			MessageReceiveStatus& recv_status = it->second;
 			if (!recv_status.recv_failed) {
 				recv_status.recv_failed = true;
-				//AddRetxRequest(recv_status.msg_id, recv_status.msg_length, recv_status.msg_length);
+
 				close(recv_status.file_descriptor);
-				if (recv_status.retx_file_descriptor > 0)
+				recv_status.file_descriptor = -1;
+				if (recv_status.retx_file_descriptor > 0) {
 					close(recv_status.retx_file_descriptor);
-				//recv_status_map.erase(header->session_id);
+					recv_status.retx_file_descriptor = -1;
+				}
 
 				recv_stats.num_failed_files++;
 				AddSessionStatistics(header->session_id);
