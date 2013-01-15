@@ -274,10 +274,6 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 			sprintf(file_name, "/tmp/temp/temp%d.dat", i + 1);
 			file_id = sender->SendFile(file_name, sender_proxy->GetRetransmissionTimeoutRatio());
-
-			while (!sender->IsTransferFinished(file_id)) {
-				usleep(2000);
-			}
 		}
 
 		while (!sender->IsTransferFinished(file_id)) {
