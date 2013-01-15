@@ -328,7 +328,7 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 	header->session_id = cur_session_id;
 	header->src_port = 0;
 	header->dest_port = 0;
-	header->seq_number = 0;
+	header->seq_number = start_seq_num;
 	header->flags = MVCTP_DATA;
 
 	size_t remained_size = length;
@@ -388,7 +388,7 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	metadata.AddMessageMetadata(meta);
 
 	// Send the BOF message to all receivers before starting the file transfer
-	char msg_packet[1500];
+	char msg_packet[500];
 	MvctpHeader* header = (MvctpHeader*)msg_packet;
 	header->session_id = cur_session_id;
 	header->seq_number = 0;

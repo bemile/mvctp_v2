@@ -573,14 +573,15 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
  * Take actions after receiving an EOF message for a specific file
  */
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
-	cout << "Received a EOF for file " << msg_id << endl;
+	cout << "Received a EOF for file " << msg_id  << endl;
 	map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(msg_id);
 	if (it != recv_status_map.end()) {
-		MessageReceiveStatus& status = it->second; //recv_status_map[msg_id];
+		MessageReceiveStatus& status = it->second;
 		status.is_multicast_done = true;
 
 		// Check data loss at the end
 		if (status.current_offset < status.msg_length) {
+			cout << "Current offset: " << status.current_offset << "    Msg Length: " << status.msg_length << endl;
 			//AddRetxRequest(msg_id, status.current_offset, status.msg_length);
 			status.current_offset = status.msg_length;
 		}
