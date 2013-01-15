@@ -351,6 +351,9 @@ void MVCTPReceiver::HandleMulticastPacket() {
 		}
 
 		MessageReceiveStatus& recv_status = it->second;
+		if (recv_status.recv_failed)
+			return;
+
 		// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
 		if (rand() % 1000 >= packet_loss_rate) {
 			if (header->seq_number > recv_status.current_offset) {
