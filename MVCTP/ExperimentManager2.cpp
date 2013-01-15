@@ -161,7 +161,7 @@ void ExperimentManager2::ReadFileSizes(vector<int>& file_sizes) {
 	double size = 0;
 
 	while (fs_file >> size) {
-		file_sizes.push_back((int)size / 4);
+		file_sizes.push_back((int)size / 8/*4*/);
 	}
 	fs_file.close();
 }
