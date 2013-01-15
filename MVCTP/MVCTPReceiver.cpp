@@ -647,7 +647,7 @@ void MVCTPReceiver::RunRetransmissionThread() {
 				header->seq_number = 0;
 				header->flags = ((request->data_len == 0) ? MVCTP_RETRANS_END : MVCTP_RETRANS_REQ);
 				if (request->data_len > 0)
-					cout << "Sent a retx request for file " << req.msg_id << endl;
+					cout << "Sent a retx request for file " << req.msg_id << ".  Loss packet length: " << req.data_len << endl;
 
 				retrans_tcp_client->Send(buf, MVCTP_HLEN + header->data_len);
 				retrans_list.pop_front();
