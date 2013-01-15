@@ -344,7 +344,7 @@ void MVCTPReceiver::HandleMulticastPacket() {
 		HandleBofMessage(*ptr_sender_msg);
 	} else if (header->flags & MVCTP_EOF) {
 		HandleEofMessage(header->session_id);
-	} else if (header->flags & MVCTP_DATA) {
+	} else if (header->flags == MVCTP_DATA) {
 		if ((it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
 			cout << "[MVCTP_DATA] Could not find the message ID in recv_status_map: " << header->session_id << endl;
 			return;
@@ -353,8 +353,6 @@ void MVCTPReceiver::HandleMulticastPacket() {
 		MessageReceiveStatus& recv_status = it->second;
 		// Write the packet into the file. Otherwise, just drop the packet (emulates errored packet)
 		if (rand() % 1000 >= packet_loss_rate) {
-			if (recv_status.multicast_bytes % 100 == 0)
-				cout << "New packet received. Current offset: " << recv_status.current_offset << endl;
 			if (header->seq_number > recv_status.current_offset) {
 				AddRetxRequest(header->session_id, recv_status.current_offset, header->seq_number);
 				if (lseek(recv_status.file_descriptor, header->seq_number, SEEK_SET) < 0) {
@@ -541,7 +539,7 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	recv_stats.current_msg_id = sender_msg.session_id;
 	recv_stats.num_recved_files++;
 
-	cout << "Added a new recv status for file " << status.msg_id << endl;
+	//cout << "Added a new recv status for file " << status.msg_id << endl;
  }
 
 
@@ -552,8 +550,7 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 	switch (sender_msg.msg_type) {
 		case SPEED_TEST:
 			if (recv_stats.session_retrans_percentage > 0.3) {
-				status_proxy->SendMessageLocal(INFORMATIONAL,
-						"I'm going offline because I'm a slow node...");
+				status_proxy->SendMessageLocal(INFORMATIONAL, "I'm going offline because I'm a slow node...");
 				system("sudo reboot");
 			}
 			break;
@@ -575,7 +572,6 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
  * Take actions after receiving an EOF message for a specific file
  */
 void MVCTPReceiver::HandleEofMessage(uint msg_id) {
-	cout << "Received a EOF for file " << msg_id  << endl;
 	map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(msg_id);
 	if (it != recv_status_map.end()) {
 		MessageReceiveStatus& status = it->second;
@@ -583,7 +579,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 
 		// Check data loss at the end
 		if (status.current_offset < status.msg_length) {
-			//AddRetxRequest(msg_id, status.current_offset, status.msg_length);
+			AddRetxRequest(msg_id, status.current_offset, status.msg_length);
 			status.current_offset = status.msg_length;
 		}
 	}
@@ -647,10 +643,6 @@ void MVCTPReceiver::RunRetransmissionThread() {
 				header->session_id = req.msg_id;
 				header->seq_number = 0;
 				header->flags = (request->data_len == 0) ? MVCTP_RETRANS_END : MVCTP_RETRANS_REQ;
-				if (request->data_len > 0)
-					cout << "Sent a retx request for file " << req.msg_id << ".  Loss packet length: " << req.data_len << endl;
-				else
-					cout << "Sent a MVCTP_RETRANS_END msg for file " << req.msg_id << endl;
 
 				retrans_tcp_client->Send(buf, MVCTP_HLEN + header->data_len);
 				retrans_list.pop_front();
