@@ -512,7 +512,6 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	status.msg_name = sender_msg.text;
 	status.msg_length = sender_msg.data_len;
 	status.is_multicast_done = false;
-	status.msg_length = sender_msg.data_len;
 	status.current_offset = 0;
 	status.multicast_packets = 0;
 	status.multicast_bytes = 0;
@@ -582,7 +581,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 
 		// Check data loss at the end
 		if (status.current_offset < status.msg_length) {
-			AddRetxRequest(msg_id, status.current_offset, status.msg_length);
+			//AddRetxRequest(msg_id, status.current_offset, status.msg_length);
 			status.current_offset = status.msg_length;
 		}
 	}
