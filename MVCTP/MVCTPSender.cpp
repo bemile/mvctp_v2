@@ -322,8 +322,8 @@ void MVCTPSender::DoMemoryDataRetransmission(void* data) {
 
 // Multicast data in a memory buffer, given the specific start sequence number
 void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_seq_num) {
-	char buffer[MVCTP_PACKET_LEN];
-	char* packet_data = buffer + sizeof(MvctpHeader);
+	char 	buffer[MVCTP_PACKET_LEN];
+	char* 	packet_data = buffer + sizeof(MvctpHeader);
 	MvctpHeader* header = (MvctpHeader*) buffer;
 	header->session_id = cur_session_id;
 	header->src_port = 0;
@@ -388,7 +388,7 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	metadata.AddMessageMetadata(meta);
 
 	// Send the BOF message to all receivers before starting the file transfer
-	char msg_packet[500];
+	char msg_packet[1500];
 	MvctpHeader* header = (MvctpHeader*)msg_packet;
 	header->session_id = cur_session_id;
 	header->seq_number = 0;
