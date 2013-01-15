@@ -464,7 +464,7 @@ void MVCTPReceiver::HandleUnicastPacket() {
 				}
 
 				recv_stats.num_failed_files++;
-				AddSessionStatistics(header->session_id);
+				//AddSessionStatistics(header->session_id);
 			}
 		}
 		else {
