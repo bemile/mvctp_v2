@@ -193,6 +193,23 @@ void MVCTPSender::ResetAllReceiverStats() {
 }
 
 
+void MVCTPSender::SetReceiverLossRate(int recver_sock, int loss_rate) {
+	char msg_packet[500];
+	MvctpHeader* header = (MvctpHeader*) msg_packet;
+	header->session_id = cur_session_id;
+	header->seq_number = 0;
+	header->data_len = sizeof(MvctpSenderMessage);
+	header->flags = MVCTP_SENDER_MSG_EXP;
+
+	MvctpSenderMessage* msg = (MvctpSenderMessage*) (msg_packet + MVCTP_HLEN);
+	msg->msg_type = SET_LOSS_RATE;
+	msg->session_id = cur_session_id;
+	msg->data_len = 0;
+	sprintf(msg->text, "%d", loss_rate);
+	retrans_tcp_server->SelectSend(recver_sock, &msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));
+}
+
+
 // After binding the multicast address, the sender also needs to
 // start the thread to accept incoming connection requests
 int MVCTPSender::JoinGroup(string addr, u_short port) {
@@ -211,6 +228,10 @@ int	MVCTPSender::RestartTcpServer() {
 
 int	MVCTPSender::GetNumReceivers() {
 	return retrans_tcp_server->GetSocketList().size();
+}
+
+list<int> MVCTPSender::GetReceiverTCPSockets() {
+	return retrans_tcp_server->GetSocketList();
 }
 
 

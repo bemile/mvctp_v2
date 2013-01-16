@@ -27,7 +27,7 @@ void ExperimentManager2::ReadFileSizes(vector<int>& file_sizes) {
 	double size = 0;
 
 	while (fs_file >> size) {
-		file_sizes.push_back((int)size / 4);
+		file_sizes.push_back((int)size);
 	}
 	fs_file.close();
 }
@@ -60,16 +60,26 @@ void ExperimentManager2::GenerateFile(string file_name, int size) {
 }
 
 
-static const int NUM_EXPERIMENTS = 10;
-static const int FILE_COUNT = 500;
-
-int RHO[] = {40, 60, 80};    // in percent
-int LOSS_RATE[] = {10, 20, 40};  // out of 1000 packets
-int SLOW_NODE_RATIO = 40;  // in percent
+static const int 	NUM_EXPERIMENTS = 10;
+static const int 	FILE_COUNT = 500;
+static const int 	SLOW_RECEIVER_RATIO = 40;  // in percent
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
+	this->sender_proxy = sender_proxy;
+	this->sender = sender;
+
 	//sender->SetSendRate(600);
 	system("mkdir /tmp/temp");
 	system("sudo rm /tmp/temp/temp*.dat");
+
+	//list<int> recv_socks = sender->GetReceiverTCPSockets();
+	//sender->ExecuteCommandOnReceivers("mkdir /tmp/temp", 0, recv_socks.size());
+
+	int TIMEOUT_RATIO[] = {10000, 5000};
+	int NUM_TIMEOUT_RATIO = 2;
+	int RHO[] = {40, 60, 80};    // in percent
+	int NUM_RHO = 3;
+	int LOSS_RATE[] = {10, 20, 40};  // out of 1000 packets
+	int NUM_LOSS_RATE = 3;
 
 	vector<int> file_sizes;
 	ReadFileSizes(file_sizes);
@@ -77,13 +87,46 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	vector<double> inter_arrival_times;
 	ReadInterArrivals(inter_arrival_times);
 
+	for (int time_index = 0; time_index < NUM_TIMEOUT_RATIO; time_index++) {
+		for (int rho_index = 0; rho_index < NUM_RHO; rho_index++) {
+			for (int loss_index = 0; loss_index < NUM_LOSS_RATE; loss_index++) {
+				// Run the experiments for NUM_EXPERIMENTS times
+				char file_name[100];
+				sprintf(file_name, "exp_results_timeout%d_rho%d_loss%d.csv",
+						TIMEOUT_RATIO[time_index], RHO[rho_index], LOSS_RATE[loss_index]);
+				result_file.open(file_name);
+				result_file << "#Node ID, Log Time (Sec), File ID, File Size (bytes), Transfer Time (sec), Retx Bytes, Success, Is Slow Node" << endl;
+				RunOneExperimentSet(file_sizes, inter_arrival_times, TIMEOUT_RATIO[time_index],
+						RHO[rho_index], LOSS_RATE[loss_index]);
+				result_file.close();
+			}
+		}
+	}
+}
 
-	// Run the experiments for NUM_EXPERIMENTS times
-	result_file.open("exp_results.csv");
-	//result_file << "#Node ID, Throughput (Mbps), Robustness (%), Avg. CPU Usage (%), Slow Node (True or False)" << endl;
-	result_file << "#Node ID, Log Time (Sec), File ID, File Size (bytes), Transfer Time (sec), Retx Bytes, Success, Is Slow Node" << endl;
+
+
+
+void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<double>& inter_arrival_times,
+											int timeout_ratio, int rho, int loss_rate) {
+	// set loss rate
+	list<int> recv_socks = sender->GetReceiverTCPSockets();
+	int num_slow_receivers = recv_socks.size() * SLOW_RECEIVER_RATIO / 100;
+	list<int>::const_iterator it;
+	for (it = recv_socks.begin(); it != recv_socks.end(); it++) {
+		sender->SetReceiverLossRate(*it, 0);
+	}
+
+	it = recv_socks.begin();
+	for (int i = 0; i < num_slow_receivers; i++) {
+		sender->SetReceiverLossRate(*it, loss_rate);
+		it++;
+	}
+
+
 	char str[256];
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
+		//sender->ExecuteCommandOnReceivers("sudo rm /tmp/temp/temp*.dat", 0, recv_socks.size());
 		sprintf(str, "\n\n***** Run %d *****\nGenerating files...\n", n + 1);
 		sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 		// Generate files
@@ -99,13 +142,12 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 			// Generate the file
 			sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
-			GenerateFile(file_name, file_sizes[index]);
+			GenerateFile(file_name, file_sizes[index] * rho / 100);
 		}
-
 
 		// Start sending files
 		sender_proxy->SendMessageLocal(INFORMATIONAL, "Sending files...\n");
-		system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
+		//system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 		sender->ResetAllReceiverStats();
 
 		struct timespec time_spec;
@@ -114,7 +156,6 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 		CpuCycleCounter cpu_counter;
 		AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
-		double last_time_mark = 0.0;
 		double sent_time = 0.0;
 		double curr_time = 0.0;
 
@@ -131,20 +172,17 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 			double time_diff = sent_time - curr_time; // - last_time_mark;
 			if (time_diff > 0) {
 				if (time_diff > 1.0) {
-					time_spec.tv_sec = (int)time_diff;
+					time_spec.tv_sec = (int) time_diff;
 					time_spec.tv_nsec = (time_diff - time_spec.tv_sec) * 1000000000;
-				}
-				else {
+				} else {
 					time_spec.tv_sec = 0;
 					time_spec.tv_nsec = time_diff * 1000000000;
 				}
-
-				//cout << "Wait for " << time_diff << " seconds" << endl;
 				nanosleep(&time_spec, NULL);
 			}
 
 			sprintf(file_name, "/tmp/temp/temp%d.dat", i + 1);
-			file_id = sender->SendFile(file_name, sender_proxy->GetRetransmissionTimeoutRatio());
+			file_id = sender->SendFile(file_name, timeout_ratio);
 		}
 
 		while (!sender->IsTransferFinished(file_id)) {
@@ -156,17 +194,17 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 		double transfer_time = GetElapsedSeconds(cpu_counter);
 		double pho = sample.total_file_size * 8.0 / sample.total_time / (100 * 1000000.0);
 		double throughput = sample.total_file_size / 1000000.0 / transfer_time * 8;
-		sprintf(str, "Experiment Finished.\n\n***** Statistics *****\nTotal No. Files: %d\nTotal File Size: %d bytes\n"
-				"Total Arrival Time Span: %.2f second\nPho Value: %.2f\nTotal Transfer Time: %.2f seconds\n"
-				"Throughput: %.2f Mbps\n*****End of Statistics *****\n\n",
-				FILE_COUNT, sample.total_file_size, sample.total_time, pho, transfer_time, throughput);
+		sprintf(str,
+				"Experiment Finished.\n\n***** Statistics *****\nTotal No. Files: %d\nTotal File Size: %d bytes\n"
+						"Total Arrival Time Span: %.2f second\nPho Value: %.2f\nTotal Transfer Time: %.2f seconds\n"
+						"Throughput: %.2f Mbps\n*****End of Statistics *****\n\n",
+				FILE_COUNT, sample.total_file_size, sample.total_time, pho,
+				transfer_time, throughput);
 		sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 	}
 
 	sleep(2);
-	result_file.close();
 }
-
 
 
 void ExperimentManager2::HandleExpResults(string msg) {

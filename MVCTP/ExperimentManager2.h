@@ -40,7 +40,7 @@ public:
 	void StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	void ReadFileSizes(vector<int>& file_sizes);
 	void GenerateFile(string file_name, int size);
-	void ReadInterArrivals(vector<double>& file_sizes);
+	void ReadInterArrivals(vector<double>& inter_arrival_times);
 
 	void HandleExpResults(string msg);
 
@@ -53,7 +53,11 @@ private:
 
 	pthread_mutex_t write_mutex;
 
+	SenderStatusProxy* sender_proxy;
+	MVCTPSender* sender;
+
 	File_Sample GenerateFiles();
+	void RunOneExperimentSet(vector<int>& file_sizes, vector<double>& inter_arrival_times, int timeout, int rho, int loss_rate);
 	//void DoSpeedTest(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 	//void DoLowSpeedExperiment(SenderStatusProxy* sender_proxy, MVCTPSender* sender);
 };

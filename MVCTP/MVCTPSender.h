@@ -84,6 +84,7 @@ public:
 	void	RemoveSlowNodes();
 	int		RestartTcpServer();
 	int		GetNumReceivers();
+	list<int>	GetReceiverTCPSockets();
 	void 	SetSendRate(int num_mbps);
 	int		GetSendRate();
 
@@ -91,6 +92,7 @@ public:
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
 	void	ResetAllReceiverStats();
+	void	SetReceiverLossRate(int recver_sock, int loss_rate);
 	// For memory-to-memory data tranfer
 	void 	SendMemoryData(void* data, size_t length);
 	// For disk-to-disk data transfer

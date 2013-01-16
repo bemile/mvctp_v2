@@ -39,6 +39,10 @@ const struct MvctpReceiverStats MVCTPReceiver::GetBufferStats() {
 void MVCTPReceiver::SetPacketLossRate(int rate) {
 	packet_loss_rate = rate;
 
+	char msg[150];
+	sprintf(msg, "Packet loss rate has been set to %d per thousand.", rate);
+	status_proxy->SendMessageLocal(INFORMATIONAL, msg);
+
 	// tcp socket
 //	double loss_rate = rate / 10.0;
 //	char rate_str[25];
@@ -111,10 +115,10 @@ void MVCTPReceiver::ResetHistoryStats() {
 
 	recv_status_map.clear();
 
-	recv_stats.cpu_monitor.Stop();
-	recv_stats.cpu_monitor.SetCPUFlag(true);
-	recv_stats.cpu_monitor.SetInterval(200);
-	recv_stats.cpu_monitor.Start();
+	//recv_stats.cpu_monitor.Stop();
+	//recv_stats.cpu_monitor.SetCPUFlag(true);
+	//recv_stats.cpu_monitor.SetInterval(200);
+	//recv_stats.cpu_monitor.Start();
 }
 
 
@@ -571,6 +575,9 @@ void MVCTPReceiver::HandleSenderMessage(MvctpSenderMessage& sender_msg) {
 			break;
 		case RESET_HISTORY_STATISTICS:
 			ResetHistoryStats();
+			break;
+		case SET_LOSS_RATE:
+			SetPacketLossRate(atoi(sender_msg.text));
 			break;
 		case EXECUTE_COMMAND:
 			ExecuteCommand(sender_msg.text);

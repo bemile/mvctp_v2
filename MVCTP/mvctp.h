@@ -187,6 +187,7 @@ static const int SPEED_TEST = 12;
 static const int COLLECT_STATISTICS = 13;
 static const int EXECUTE_COMMAND = 14;
 static const int RESET_HISTORY_STATISTICS = 15;
+static const int SET_LOSS_RATE = 16;
 
 
 struct MvctpSenderMessage {

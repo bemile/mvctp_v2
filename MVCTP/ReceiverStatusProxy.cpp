@@ -84,8 +84,6 @@ int ReceiverStatusProxy::HandleCommand(const char* command) {
 		if (parts.size() == 2) {
 			int rate = atoi(parts.back().c_str());
 			ptr_receiver->SetPacketLossRate(rate);
-			sprintf(msg, "Packet loss rate has been set to %d per thousand.", rate);
-			SendMessageLocal(COMMAND_RESPONSE, msg);
 		}
 		else {
 			SendMessageLocal(COMMAND_RESPONSE, "Usage: SetLossRate lost_packets_per_thousand)");
