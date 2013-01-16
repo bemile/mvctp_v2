@@ -135,14 +135,15 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 		File_Sample sample;
 		for (int i = 0; i < FILE_COUNT; i++) {
 			int index = n * FILE_COUNT + i;
-			sample.file_sizes.push_back(file_sizes[index]);
-			sample.total_file_size += file_sizes[index];
+			int fsize= file_sizes[index] * rho / 100;
+			sample.file_sizes.push_back(fsize);
+			sample.total_file_size += fsize;
 			sample.inter_arrival_times.push_back(inter_arrival_times[index]);
 			sample.total_time += inter_arrival_times[index];
 
 			// Generate the file
 			sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
-			GenerateFile(file_name, file_sizes[index] * rho / 100);
+			GenerateFile(file_name, fsize);
 		}
 
 		// Start sending files
