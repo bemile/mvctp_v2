@@ -21,9 +21,9 @@ ExperimentManager2::~ExperimentManager2() {
 
 
 void ExperimentManager2::ReadFileSizes(vector<int>& file_sizes) {
-	system("sudo cp /users/jieli/src/file_sizes.txt /tmp/temp");
+	system("sudo cp /users/jieli/src/file_sizes.csv /tmp/temp");
 	// read in file sizes and inter-arrival-times
-	ifstream fs_file("/tmp/temp/file_sizes.txt");
+	ifstream fs_file("/tmp/temp/file_sizes.csv");
 	double size = 0;
 
 	while (fs_file >> size) {
@@ -34,8 +34,8 @@ void ExperimentManager2::ReadFileSizes(vector<int>& file_sizes) {
 
 
 void ExperimentManager2::ReadInterArrivals(vector<double>& inter_arrival_times) {
-	system("sudo cp /users/jieli/src/inter_arrival_times.txt /tmp/temp");
-	ifstream irt_file("/tmp/temp/inter_arrival_times.txt");
+	system("sudo cp /users/jieli/src/inter_arrival_times.csv /tmp/temp");
+	ifstream irt_file("/tmp/temp/inter_arrival_times.csv");
 	double time;
 	while (irt_file >> time) {
 		if (time < 20.0)
@@ -62,6 +62,10 @@ void ExperimentManager2::GenerateFile(string file_name, int size) {
 
 static const int NUM_EXPERIMENTS = 10;
 static const int FILE_COUNT = 500;
+
+int RHO[] = {0.4, 0.6, 0.8};
+int LOSS_RATE = {10, 20, 40};  // out of 1000 packets
+int SLOW_NODE_RATIO = 40;  // in percent
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	//sender->SetSendRate(600);
 	system("mkdir /tmp/temp");
