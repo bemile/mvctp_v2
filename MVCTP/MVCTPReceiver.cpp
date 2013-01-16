@@ -118,6 +118,30 @@ void MVCTPReceiver::ResetHistoryStats() {
 }
 
 
+// Format of a report entry:
+// host_name, msg_id, file_size, transfer_time, retx bytes, success (1 or 0), is_slow_receiver
+void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
+	MessageReceiveStatus& status = recv_status_map[msg_id];
+
+	char buf[1024];
+	sprintf(buf, "%s,%.5f,%u,%lld,%.5f,%lld,%d,%s\n", status_proxy->GetNodeId().c_str(),
+			GetElapsedSeconds(recv_stats.reset_cpu_timer),
+			msg_id, status.msg_length, GetElapsedSeconds(status.start_time_counter),
+			status.retx_bytes, status.recv_failed ? 0 : 1,
+			(packet_loss_rate > 0 ? "True" : "False"));
+
+	recv_stats.session_stats_vec.push_back(buf);
+
+
+//	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
+//	double robustness = 100.0 - recv_stats.num_failed_files * 100.0 / recv_stats.num_recved_files;  // in percentage
+//	sprintf(buf, "%s,%.2f,%.2f,%d,%s", status_proxy->GetNodeId().c_str(), avg_throughput, robustness,
+//			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
+//
+//	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
+}
+
+
 void MVCTPReceiver::SendHistoryStatsToSender() {
 	/*char buf[1024];
 	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
@@ -192,28 +216,6 @@ void MVCTPReceiver::SendSessionStatisticsToSender() {
 	retrans_tcp_client->Send(buf, len);
 }
 
-
-// Format of a report entry:
-// host_name, msg_id, file_size, transfer_time, retx bytes, success (1 or 0), is_slow_receiver
-void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
-	MessageReceiveStatus& status = recv_status_map[msg_id];
-
-	char buf[1024];
-	sprintf(buf, "%s,%u,%lld,%.5f,%lld,%d,%s\n", status_proxy->GetNodeId().c_str(), msg_id,
-			status.msg_length, GetElapsedSeconds(status.start_time_counter),
-			status.retx_bytes, status.recv_failed ? 0 : 1,
-			(packet_loss_rate > 0 ? "True" : "False"));
-
-	recv_stats.session_stats_vec.push_back(buf);
-
-
-//	double avg_throughput = recv_stats.total_recv_bytes / 1000.0 / 1000.0 * 8 / recv_stats.last_file_recv_time;
-//	double robustness = 100.0 - recv_stats.num_failed_files * 100.0 / recv_stats.num_recved_files;  // in percentage
-//	sprintf(buf, "%s,%.2f,%.2f,%d,%s", status_proxy->GetNodeId().c_str(), avg_throughput, robustness,
-//			recv_stats.cpu_monitor.GetAverageCpuUsage(), (packet_loss_rate > 0 ? "True" : "False"));
-//
-//	status_proxy->SendMessageLocal(INFORMATIONAL, buf);
-}
 
 
 void MVCTPReceiver::ExecuteCommand(char* command) {
