@@ -92,8 +92,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 			for (int loss_index = 0; loss_index < NUM_LOSS_RATE; loss_index++) {
 				// Run the experiments for NUM_EXPERIMENTS times
 				char file_name[100];
-				sprintf(file_name, "exp_results_timeout%d_rho%d_loss%d.csv",
-						TIMEOUT_RATIO[time_index], RHO[rho_index], LOSS_RATE[loss_index]);
+				sprintf(file_name, "exp_timeout%d_rho%d_loss%d_nodes%d.csv",
+						TIMEOUT_RATIO[time_index], RHO[rho_index], LOSS_RATE[loss_index], sender->GetReceiverTCPSockets().size());
 				result_file.open(file_name);
 				result_file << "#Node ID, Log Time (Sec), File ID, File Size (bytes), Transfer Time (sec), Retx Bytes, Success, Is Slow Node" << endl;
 				RunOneExperimentSet(file_sizes, inter_arrival_times, TIMEOUT_RATIO[time_index],
