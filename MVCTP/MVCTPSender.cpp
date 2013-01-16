@@ -102,6 +102,7 @@ void MVCTPSender::SetStatusProxy(StatusProxy* proxy) {
 
 void MVCTPSender::ResetMetadata() {
 	metadata.ClearAllMetadata();
+	cur_session_id = 0;
 }
 
 
