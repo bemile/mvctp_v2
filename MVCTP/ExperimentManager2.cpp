@@ -63,8 +63,8 @@ void ExperimentManager2::GenerateFile(string file_name, int size) {
 static const int NUM_EXPERIMENTS = 10;
 static const int FILE_COUNT = 500;
 
-int RHO[] = {0.4, 0.6, 0.8};
-int LOSS_RATE = {10, 20, 40};  // out of 1000 packets
+int RHO[] = {40, 60, 80};    // in percent
+int LOSS_RATE[] = {10, 20, 40};  // out of 1000 packets
 int SLOW_NODE_RATIO = 40;  // in percent
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
 	//sender->SetSendRate(600);
