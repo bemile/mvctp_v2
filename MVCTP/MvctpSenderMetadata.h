@@ -98,12 +98,13 @@ public:
 	MvctpSenderMetadata();
 	~MvctpSenderMetadata();
 
-	void AddMessageMetadata(MessageMetadata* ptr_meta);
-	void RemoveMessageMetadata(uint msg_id);
+	void 	AddMessageMetadata(MessageMetadata* ptr_meta);
+	void 	RemoveMessageMetadata(uint msg_id);
+	void 	ClearAllMetadata();
 	MessageMetadata* GetMetadata(uint msg_id);
-	bool IsTransferFinished(uint msg_id);
-	int GetFileDescriptor(uint msg_id);
-	void RemoveFinishedReceiver(uint msg_id, int sock_fd);
+	bool 	IsTransferFinished(uint msg_id);
+	int 	GetFileDescriptor(uint msg_id);
+	void 	RemoveFinishedReceiver(uint msg_id, int sock_fd);
 
 private:
 	map<uint, MessageMetadata*> metadata_map;	// the map from message id to the pointer to the message metadata

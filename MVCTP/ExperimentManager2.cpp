@@ -126,6 +126,7 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 
 	char str[256];
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
+		sender->ResetMetadata();
 		//sender->ExecuteCommandOnReceivers("sudo rm /tmp/temp/temp*.dat", 0, recv_socks.size());
 		sprintf(str, "\n\n***** Run %d *****\nGenerating files...\n", n + 1);
 		sender_proxy->SendMessageLocal(INFORMATIONAL, str);

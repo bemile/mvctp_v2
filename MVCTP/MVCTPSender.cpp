@@ -100,6 +100,11 @@ void MVCTPSender::SetStatusProxy(StatusProxy* proxy) {
 	status_proxy = proxy;
 }
 
+void MVCTPSender::ResetMetadata() {
+	metadata.ClearAllMetadata();
+}
+
+
 void MVCTPSender::SendAllStatistics() {
 	char buf[512];
 	sprintf(buf, "***** Sender Statistics *****\nTotal Sent Packets:\t\t%u\nTotal Retrans. Packets:\t\t%d\t"

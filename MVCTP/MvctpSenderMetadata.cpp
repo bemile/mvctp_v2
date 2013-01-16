@@ -31,10 +31,22 @@ void MvctpSenderMetadata::AddMessageMetadata(MessageMetadata* ptr_meta) {
 
 void MvctpSenderMetadata::RemoveMessageMetadata(uint msg_id) {
 	pthread_rwlock_wrlock(&map_lock);
-	metadata_map.erase(msg_id);
+	map<uint, MessageMetadata*>::iterator it = metadata_map.find(msg_id);
+	if (it != metadata_map.end()) {
+		delete it->second;
+		metadata_map.erase(it);
+	}
 	pthread_rwlock_unlock(&map_lock);
 }
 
+void MvctpSenderMetadata::ClearAllMetadata() {
+	pthread_rwlock_wrlock(&map_lock);
+	for (map<uint, MessageMetadata*>::iterator it = metadata_map.begin(); it != metadata_map.end(); it++) {
+		delete (it->second);
+	}
+	metadata_map.clear();
+	pthread_rwlock_unlock(&map_lock);
+}
 
 MessageMetadata* MvctpSenderMetadata::GetMetadata(uint msg_id) {
 	MessageMetadata* temp = NULL;

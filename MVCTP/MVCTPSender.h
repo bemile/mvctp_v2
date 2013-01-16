@@ -89,6 +89,7 @@ public:
 	int		GetSendRate();
 
 	void 	SendAllStatistics();
+	void	ResetMetadata();
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
 	void	ResetAllReceiverStats();
