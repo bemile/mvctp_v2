@@ -455,7 +455,7 @@ void MVCTPReceiver::HandleUnicastPacket() {
 			AddSessionStatistics(header->session_id);
 		}
 	} else if (header->flags & MVCTP_RETRANS_TIMEOUT) {
-		cout << "I have received a timeout message for file " << header->session_id << endl;
+		//cout << "I have received a timeout message for file " << header->session_id << endl;
 		it = recv_status_map.find(header->session_id);
 		if (it != recv_status_map.end()) {
 			MessageReceiveStatus& recv_status = it->second;

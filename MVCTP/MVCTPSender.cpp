@@ -552,8 +552,8 @@ void MVCTPSender::RunRetransThread(int sock) {
 
 			// check whether the retransmission for the file has already time out
 			if (GetElapsedSeconds(meta->multicast_start_cpu_time) > meta->retx_timeout_seconds) {
-				cout << "Retx timeout for file " << retx_request->msg_id << ".  Elapsed Time: "
-						<< GetElapsedSeconds(meta->multicast_start_cpu_time) << "    Timeout: " << meta->retx_timeout_seconds << endl;
+				//cout << "Retx timeout for file " << retx_request->msg_id << ".  Elapsed Time: "
+				//		<< GetElapsedSeconds(meta->multicast_start_cpu_time) << "    Timeout: " << meta->retx_timeout_seconds << endl;
 				send_header->session_id = retx_request->msg_id;
 				send_header->flags = MVCTP_RETRANS_TIMEOUT;
 				send_header->data_len = 0;
