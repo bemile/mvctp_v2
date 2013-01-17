@@ -352,7 +352,7 @@ void MVCTPReceiver::HandleMulticastPacket() {
 		HandleEofMessage(header->session_id);
 	} else if (header->flags == MVCTP_DATA) {
 		if ((it = recv_status_map.find(header->session_id)) == recv_status_map.end()) {
-			cout << "[MVCTP_DATA] Could not find the message ID in recv_status_map: " << header->session_id << endl;
+			//cout << "[MVCTP_DATA] Could not find the message ID in recv_status_map: " << header->session_id << endl;
 			return;
 		}
 
@@ -602,7 +602,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 		}
 	}
 	else {
-		cout << "Could not find message in recv_status_map for file " << msg_id << endl;
+		//cout << "Could not find message in recv_status_map for file " << msg_id << endl;
 		//return;
 	}
 
