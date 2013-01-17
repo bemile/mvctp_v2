@@ -468,7 +468,7 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	}
 
 	// Record memory data multicast time
-	send_stats.session_trans_time = GetElapsedSeconds(cpu_counter);
+	send_stats.session_trans_time = meta->msg_length * 8.0 / 100000000.0; //GetElapsedSeconds(cpu_counter);
 	meta->stats.session_trans_time = send_stats.session_trans_time;
 	double default_timeout = meta->stats.session_trans_time * (meta->retx_timeout_ratio / 100.0 + 1.0);
 	meta->retx_timeout_seconds = default_timeout > (MIN_RETX_TIMEOUT + meta->stats.session_retrans_time) ?
