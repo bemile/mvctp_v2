@@ -388,12 +388,11 @@ void MVCTPSender::DoMemoryTransfer(void* data, size_t length, u_int32_t start_se
 }
 
 
-#define MIN_RETX_TIMEOUT 2//0.001
+#define MIN_RETX_TIMEOUT 0.02//0.001
 uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	ResetSessionStatistics();
 	// Increase the session id for new file transfer
 	cur_session_id++;
-	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
 
 	struct stat file_status;
 	stat(file_name, &file_status);
@@ -407,7 +406,6 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	meta->msg_id = cur_session_id;
 	meta->msg_length = file_size;
 	meta->file_name = file_name;
-	meta->multicast_start_cpu_time = cpu_counter;
 	meta->retx_timeout_ratio = retx_timeout_ratio;
 
 	// add all current receiver sockets into the unfinished receiver map
@@ -416,6 +414,9 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 		meta->unfinished_recvers.insert(*it);
 	}
 	metadata.AddMessageMetadata(meta);
+
+	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+	meta->multicast_start_cpu_time = cpu_counter;
 
 	// Send the BOF message to all receivers before starting the file transfer
 	char msg_packet[500];
@@ -478,7 +479,7 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	// For test ONLY: clear system cache before doing retransmission
 	// system("sudo sync && sudo echo 3 > /proc/sys/vm/drop_caches");
 
-	AccessCPUCounter(&cpu_counter.hi, &cpu_counter.lo);
+
 	// Send a notification to all receivers to start retransmission
 	header->flags = MVCTP_EOF;
 	header->data_len = 0;
@@ -632,7 +633,6 @@ void MVCTPSender::RunRetransThread(int sock) {
 			retrans_tcp_server->SelectSend(sock_fd, send_header, MVCTP_HLEN);
 		}
 		else if (recv_header->flags & MVCTP_HISTORY_STATISTICS) {
-			cout << "I have received a history statistics from socket " << sock_fd << endl;
 			char* buf = new char[recv_header->data_len + 1];
 			if (retrans_tcp_server->Receive(sock_fd, buf, recv_header->data_len) < 0) {
 				break;
@@ -641,18 +641,22 @@ void MVCTPSender::RunRetransThread(int sock) {
 			buf[recv_header->data_len] = '\0';
 			status_proxy->SendMessageLocal(EXP_RESULT_REPORT, buf);
 			delete[] buf;
-			cout << "Finished receiving a history statistics from socket " << sock_fd << endl;
+			cout << "Received a history statistics from socket " << sock_fd << endl;
 		}
 	}
 
 	cout << "Retransmission thread exited for socket " << sock_fd  << endl;
-
 }
 
 
 
 
 
+
+
+
+
+//==================================== Old Functions ====================================
 void MVCTPSender::SendFileBufferedIO(const char* file_name) {
 	PerformanceCounter cpu_info(50);
 	cpu_info.SetCPUFlag(true);
