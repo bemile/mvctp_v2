@@ -60,7 +60,7 @@ void ExperimentManager2::GenerateFile(string file_name, int size) {
 }
 
 
-static const int 	NUM_EXPERIMENTS = 5;
+static const int 	NUM_EXPERIMENTS = 10;
 static const int 	FILE_COUNT = 500;
 static const int 	SLOW_RECEIVER_RATIO = 40;  // in percent
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
