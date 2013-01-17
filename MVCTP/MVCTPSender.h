@@ -90,6 +90,7 @@ public:
 
 	void 	SendAllStatistics();
 	void	ResetMetadata();
+	void	ResetSessionID();
 	void 	SendSessionStatistics();
 	void	ResetSessionStatistics();
 	void	ResetAllReceiverStats();

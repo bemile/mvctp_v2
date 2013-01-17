@@ -123,6 +123,7 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 		it++;
 	}
 
+	sender->ResetSessionID();
 
 	char str[256];
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
