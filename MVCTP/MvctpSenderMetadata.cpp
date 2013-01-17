@@ -22,8 +22,6 @@ MvctpSenderMetadata::~MvctpSenderMetadata() {
 
 void MvctpSenderMetadata::AddMessageMetadata(MessageMetadata* ptr_meta) {
 	pthread_rwlock_wrlock(&map_lock);
-	//if (metadata_map.size() > METADATA_SIZE_LIMIT)
-	//	metadata_map.clear();
 	metadata_map[ptr_meta->msg_id] = ptr_meta;
 	pthread_rwlock_unlock(&map_lock);
 }
@@ -64,9 +62,7 @@ bool MvctpSenderMetadata::IsTransferFinished(uint msg_id) {
 	map<uint, MessageMetadata*>::iterator it;
 	pthread_rwlock_rdlock(&map_lock);
 	if ( (it = metadata_map.find(msg_id)) != metadata_map.end()) {
-		if (GetElapsedSeconds(it->second->multicast_start_cpu_time) > it->second->retx_timeout_seconds)
-			is_finished = true;
-		else
+		if (GetElapsedSeconds(it->second->multicast_start_cpu_time) < it->second->retx_timeout_seconds)
 			is_finished = (it->second->unfinished_recvers.size() == 0);
 	}
 	pthread_rwlock_unlock(&map_lock);
@@ -76,22 +72,26 @@ bool MvctpSenderMetadata::IsTransferFinished(uint msg_id) {
 
 
 int MvctpSenderMetadata::GetFileDescriptor(uint msg_id) {
+	int res = -1;
 	map<uint, MessageMetadata*>::iterator it;
 	pthread_rwlock_rdlock(&map_lock);
-	if ( (it = metadata_map.find(msg_id)) == metadata_map.end())
-		return -1;
+	if ( (it = metadata_map.find(msg_id)) == metadata_map.end()) {
+		pthread_rwlock_unlock(&map_lock);
+		return res;
+	}
 
 	FileMessageMetadata* meta = (FileMessageMetadata*)it->second;
 	if (meta->file_descriptor < 0) {
 		pthread_rwlock_unlock(&map_lock);
 		pthread_rwlock_wrlock(&map_lock);
 		meta->file_descriptor = open(meta->file_name.c_str(), O_RDONLY);
+		res = meta->file_descriptor;
 		pthread_rwlock_unlock(&map_lock);
 	}
 	else {
 		pthread_rwlock_unlock(&map_lock);
 	}
-	return meta->file_descriptor;
+	return res;
 }
 
 
