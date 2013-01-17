@@ -60,7 +60,7 @@ void ExperimentManager2::GenerateFile(string file_name, int size) {
 }
 
 
-static const int 	NUM_EXPERIMENTS = 10;
+static const int 	NUM_EXPERIMENTS = 5;
 static const int 	FILE_COUNT = 500;
 static const int 	SLOW_RECEIVER_RATIO = 40;  // in percent
 void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTPSender* sender) {
@@ -76,10 +76,10 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 	int TIMEOUT_RATIO[] = {10000, 5000};
 	int NUM_TIMEOUT_RATIO = 2;
-	int RHO[] = {40, 60, 80};    // in percent
-	int NUM_RHO = 3;
-	int LOSS_RATE[] = {10, 20, 40};  // out of 1000 packets
-	int NUM_LOSS_RATE = 3;
+	int RHO[] = {40, 60/*, 80*/};    // in percent
+	int NUM_RHO = 2;
+	int LOSS_RATE[] = {/*10,*/ 20, 40};  // out of 1000 packets
+	int NUM_LOSS_RATE = 2;
 
 	vector<int> file_sizes;
 	ReadFileSizes(file_sizes);
