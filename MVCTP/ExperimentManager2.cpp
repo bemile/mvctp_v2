@@ -67,7 +67,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	this->sender_proxy = sender_proxy;
 	this->sender = sender;
 
-	sender->SetSchedRR(true);
+	//sender->SetSchedRR(true);
 
 	//sender->SetSendRate(600);
 	system("mkdir /tmp/temp");
