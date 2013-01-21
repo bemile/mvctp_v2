@@ -551,10 +551,9 @@ void MVCTPSender::RunRetransThread(int sock) {
 				SysError("MVCTPSender::RunRetransThread()::receive retx request data error");
 			}
 
-			//cout << "Received a retx request for file " << retx_request->msg_id << endl;
 			MessageMetadata* meta = metadata.GetMetadata(retx_request->msg_id);
 			if (meta == NULL) {
-				cout << "Error: could not find metadata for file " << retx_request->msg_id << endl;
+				//cout << "Error: could not find metadata for file " << retx_request->msg_id << endl;
 				continue;
 			} else if (timeout_set.find(retx_request->msg_id) != timeout_set.end()) {
 				continue;
@@ -630,7 +629,7 @@ void MVCTPSender::RunRetransThread(int sock) {
 			retrans_tcp_server->SelectSend(sock_fd, send_header, MVCTP_HLEN);
 
 			map<uint, int>::iterator it = retrans_fd_map.find(recv_header->session_id);
-			if (it != retrans_fd_map.end()) {
+			if ( it != retrans_fd_map.end() ) {
 				close(it->second);
 				retrans_fd_map.erase(it);
 			}
