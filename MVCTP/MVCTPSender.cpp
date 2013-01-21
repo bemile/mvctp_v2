@@ -528,6 +528,9 @@ void MVCTPSender::RunRetransThread(int sock) {
 	map<uint, int> retrans_fd_map;
 	map<uint, int>::iterator it;
 
+	// A set that includes the unique id of all timeout messages
+	set<uint> timeout_set;
+
 	char recv_buf[MVCTP_PACKET_LEN];
 	MvctpHeader* recv_header = (MvctpHeader*)recv_buf;
 	char* recv_packet_data = recv_buf + MVCTP_HLEN;
@@ -553,6 +556,8 @@ void MVCTPSender::RunRetransThread(int sock) {
 			if (meta == NULL) {
 				cout << "Error: could not find metadata for file " << retx_request->msg_id << endl;
 				continue;
+			} else if (timeout_set.find(retx_request->msg_id) != timeout_set.end()) {
+				continue;
 			}
 
 			// check whether the retransmission for the file has already time out
@@ -562,8 +567,9 @@ void MVCTPSender::RunRetransThread(int sock) {
 				send_header->session_id = retx_request->msg_id;
 				send_header->flags = MVCTP_RETRANS_TIMEOUT;
 				send_header->data_len = 0;
-
 				retrans_tcp_server->SelectSend(sock_fd, send_buf, MVCTP_HLEN);
+
+				timeout_set.insert(retx_request->msg_id);
 			}
 			else if (meta->is_disk_file) {	// is disk file transfer
 				FileMessageMetadata* file_meta = (FileMessageMetadata*)meta;
@@ -628,6 +634,9 @@ void MVCTPSender::RunRetransThread(int sock) {
 				close(it->second);
 				retrans_fd_map.erase(it);
 			}
+
+			if ( timeout_set.find(recv_header->session_id) != timeout_set.end() )
+				timeout_set.erase(recv_header->session_id);
 
 			// mark the completion of retransmission to one receiver
 			metadata.RemoveFinishedReceiver(recv_header->session_id, sock_fd);
