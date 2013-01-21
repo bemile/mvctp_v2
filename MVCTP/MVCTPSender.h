@@ -67,6 +67,7 @@ struct MvctpRetransBuffer {
 struct StartRetransThreadInfo {
 	MVCTPSender* sender_ptr;
 	int	sock_fd;
+	map<uint, int>* ptr_retrans_fd_map;		// Opened file descriptor map for the retransmission.  Format: <msg_id, file_descriptor>
 };
 
 
@@ -127,7 +128,7 @@ private:
 	//MvctpEventQueueManager* 	event_queue_manager;
 
 	static void* StartRetransThread(void* ptr);
-	void RunRetransThread(int sock_fd);
+	void RunRetransThread(int sock_fd, map<uint, int>& retrans_fd_map);
 	map<int, pthread_t*> retrans_thread_map;	//first: socket id;  second: pthread_t pointer
 	map<int, bool>	retrans_switch_map; 		//first: socket_id;  second: swtich to allow/disallow retransmission on-the-fly
 	map<int, bool>	retrans_finish_map;			//first: socket_id;  second: whether the message retransmission has finished

@@ -40,6 +40,17 @@ MVCTPSender::~MVCTPSender() {
 	for (; it != retrans_thread_map.end(); it++) {
 		delete (it->second);
 	}
+
+
+	map<int, StartRetransThreadInfo*>::iterator it2;
+	for (it2 = thread_info_map.begin(); it2 != thread_info_map.end(); it2++) {
+		map<uint, int>::iterator fd_it;
+		map<uint, int>& fd_map = *(it2->second->ptr_retrans_fd_map);
+		for (fd_it = fd_map.begin(); fd_it != fd_map.end(); fd_it++) {
+			close(fd_it->second);
+		}
+		delete it2->second;
+	}
 }
 
 
@@ -102,6 +113,16 @@ void MVCTPSender::SetStatusProxy(StatusProxy* proxy) {
 
 void MVCTPSender::ResetMetadata() {
 	metadata.ClearAllMetadata();
+
+	map<int, StartRetransThreadInfo*>::iterator it;
+	for (it = thread_info_map.begin(); it != thread_info_map.end(); it++) {
+		map<uint, int>::iterator fd_it;
+		map<uint, int>& fd_map = *(it->second->ptr_retrans_fd_map);
+		for (fd_it = fd_map.begin(); fd_it != fd_map.end(); fd_it++) {
+			close(fd_it->second);
+		}
+		fd_map.clear();
+	}
 }
 
 
@@ -509,23 +530,22 @@ void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	StartRetransThreadInfo* retx_thread_info = new StartRetransThreadInfo();
 	retx_thread_info->sender_ptr = this;
 	retx_thread_info->sock_fd = sock_fd;
+	retx_thread_info->ptr_retrans_fd_map = new map<uint, int>();
 	thread_info_map[sock_fd] = retx_thread_info;
 	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, retx_thread_info);
 }
 
 void* MVCTPSender::StartRetransThread(void* ptr) {
 	StartRetransThreadInfo* info = (StartRetransThreadInfo*)ptr;
-	info->sender_ptr->RunRetransThread(info->sock_fd);
+	info->sender_ptr->RunRetransThread(info->sock_fd, *info->ptr_retrans_fd_map);
 	return NULL;
 }
 
 
 // The execution function for the retransmission thread
-void MVCTPSender::RunRetransThread(int sock) {
+void MVCTPSender::RunRetransThread(int sock, map<uint, int>& retrans_fd_map) {
 	int sock_fd = sock;
 
-	// Opened file descriptor map for the retransmission.  Format: <msg_id, file_descriptor>
-	map<uint, int> retrans_fd_map;
 	map<uint, int>::iterator it;
 
 	// A set that includes the unique id of all timeout messages
