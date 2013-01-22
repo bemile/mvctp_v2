@@ -68,7 +68,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	this->sender = sender;
 
 	// Set the sending thread to use Sched_RR high priority mode
-	sender->SetSchedRR(true);
+	//sender->SetSchedRR(true);
 
 	//sender->SetSendRate(600);
 	system("mkdir /tmp/temp");
