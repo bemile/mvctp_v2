@@ -36,6 +36,7 @@ void ReceiverStatusProxy::ConfigureEnvironment() {
 	system("sudo sysctl -w net.ipv4.tcp_mem=\"4096 8388608 16777216\"");
 	system("sudo sysctl -w net.ipv4.tcp_rmem=\"4096 8388608 16777216\"");
 	system("sudo sysctl -w net.ipv4.tcp_wmem=\"4096 8388608 16777216\"");
+	system("sudo sysctl -w net.core.netdev_max_backlog=\"10000\"");
 }
 
 

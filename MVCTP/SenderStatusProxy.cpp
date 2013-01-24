@@ -37,7 +37,7 @@ void SenderStatusProxy::ConfigureEnvironment() {
 	system("sudo sysctl -w net.core.rmem_max=\"16777216\"");
 	system("sudo sysctl -w net.core.wmem_default=\"8388608\"");
 	system("sudo sysctl -w net.core.wmem_max=\"16777216\"");
-	system("sudo sysctl -w net.core.netdev_max_backlog=\"5000\"");
+	system("sudo sysctl -w net.core.netdev_max_backlog=\"10000\"");
 }
 
 
