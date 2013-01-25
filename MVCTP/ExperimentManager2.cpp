@@ -130,9 +130,6 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 
 	char str[256];
 	for (int n = 0; n < NUM_EXPERIMENTS; n++) {
-		sender->ResetMetadata();
-		sender->ResetAllReceiverStats();
-
 		//sender->ExecuteCommandOnReceivers("sudo rm /tmp/temp/temp*.dat", 0, recv_socks.size());
 		sprintf(str, "\n\n***** Run %d *****\nGenerating files...\n", n + 1);
 		sender_proxy->SendMessageLocal(INFORMATIONAL, str);
@@ -152,6 +149,10 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 			sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
 			GenerateFile(file_name, fsize);
 		}
+
+
+		sender->ResetAllReceiverStats();
+		sender->ResetMetadata();
 
 		// Start sending files
 		sender_proxy->SendMessageLocal(INFORMATIONAL, "Sending files...\n");
