@@ -81,7 +81,7 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	int NUM_TIMEOUT_RATIO = 2;
 	int RHO[] = {40, 60}; //{40, 60/*, 80*/};    // in percent
 	int NUM_RHO = 2;
-	int LOSS_RATE[] = {100, 200}; //{50, 100}; // {10, 20}; // out of 1000 packets
+	int LOSS_RATE[] = {50, 100}; //{100, 200}; // {10, 20}; // out of 1000 packets
 	int NUM_LOSS_RATE = 2;
 
 	vector<int> file_sizes;
