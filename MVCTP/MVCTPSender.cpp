@@ -49,6 +49,8 @@ MVCTPSender::~MVCTPSender() {
 		for (fd_it = fd_map.begin(); fd_it != fd_map.end(); fd_it++) {
 			close(fd_it->second);
 		}
+		delete it2->second->ptr_retrans_fd_map;
+		delete it2->second->ptr_timeout_set;
 		delete it2->second;
 	}
 }
@@ -122,6 +124,7 @@ void MVCTPSender::ResetMetadata() {
 			close(fd_it->second);
 		}
 		fd_map.clear();
+		it->second->ptr_timeout_set->clear();
 	}
 }
 
@@ -528,28 +531,26 @@ void MVCTPSender::StartNewRetransThread(int sock_fd) {
 	retrans_finish_map[sock_fd] = false;
 
 	StartRetransThreadInfo* retx_thread_info = new StartRetransThreadInfo();
-	retx_thread_info->sender_ptr = this;
-	retx_thread_info->sock_fd = sock_fd;
-	retx_thread_info->ptr_retrans_fd_map = new map<uint, int>();
+	retx_thread_info->sender_ptr 			= this;
+	retx_thread_info->sock_fd 				= sock_fd;
+	retx_thread_info->ptr_retrans_fd_map 	= new map<uint, int>();
+	retx_thread_info->ptr_timeout_set 		= new set<uint>();
 	thread_info_map[sock_fd] = retx_thread_info;
 	pthread_create(t, NULL, &MVCTPSender::StartRetransThread, retx_thread_info);
 }
 
 void* MVCTPSender::StartRetransThread(void* ptr) {
 	StartRetransThreadInfo* info = (StartRetransThreadInfo*)ptr;
-	info->sender_ptr->RunRetransThread(info->sock_fd, *info->ptr_retrans_fd_map);
+	info->sender_ptr->RunRetransThread(info->sock_fd, *info->ptr_retrans_fd_map, *info->ptr_timeout_set);
 	return NULL;
 }
 
 
 // The execution function for the retransmission thread
-void MVCTPSender::RunRetransThread(int sock, map<uint, int>& retrans_fd_map) {
+void MVCTPSender::RunRetransThread(int sock, map<uint, int>& retrans_fd_map, set<uint>& timeout_set) {
 	int sock_fd = sock;
 
 	map<uint, int>::iterator it;
-
-	// A set that includes the unique id of all timeout messages
-	set<uint> timeout_set;
 
 	char recv_buf[MVCTP_PACKET_LEN];
 	MvctpHeader* recv_header = (MvctpHeader*)recv_buf;
