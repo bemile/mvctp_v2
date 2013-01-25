@@ -666,7 +666,7 @@ void MVCTPReceiver::RunRetransmissionThread() {
 				retrans_list.pop_front();
 			}
 		pthread_mutex_unlock(&retrans_list_mutex);
-		usleep(5000);
+		usleep(1000);
 	}
 }
 

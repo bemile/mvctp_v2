@@ -141,7 +141,7 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 		char file_name[256];
 		File_Sample sample;
 		for (int i = 0; i < FILE_COUNT; i++) {
-			int index = n * FILE_COUNT + i;
+			int index = /*n * FILE_COUNT + */i;
 			int fsize= file_sizes[index] * rho / 100;
 			sample.file_sizes.push_back(fsize);
 			sample.total_file_size += fsize;
