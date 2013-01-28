@@ -125,8 +125,10 @@ void MVCTPReceiver::ResetHistoryStats() {
 // Format of a report entry:
 // host_name, msg_id, file_size, transfer_time, retx bytes, success (1 or 0), is_slow_receiver
 void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
-	MessageReceiveStatus& status = recv_status_map[msg_id];
+	if (recv_status_map.find(msg_id) == recv_status_map.end())
+		return;
 
+	MessageReceiveStatus& status = recv_status_map[msg_id];
 	char buf[1024];
 	sprintf(buf, "%s,%.5f,%u,%lld,%.5f,%lld,%d,%s\n", status_proxy->GetNodeId().c_str(),
 			GetElapsedSeconds(recv_stats.reset_cpu_timer),
