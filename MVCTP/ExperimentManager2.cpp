@@ -211,7 +211,7 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 		sender_proxy->SendMessageLocal(INFORMATIONAL, str);
 	}
 
-	sleep(2);
+	sleep(5);
 }
 
 

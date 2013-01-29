@@ -132,7 +132,7 @@ void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
 	char buf[1024];
 	sprintf(buf, "%s,%.5f,%u,%lld,%.5f,%lld,%d,%s\n", status_proxy->GetNodeId().c_str(),
 			GetElapsedSeconds(recv_stats.reset_cpu_timer),
-			msg_id, status.msg_length, GetElapsedSeconds(status.start_time_counter),
+			msg_id, status.msg_length, status.multicast_time, /*GetElapsedSeconds(status.start_time_counter),*/
 			status.retx_bytes, status.recv_failed ? 0 : 1,
 			(packet_loss_rate > 0 ? "True" : "False"));
 
@@ -595,6 +595,7 @@ void MVCTPReceiver::HandleEofMessage(uint msg_id) {
 	map<uint, MessageReceiveStatus>::iterator it = recv_status_map.find(msg_id);
 	if (it != recv_status_map.end()) {
 		MessageReceiveStatus& status = it->second;
+		status.multicast_time = GetElapsedSeconds(status.start_time_counter);
 		status.is_multicast_done = true;
 
 		// Check data loss at the end

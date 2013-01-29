@@ -60,6 +60,7 @@ struct MessageReceiveStatus {
 	long long 	retx_bytes;
 	bool		recv_failed;
 	CpuCycleCounter 	start_time_counter;
+	double		multicast_time;
 };
 
 
