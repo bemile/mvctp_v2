@@ -77,8 +77,8 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 	//list<int> recv_socks = sender->GetReceiverTCPSockets();
 	//sender->ExecuteCommandOnReceivers("mkdir /tmp/temp", 0, recv_socks.size());
 
-	int TIMEOUT_RATIO[] = {10000000}; //{5000, 1000}; //{10000, 5000};
-	int NUM_TIMEOUT_RATIO = 1;
+	int TIMEOUT_RATIO[] = {5000, 1000}; //{10000000}; //{10000, 5000};
+	int NUM_TIMEOUT_RATIO = 2;
 	int RHO[] = {40, 60};  //{80, 90}; //   // in percent
 	int NUM_RHO = 2;
 	int LOSS_RATE[] = {50, 100}; //{200, 400};  //{10, 20}; // out of 1000 packets
