@@ -454,6 +454,8 @@ uint MVCTPSender::SendFile(const char* file_name, int retx_timeout_ratio) {
 	msg->session_id = cur_session_id;
 	msg->msg_type = FILE_TRANSFER_START;
 	msg->data_len = file_size;
+	msg->timestamp_hi = cpu_counter.hi;
+	msg->timestamp_lo = cpu_counter.lo;
 	strcpy(msg->text, file_name);
 
 	//retrans_tcp_server->SendToAll(&msg_packet, MVCTP_HLEN + sizeof(MvctpSenderMessage));

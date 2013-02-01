@@ -43,7 +43,6 @@ double GetElapsedCycles(unsigned cycle_hi, unsigned cycle_lo) {
 	result = (double) hi * (1 << 30) * 4 + lo;
 	if (result < 0) {
 		cout << "GetElapsedCycles(): counter returns negative value" << endl;
-		exit(-1);
 	}
 	return result;
 }

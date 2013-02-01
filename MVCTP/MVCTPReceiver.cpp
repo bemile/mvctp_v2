@@ -513,6 +513,10 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
+	static bool			clock_diff_measured = false;
+	static long long 	clock_diff = -1;
+
+
 	if (sender_msg.session_id % 100 == 1)
 	{
 		char str[500];
@@ -540,7 +544,18 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	if (status.file_descriptor < 0)
 		SysError("MVCTPReceiver::PrepareForFileTransfer open file error");
 
-	AccessCPUCounter(&status.start_time_counter.hi, &status.start_time_counter.lo);
+	// resolve the timestamp difference between the sender and receiver
+	if (!clock_diff_measured) {
+		AccessCPUCounter(&status.start_time_counter.hi, &status.start_time_counter.lo);
+		clock_diff = ((status.start_time_counter.hi << 32) + status.start_time_counter.lo) -
+					 ((sender_msg.timestamp_hi << 32) + sender_msg.timestamp_lo);
+		clock_diff_measured = true;
+	}
+	unsigned long long delivery_time = ((sender_msg.timestamp_hi << 32) + sender_msg.timestamp_lo) + clock_diff;
+	status.start_time_counter.hi = (unsigned)(delivery_time >> 32);
+	status.start_time_counter.lo = (unsigned)(delivery_time & 0xffffffff);
+
+
 	if (read_ahead_header->session_id == sender_msg.session_id)
 	{
 		if (write(status.file_descriptor, read_ahead_data, read_ahead_header->data_len) < 0)
