@@ -133,8 +133,8 @@ void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
 	MessageReceiveStatus& status = recv_status_map[msg_id];
 	char buf[1024];
 	sprintf(buf, "%s,%.5f,%u,%lld,%.5f,%lld,%d,%s\n", status_proxy->GetNodeId().c_str(),
-			GetElapsedSeconds(recv_stats.reset_cpu_timer),
-			msg_id, status.msg_length, status.multicast_time + status.send_time_adjust, /*GetElapsedSeconds(status.start_time_counter),*/
+			GetElapsedSeconds(recv_stats.reset_cpu_timer), msg_id, status.msg_length,
+			(status.multicast_time + status.send_time_adjust), /*GetElapsedSeconds(status.start_time_counter),*/
 			status.retx_bytes, status.recv_failed ? 0 : 1,
 			(packet_loss_rate > 0 ? "True" : "False"));
 
@@ -518,15 +518,6 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	static bool			time_diff_measured = false;
 	static double 		time_diff = 0;
 
-
-	if (sender_msg.session_id % 100 == 1)
-	{
-		char str[500];
-		sprintf(str, "Receiving file %d. File length: %d bytes\n\n",
-							sender_msg.session_id, sender_msg.data_len);
-		status_proxy->SendMessageLocal(INFORMATIONAL, str);
-	}
-
 	// First reset all session related counters
 	ResetSessionStatistics();
 
@@ -547,12 +538,12 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 		SysError("MVCTPReceiver::PrepareForFileTransfer open file error");
 
 	// resolve the timestamp difference between the sender and receiver
-	AccessCPUCounter(&status.start_time_counter.hi, &status.start_time_counter.lo);
 	if (!time_diff_measured) {
 		time_diff = GetElapsedSeconds(global_timer) - sender_msg.time_stamp;
 		time_diff_measured = true;
 		cout << "time_diff is: " << time_diff << " seconds." << endl;
 	}
+	AccessCPUCounter(&status.start_time_counter.hi, &status.start_time_counter.lo);
 	status.send_time_adjust = GetElapsedSeconds(global_timer) - (sender_msg.time_stamp + time_diff);
 
 
@@ -571,6 +562,12 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 	recv_stats.current_msg_id = sender_msg.session_id;
 	recv_stats.num_recved_files++;
 
+	if (sender_msg.session_id % 100 == 1) {
+		char str[500];
+		sprintf(str, "Receiving file %d. File length: %d bytes    Send Time Adjustment: %.2f seconds\n\n",
+				sender_msg.session_id, sender_msg.data_len, status.send_time_adjust);
+		status_proxy->SendMessageLocal(INFORMATIONAL, str);
+	}
 	//cout << "Added a new recv status for file " << status.msg_id << endl;
  }
 
