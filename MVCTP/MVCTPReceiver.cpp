@@ -24,6 +24,8 @@ MVCTPReceiver::MVCTPReceiver(int buf_size) {
 	read_ahead_header = (MvctpHeader*) read_ahead_buffer;
 	read_ahead_data = read_ahead_buffer + MVCTP_HLEN;
 	read_ahead_header->session_id = -1;
+
+	AccessCPUCounter(&global_timer.hi, &global_timer.lo);
 }
 
 MVCTPReceiver::~MVCTPReceiver() {
@@ -132,7 +134,7 @@ void MVCTPReceiver::AddSessionStatistics(uint msg_id) {
 	char buf[1024];
 	sprintf(buf, "%s,%.5f,%u,%lld,%.5f,%lld,%d,%s\n", status_proxy->GetNodeId().c_str(),
 			GetElapsedSeconds(recv_stats.reset_cpu_timer),
-			msg_id, status.msg_length, status.multicast_time, /*GetElapsedSeconds(status.start_time_counter),*/
+			msg_id, status.msg_length, status.multicast_time + status.send_time_adjust, /*GetElapsedSeconds(status.start_time_counter),*/
 			status.retx_bytes, status.recv_failed ? 0 : 1,
 			(packet_loss_rate > 0 ? "True" : "False"));
 
@@ -513,8 +515,8 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
-	static bool			clock_diff_measured = false;
-	static long long 	clock_diff = -1;
+	static bool			time_diff_measured = false;
+	static double 		time_diff = 0;
 
 
 	if (sender_msg.session_id % 100 == 1)
@@ -545,15 +547,13 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 		SysError("MVCTPReceiver::PrepareForFileTransfer open file error");
 
 	// resolve the timestamp difference between the sender and receiver
-	if (!clock_diff_measured) {
-		AccessCPUCounter(&status.start_time_counter.hi, &status.start_time_counter.lo);
-		clock_diff = ((status.start_time_counter.hi << 32) + status.start_time_counter.lo) -
-					 ((sender_msg.timestamp_hi << 32) + sender_msg.timestamp_lo);
-		clock_diff_measured = true;
+	AccessCPUCounter(&status.start_time_counter.hi, &status.start_time_counter.lo);
+	if (!time_diff_measured) {
+		time_diff = GetElapsedSeconds(global_timer) - sender_msg.time_stamp;
+		time_diff_measured = true;
+		cout << "time_diff is: " << time_diff << " seconds." << endl;
 	}
-	unsigned long long delivery_time = ((sender_msg.timestamp_hi << 32) + sender_msg.timestamp_lo) + clock_diff;
-	status.start_time_counter.hi = (unsigned)(delivery_time >> 32);
-	status.start_time_counter.lo = (unsigned)(delivery_time & 0xffffffff);
+	status.send_time_adjust = GetElapsedSeconds(global_timer) - (sender_msg.time_stamp + time_diff);
 
 
 	if (read_ahead_header->session_id == sender_msg.session_id)

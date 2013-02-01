@@ -195,8 +195,7 @@ struct MvctpSenderMessage {
 	uint32_t	session_id;
 	uint32_t 	data_len;
 	char       	text[256];
-	uint32_t	timestamp_hi;
-	uint32_t    timestamp_lo;
+	double		time_stamp;
 };
 
 struct MvctpRetransRequest {

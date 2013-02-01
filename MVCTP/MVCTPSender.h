@@ -114,7 +114,7 @@ private:
 	TcpServer*			retrans_tcp_server;
 	u_int32_t			cur_session_id;		// the session ID for a new transfer
 	MvctpSenderStats	send_stats;			// data transfer statistics
-	CpuCycleCounter		cpu_counter;		// counter for elapsed CPU cycles
+	CpuCycleCounter		cpu_counter, global_timer;		// counter for elapsed CPU cycles
 	StatusProxy*		status_proxy;
 	RateShaper			rate_shaper;
 	int					max_num_retrans_buffs;

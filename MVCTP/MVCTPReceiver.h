@@ -60,6 +60,7 @@ struct MessageReceiveStatus {
 	long long 	retx_bytes;
 	bool		recv_failed;
 	CpuCycleCounter 	start_time_counter;
+	double		send_time_adjust;
 	double		multicast_time;
 };
 
@@ -112,7 +113,7 @@ private:
 	int 				packet_loss_rate;
 	uint				session_id;
 	MvctpReceiverStats 	recv_stats;
-	CpuCycleCounter		cpu_counter;
+	CpuCycleCounter		cpu_counter, global_timer;
 	StatusProxy*		status_proxy;
 
 	PerformanceCounter 	cpu_info;
