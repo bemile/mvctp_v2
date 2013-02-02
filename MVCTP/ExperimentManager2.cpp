@@ -139,10 +139,10 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 		File_Sample sample;
 		for (int i = 0; i < FILE_COUNT; i++) {
 			int index = /*n * FILE_COUNT + */i;
-			int fsize= file_sizes[index] * 5 * rho / 100;
+			int fsize= file_sizes[index] * 2 * rho / 100;
 			sample.file_sizes.push_back(fsize);
 			sample.total_file_size += fsize;
-			double inter_arrival_time = inter_arrival_times[index] * 5;
+			double inter_arrival_time = inter_arrival_times[index] * 2;
 			sample.inter_arrival_times.push_back(inter_arrival_time);
 			sample.total_time += inter_arrival_time;
 
