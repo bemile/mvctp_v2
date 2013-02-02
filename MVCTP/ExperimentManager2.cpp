@@ -79,9 +79,9 @@ void ExperimentManager2::StartExperiment2(SenderStatusProxy* sender_proxy, MVCTP
 
 	int TIMEOUT_RATIO[] = {5000, 1000}; //{10000000}; //{10000, 5000};
 	int NUM_TIMEOUT_RATIO = 2;
-	int RHO[] = {40, 60};  //{80, 90}; //   // in percent
+	int RHO[] = {40, 80};  //{80, 90}; //   // in percent
 	int NUM_RHO = 2;
-	int LOSS_RATE[] = {50, 100}; //{200, 400};  //{10, 20}; // out of 1000 packets
+	int LOSS_RATE[] = {50, 150}; //{200, 400};  //{10, 20}; // out of 1000 packets
 	int NUM_LOSS_RATE = 2;
 
 	vector<int> file_sizes;
@@ -139,11 +139,12 @@ void ExperimentManager2::RunOneExperimentSet(vector<int>& file_sizes, vector<dou
 		File_Sample sample;
 		for (int i = 0; i < FILE_COUNT; i++) {
 			int index = /*n * FILE_COUNT + */i;
-			int fsize= file_sizes[index] * rho / 100;
+			int fsize= file_sizes[index] * 5 * rho / 100;
 			sample.file_sizes.push_back(fsize);
 			sample.total_file_size += fsize;
-			sample.inter_arrival_times.push_back(inter_arrival_times[index]);
-			sample.total_time += inter_arrival_times[index];
+			double inter_arrival_time = inter_arrival_times[index] * 5;
+			sample.inter_arrival_times.push_back(inter_arrival_time);
+			sample.total_time += inter_arrival_time;
 
 			// Generate the file
 			sprintf(file_name, "/tmp/temp/temp%d.dat", file_index++);
