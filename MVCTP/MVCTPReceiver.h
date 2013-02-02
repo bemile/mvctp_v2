@@ -117,7 +117,8 @@ private:
 	StatusProxy*		status_proxy;
 
 	PerformanceCounter 	cpu_info;
-
+	bool				time_diff_measured;
+	double 				time_diff;
 
 	void 	ReconnectSender();
 

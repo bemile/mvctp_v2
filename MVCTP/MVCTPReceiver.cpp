@@ -26,6 +26,8 @@ MVCTPReceiver::MVCTPReceiver(int buf_size) {
 	read_ahead_header->session_id = -1;
 
 	AccessCPUCounter(&global_timer.hi, &global_timer.lo);
+	time_diff_measured = false;
+	time_diff = 0;
 }
 
 MVCTPReceiver::~MVCTPReceiver() {
@@ -116,6 +118,8 @@ void MVCTPReceiver::ResetHistoryStats() {
 	AccessCPUCounter(&recv_stats.reset_cpu_timer.hi, &recv_stats.reset_cpu_timer.lo);
 
 	recv_status_map.clear();
+	time_diff_measured = false;
+	AccessCPUCounter(&global_timer.hi, &global_timer.lo);
 
 	//recv_stats.cpu_monitor.Stop();
 	//recv_stats.cpu_monitor.SetCPUFlag(true);
@@ -515,9 +519,6 @@ void MVCTPReceiver::HandleBofMessage(MvctpSenderMessage& sender_msg) {
 
 // Create metadata for a new file that is to be received
 void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
-	static bool			time_diff_measured = false;
-	static double 		time_diff = 0;
-
 	// First reset all session related counters
 	ResetSessionStatistics();
 

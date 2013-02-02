@@ -213,6 +213,8 @@ void MVCTPSender::ResetSessionStatistics() {
 }
 
 void MVCTPSender::ResetAllReceiverStats() {
+	AccessCPUCounter(&global_timer.hi, &global_timer.lo);
+
 	char msg_packet[500];
 	MvctpHeader* header = (MvctpHeader*)msg_packet;
 	header->session_id = cur_session_id;
