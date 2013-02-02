@@ -564,7 +564,7 @@ void MVCTPReceiver::PrepareForFileTransfer(MvctpSenderMessage& sender_msg) {
 
 	if (sender_msg.session_id % 100 == 1) {
 		char str[500];
-		sprintf(str, "Receiving file %d. File length: %d bytes    Send Time Adjustment: %.2f seconds\n\n",
+		sprintf(str, "Receiving file %d. File length: %d bytes    Send Time Adjustment: %.5f seconds\n\n",
 				sender_msg.session_id, sender_msg.data_len, status.send_time_adjust);
 		status_proxy->SendMessageLocal(INFORMATIONAL, str);
 	}
